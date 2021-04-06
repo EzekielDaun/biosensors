@@ -2,6 +2,7 @@
 ## Code has been modified by Eric Lyall in December 2020 ericlyall1428@gmail.com
 ## It was modified for the 8164A laser set-up at the Life Sciences Institute at UBC. The laser has 2 active detectors.
 ## An option for a periodic fine align is/has been added
+## 2021-03-31 S. Grist added saving the timestamp associated with each sweep to a CSV.
 
 ## Import Statements:
 
@@ -16,6 +17,8 @@ from CorvusEco import CorvusEcoClass
 import os
 import visa
 import numpy as np
+import time
+import csv
 
 def calc_slice_indices (wavelength, guess_wavelength,range):
     st_index = int((guess_wavelength-range - wavelength[0])/(wavelength[len(wavelength)-1]-wavelength[0])*len(wavelength))
@@ -173,8 +176,21 @@ if __name__ == '__main__':
 
     nbscan=5000;
 
-    for i in range(1,nbscan+1):
+    # get the initial time
+    t0 = time.time()
 
+    for i in range(1,nbscan+1):
+        # get elapsed time
+        t1 = time.time()
+        t_elapse = t1-t0
+
+        matFilename = 'laser_sweep_%d.mat' %i;
+
+        # save elapsed time to CSV
+        csvFilename = 'timeSteps.csv'
+        with open(baseFolder+csvFilename, 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow([i, matFilename, t_elapse])
 
         # sweep laser
 
@@ -197,8 +213,6 @@ if __name__ == '__main__':
         matDict['power1'] = power_chan1
 
         matDict['power2'] = power_chan2
-
-        matFilename = 'laser_sweep_%d.mat' %i;
 
         savemat(baseFolder+matFilename, matDict);
 
