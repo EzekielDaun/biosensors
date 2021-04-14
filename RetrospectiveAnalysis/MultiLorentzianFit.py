@@ -7,14 +7,14 @@ import copy
 import time
 class LorentzianFitting():
 
-    def __init__(self, power,wavelength):
+    def __init__(self, power,wavelength, pkProm):
         self.raw_power_array, self.nm_wavelength = self.return_sweep_data(power,wavelength)
         # Normalizing the power array:
         self.min = min(self.raw_power_array)
         self.max = max(self.raw_power_array)
         self.norm_power_array = np.array((self.raw_power_array - self.min) / (self.max - self.min))
 
-        self.prom = 6 / (self.max - self.min) # Finding the peak prominence for the normalized array:
+        self.prom = pkProm / (self.max - self.min) # Finding the peak prominence for the normalized array:
         self.peaks,_ = find_peaks((-1) * self.norm_power_array, prominence=self.prom)
         self.dist_bt_peaks=self.get_dist_bt_peaks(self.peaks)
         # self.parabolic_params = np.load('Normalized Grating Coupler Curves/params.npy')

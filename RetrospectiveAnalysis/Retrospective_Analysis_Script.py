@@ -43,7 +43,7 @@ def spike_remover(offset_data, std_multiplier=1):
 
 
 
-def get_sweep_data(filename):
+def get_sweep_data(filename, pkProm):
     """
     This function converts the sweep data from a MATLAB vector in to a dictionary datatype that is
     easier for python to read.
@@ -66,8 +66,8 @@ def get_sweep_data(filename):
     # key parameter: peak prominence, which is the vertical distance between a peak and its lowest contour line.
     # There a lots of other parameters you could use here- i.e horizontal distances, min heights..
     # refer to scipy find_peaks docs to view additional parameters.
-    peaks1 = find_peaks((-1) * power1, prominence=4)[0]
-    peaks2 = find_peaks((-1) * power2, prominence=4)[0]
+    peaks1 = find_peaks((-1) * power1, prominence=pkProm)[0]
+    peaks2 = find_peaks((-1) * power2, prominence=pkProm)[0]
 
     if '852' in filename:
         print("852 sweep peak", peaks1)
@@ -242,7 +242,7 @@ def file_num(filename):
     filenumber = int(filename[start_index: end_index])
     return filenumber
 
-def grapher(root, p1_index = 1, p2_index = 1, sweep_timestep = .25, remove_spikes=True ):
+def grapher(root, p1_index = 1, p2_index = 1, sweep_timestep = .25, remove_spikes=True, pkProm=4 ):
     """
 Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset between power 1 and power 2 peaks relative
                     to their intiial points.
@@ -306,15 +306,15 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             csv_reader = csv.reader(csv_file, delimiter=',')
             for row in csv_reader:
                 # In case we've thrown out any .mat files, look for the filename (second csv column) of interest rather than
-                # relying on the complete dataset to be present
+                # relying on the complete dataset to be present.  Convert to minutes prior to storing.
                 if len(row)>=3:
-                    dTime[row[1]] = float(row[2])
+                    dTime[row[1]] = float(row[2])/60
 
     ## Looping through all the matlab vectors from each sweep.
     for iteration, filename in enumerate(files_list):
         print(os.path.relpath(filename, root))
 
-        sweep_data = get_sweep_data(filename)  # getting the sweep data from matlab vector
+        sweep_data = get_sweep_data(filename, pkProm)  # getting the sweep data from matlab vector
         all_sweeps_array.append(sweep_data)
 
         ## If we are just beggining the sweeps, chooses a specific set of datapoints for tracking. (SG change to just first iteration)
@@ -339,14 +339,14 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
         ## Changing the peaks to their lorentzian form..
         lor_wavelengths = sweep_data.get('wavelength')
         # Power 1 Peaks
-        Lorentz1 = LorentzianFitting(sweep_data.get('power1'),lor_wavelengths)
+        Lorentz1 = LorentzianFitting(sweep_data.get('power1'),lor_wavelengths, pkProm)
         adjusted_power1 = Lorentz1.norm_power_array
         adjusted_power1 = Lorentz1.parabolic_overlay()
         lor_power_1_peak = Lorentz1.lorentzian_overlay(adjusted_power1, peak_index=power_1_peak, range_fraction=.2)
         arr1 = np.array([abs(lor_power_1_peak-x) for x in lor_wavelengths])
         power_1_peak = int(np.where(arr1 == np.amin(arr1))[0])
         # Power 2 Peaks
-        Lorentz2 = LorentzianFitting(sweep_data.get('power2'),lor_wavelengths)
+        Lorentz2 = LorentzianFitting(sweep_data.get('power2'),lor_wavelengths, pkProm)
         adjusted_power2 = Lorentz2.norm_power_array
         adjusted_power2 = Lorentz2.parabolic_overlay()
         lor_power_2_peak = Lorentz2.lorentzian_overlay(adjusted_power2, peak_index= power_2_peak, range_fraction=.2)
@@ -406,10 +406,10 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     ax1.set_xlabel('Time (min)', size = 15)
     ax1.set_xlim(0,int(np.max(t_array)))
     # ax1.plot(t_array, power_1_offset_list*1e12, color='blue', label='Detector Slot 1/Array Channel 1/Top/Power 1')
-    ax1.plot(t_array, power_1_offset_list * 1e12, color='blue', label='Detector Slot 1/Top')
+    lines = ax1.plot(t_array, power_1_offset_list * 1e12, color='blue', label='Detector Slot 1/Top')
     # ax1.plot(t_array, lor_p1_offset*1e12,color='orange',label='Lorentzian Fit Power 1')
     # ax1.plot(t_array, power_2_offset_list*1e12, color='r', label='Detector Slot 2/Array Channel 3/Bottom/Power 2')
-    ax1.plot(t_array, power_2_offset_list * 1e12, color='r', label='Detector Slot 2/Bottom')
+    lines.append(ax1.plot(t_array, power_2_offset_list * 1e12, color='r', label='Detector Slot 2/Bottom'))
    # ax1.plot(t_array, power_1_offset_list*1e12-power_2_offset_list*1e12, color = 'g', label = 'Power1-Power2')
     ax1.legend(loc='upper left', fontsize = 'small')
     plt.draw()
@@ -426,6 +426,30 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     plt.savefig(figfilename, bbox_inches='tight')
     figfilename = os.path.join(root, "peakshift.pdf")
     plt.savefig(figfilename, bbox_inches='tight')
+    # save only ch1
+    ax1.lines.pop(1)
+    xmin, xmax, ymin, ymax = plt.axis()
+    yrange = np.max(power_1_offset_list * 1e12)-np.min(power_1_offset_list * 1e12)
+    ymin = np.min(power_1_offset_list * 1e12) - 0.05 * yrange
+    ymax = np.max(power_1_offset_list * 1e12) + 0.05 * yrange
+    plt.axis([xmin, xmax, ymin, ymax])
+    figfilename = os.path.join(root, "peakshift_ch1.png")
+    plt.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "peakshift_ch1.pdf")
+    plt.savefig(figfilename, bbox_inches='tight')
+    # save only ch2
+    lines.append(ax1.plot(t_array, power_2_offset_list * 1e12, color='r', label='Detector Slot 2/Bottom'))
+    ax1.lines.pop(0)
+    yrange = np.max(power_2_offset_list * 1e12) - np.min(power_2_offset_list * 1e12)
+    ymin = np.min(power_2_offset_list * 1e12) - 0.05 * yrange
+    ymax = np.max(power_2_offset_list * 1e12) + 0.05 * yrange
+    plt.axis([xmin, xmax, ymin, ymax])
+    figfilename = os.path.join(root, "peakshift_ch2.png")
+    plt.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "peakshift_ch2.pdf")
+    plt.savefig(figfilename, bbox_inches='tight')
+    lines.append(ax1.plot(t_array, power_1_offset_list * 1e12, color='blue', label='Detector Slot 1/Top'))
+    plt.axis('auto')
 
     current_sweep_index = len(all_sweeps_array)-1
     wavelength_graph = sweep_data.get('wavelength')*1e9
@@ -534,7 +558,7 @@ if __name__ == '__main__':
 
     ## Graphing the offset versus time.
     grapher(root=root_folder, p1_index=track_p1_peak, p2_index=track_p2_peak,
-            sweep_timestep=sweep_timestep, remove_spikes=False)
+            sweep_timestep=sweep_timestep, remove_spikes=False, pkProm=4)
 
     print("Program Time=", datetime.now() - startTime)
     plt.show()
