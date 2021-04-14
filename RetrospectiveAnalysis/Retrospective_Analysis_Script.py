@@ -12,6 +12,7 @@ from MultiLorentzianFit import LorentzianFitting
 from numpy import asarray
 from numpy import savetxt
 import glob
+import csv
 
 # import pandas as pd
 ##TODO: Pandas library not installed, would need internet- or maybe can manually install somehow??
@@ -262,6 +263,7 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     #         files_list.append(x)
 
     files_list = glob.glob(os.path.join(root, "laser*.mat"))
+    print(len(files_list))
 
     ## Sorting all these files by their number from lowest to highest
     files_list.sort(key=file_num)
@@ -274,9 +276,9 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     # is FSR/3 or greater
     numFiles = len(files_list)
     force_dir = np.zeros(numFiles)
-    force_dir = np.ones(numFiles)
-    for i in range(len(force_dir)):
-        force_dir[i] = -force_dir[i]
+    # force_dir = np.ones(numFiles)
+    # for i in range(len(force_dir)):
+    #     force_dir[i] = -force_dir[i]
 
     # making array to store the offsets
     power_1_offset_list = [] # contains the offsets between power 1 and its initial location
@@ -292,9 +294,25 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     # An array containing the sweep data from each sweep
     all_sweeps_array = []
 
+    # If we have the csv file with saved acquisition times, use that instead of the calculated times! (SG)
+    # Set up the dictionary
+    dTime = dict()
+    useDict = False
+    csvFileName = os.path.join(root, "timeSteps.csv")
+    print(csvFileName)
+    if os.path.isfile(csvFileName):
+        useDict = True
+        with open(csvFileName) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            for row in csv_reader:
+                # In case we've thrown out any .mat files, look for the filename (second csv column) of interest rather than
+                # relying on the complete dataset to be present
+                if len(row)>=3:
+                    dTime[row[1]] = float(row[2])
+
     ## Looping through all the matlab vectors from each sweep.
     for iteration, filename in enumerate(files_list):
-        print(filename)
+        print(os.path.relpath(filename, root))
 
         sweep_data = get_sweep_data(filename)  # getting the sweep data from matlab vector
         all_sweeps_array.append(sweep_data)
@@ -351,7 +369,13 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
         #Appending peaks to past_peak_lists.
         past_power_1_peaks.append(power_1_peak)  # appending past power1 peaks
         past_power_2_peaks.append(power_2_peak)  # appending past power2 peaks
-        t_array.append(sweep_timestep * iteration)  # appending the time, assuming each sweep is .25 min apart.
+
+        ## If we have the csv file with saved acquisition times, use that instead of the calculated times! (SG)
+        if useDict:
+            t_array.append(dTime[os.path.relpath(filename, root)]) # append the time corresponding to the current filename
+        # if we don't have the .csv file, manually calculate as we did before (SG)
+        else:
+            t_array.append(sweep_timestep * iteration)  # appending the time, assuming each sweep is .25 min apart.
 
         ## Appending the offsets to the offset lists.
         power_1_offset_list.append(
@@ -372,25 +396,36 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     t_array = np.array(t_array)
 
 
+
+
     ## Plotting the offset versus the initial point versus time.
     fig = plt.figure()
     ax1 = fig.add_subplot(1,1,1)
-    ax1.set_title('Offset from initial resonance peak location vs time', size =15)
+    ax1.set_title('Offset from initial resonance peak location vs time', size = 15)
     ax1.set_ylabel('Offset (pm)', size = 15)
     ax1.set_xlabel('Time (min)', size = 15)
     ax1.set_xlim(0,int(np.max(t_array)))
-    ax1.plot(t_array, power_1_offset_list*1e12, color='blue', label='Detector Slot 1/Array Channel 1/Top/Power 1')
+    # ax1.plot(t_array, power_1_offset_list*1e12, color='blue', label='Detector Slot 1/Array Channel 1/Top/Power 1')
+    ax1.plot(t_array, power_1_offset_list * 1e12, color='blue', label='Detector Slot 1/Top')
     # ax1.plot(t_array, lor_p1_offset*1e12,color='orange',label='Lorentzian Fit Power 1')
-    ax1.plot(t_array, power_2_offset_list*1e12, color='r', label='Detector Slot 2/Array Channel 3/Bottom/Power 2')
+    # ax1.plot(t_array, power_2_offset_list*1e12, color='r', label='Detector Slot 2/Array Channel 3/Bottom/Power 2')
+    ax1.plot(t_array, power_2_offset_list * 1e12, color='r', label='Detector Slot 2/Bottom')
    # ax1.plot(t_array, power_1_offset_list*1e12-power_2_offset_list*1e12, color = 'g', label = 'Power1-Power2')
-    ax1.legend(loc='lower left')
+    ax1.legend(loc='upper left', fontsize = 'small')
     plt.draw()
 
     # save the data to a MATLAB matrix (SG)
-    matfilename = root+"/matlab_matrix.mat"
+    matfilename = os.path.join(root, "matlab_matrix.mat")
     print(matfilename)
     mdic = {"t_array": t_array, "power_1_offset_list": power_1_offset_list, "power_2_offset_list": power_2_offset_list}
     savemat(matfilename, mdic)
+
+    # save the peak shift figure (SG)
+    fig.set_size_inches(8, 4)
+    figfilename = os.path.join(root, "peakshift.png")
+    plt.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "peakshift.pdf")
+    plt.savefig(figfilename, bbox_inches='tight')
 
     current_sweep_index = len(all_sweeps_array)-1
     wavelength_graph = sweep_data.get('wavelength')*1e9
@@ -484,7 +519,7 @@ if __name__ == '__main__':
 
     ## Enter the name of the folder that contians the matlab vectors of different sweeps.
     #root_folder = r'C:\Users\eric1\Google Drive\UBC\CBR\Vinny COVID Project\Dec9Trial'
-    root_folder =  os.path.expanduser("~/Dropbox/UBC_DP_Biosensor/2021-1/Vinny_Results/2021-03-29/Sweeps_Decending-Mol-Fraction")
+    root_folder =  os.path.expanduser("/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-1/Vinny_Results/Bioassay Runs/2021-04-01/Sweeps")
 
     #r'C:\Users\MapleLeafStage\Documents\Dec23Trial'
 
@@ -499,7 +534,7 @@ if __name__ == '__main__':
 
     ## Graphing the offset versus time.
     grapher(root=root_folder, p1_index=track_p1_peak, p2_index=track_p2_peak,
-            sweep_timestep=sweep_timestep, remove_spikes=True)
+            sweep_timestep=sweep_timestep, remove_spikes=False)
 
     print("Program Time=", datetime.now() - startTime)
     plt.show()
