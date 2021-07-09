@@ -127,7 +127,12 @@ class LorentzianFitting():
         return x0*1e-12, high_res_wave_slice*1e-12, (fitted_power_slice+ high_res_grating_curve)*(self.max-self.min)+self.min# returning the theoretical lorentzian peak location
 
     def parabolic_overlay(self):
+        downsample_factor = 10 # start with a downsample factor of 10 to reduce processing time -- we don't need so many points for the rough parabola fit
         rem_power, rem_wave = self.remove_peaks(self.norm_power_array)
+        # downsample the power and wavelength by the downsample factor to reduce processing time
+        rem_power = rem_power[::downsample_factor]
+        rem_wave = rem_wave[::downsample_factor]
+        # fit the curve
         rem_power_fit_params = curve_fit(self.parabola_fit, rem_wave,rem_power)
         a,b,c = rem_power_fit_params[0]
 
