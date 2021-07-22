@@ -293,6 +293,8 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     power_2_peakWL_list = []
     lor_p1_offset=[]
     t_array = []             # contains all the time points (min) at which each sweep was conducted.
+    #ch1_spectrogram = [] # 2D array, to be plotted as an image, showing all of the spectra for ch1.
+    #ch2_spectrogram = []  # 2D array, to be plotted as an image, showing all of the spectra fpr ch2.
 
     ## Making a array of past peaks indexes:
     past_power_1_peaks = []
@@ -325,6 +327,28 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
 
         sweep_data = get_sweep_data(filename, pkProm)  # getting the sweep data from matlab vector
         all_sweeps_array.append(sweep_data)
+
+        if iteration==0:
+            p1a = sweep_data.get('power1')
+            p2a = sweep_data.get('power2')
+            p1 = np.array(sweep_data.get('power1'))
+            p2 = np.array(sweep_data.get('power2'))
+            p1b = p1.astype(np.float)
+            p2b = p2.astype(np.float)
+            #ch1_spectrogram = p1b/np.min(p1b)
+            #ch2_spectrogram = p2b/np.min(p2b)
+            ch1_spectrogram = np.flip(p1b)
+            ch2_spectrogram = np.flip(p2b)
+
+        else:
+            p1 = np.array(sweep_data.get('power1'))
+            p2 = np.array(sweep_data.get('power2'))
+            p1 = p1.astype(np.float)
+            p2 = p2.astype(np.float)
+            #ch1_spectrogram = np.vstack((ch1_spectrogram, (p1-np.max(p1))/(np.min(p1[10:])-np.max(p1))))
+            #ch2_spectrogram = np.vstack((ch2_spectrogram, (p2-np.max(p2))/(np.min(p2[10:])-np.max(p2))))
+            ch1_spectrogram = np.vstack((ch1_spectrogram, np.flip(p1)))
+            ch2_spectrogram = np.vstack((ch2_spectrogram, np.flip(p2)))
 
         ## Check that we found peaks in this file and proceed if so.  If not, set this element of all of the arrays to NaN.
         if len(sweep_data.get('peaks1')) >= p1_index and len(sweep_data.get('peaks2')) >= p2_index:
@@ -459,7 +483,70 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
 
     t_array = np.array(t_array)
 
+    ## Plotting the spectrograms
+    figh, ax = plt.subplots()
+    im = ax.imshow((np.transpose(ch1_spectrogram)), cmap='inferno')
+    cbar = plt.colorbar(im, orientation='horizontal')
+    plt.title('Ch1 Spectrogram')
+    # axis labels
+    nx = t_array.shape[0]
+    no_labels = 7  # how many labels on x axis
+    step_x = int(nx / (no_labels - 1))  # step between labels
+    x_positions = np.arange(0, nx, step_x)  # pixel count at label position
+    x_labels = np.around(t_array[::step_x], 0)  # label values (rounded to nearest integer)
+    plt.xticks(x_positions, x_labels)
+    ny = np.flip(lor_wavelengths.shape[0])
+    no_labels = 7  # how many labels on y axis
+    step_y = int(ny / (no_labels - 1))  # step between labels
+    y_positions = np.arange(0, ny, step_y)  # pixel count at label position
+    y_labels = np.around(np.flip(lor_wavelengths[::step_y]*1e9), 2)  # label values (rounded to nearest integer)
+    plt.yticks(y_positions, y_labels)
+    plt.xlabel('Time (minutes)')
+    plt.ylabel('Wavelength (pm)')
+    plt.axis('auto')
+    # colorbar label
+    cbar.set_label('Power (dBm)')
+    plt.show()
+    # save the spectrogram figure
+    figh.set_size_inches(8, 5)
+    figfilename = os.path.join(root, "ch1_spectrogram.png")
+    figh.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "ch1_spectrogram.pdf")
+    figh.savefig(figfilename, bbox_inches='tight')
+    # plot line plot over it with tracked peak
+    ax.plot(np.arange(0, nx, 1), (ny-past_power_1_peaks), '-', linewidth=2, color='black')
+    figfilename = os.path.join(root, "ch1_spectrogram_overlay.png")
+    figh.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "ch1_spectrogram_overlay.pdf")
+    figh.savefig(figfilename, bbox_inches='tight')
+    plt.show()
 
+    figh, ax = plt.subplots()
+    im2 = ax.imshow((np.transpose(ch2_spectrogram)), cmap='inferno')
+    cbar = plt.colorbar(im2, orientation='horizontal')
+    plt.title('Ch2 Spectrogram')
+    # axis labels
+    plt.xticks(x_positions, x_labels)
+    plt.yticks(y_positions, y_labels)
+    plt.xlabel('Time (minutes)')
+    plt.ylabel('Wavelength (pm)')
+    plt.axis('auto')
+    # colorbar label
+    cbar.set_label('Power (dBm)')
+    plt.show()
+    # save the spectrogram figure
+    figh.set_size_inches(8, 5)
+    figfilename = os.path.join(root, "ch2_spectrogram.png")
+    figh.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "ch2_spectrogram.pdf")
+    figh.savefig(figfilename, bbox_inches='tight')
+    # plot line plot over it with tracked peak
+    ax.plot(np.arange(0, nx, 1), (ny - past_power_2_peaks), '-', linewidth=2, color='black')
+    figfilename = os.path.join(root, "ch2_spectrogram_overlay.png")
+    figh.savefig(figfilename, bbox_inches='tight')
+    figfilename = os.path.join(root, "ch2_spectrogram_overlay.pdf")
+    figh.savefig(figfilename, bbox_inches='tight')
+    plt.show()
 
 
     ## Plotting the offset versus the initial point versus time.
@@ -621,7 +708,7 @@ if __name__ == '__main__':
 
     ## Enter the name of the folder that contians the matlab vectors of different sweeps.
     #root_folder = r'C:\Users\eric1\Google Drive\UBC\CBR\Vinny COVID Project\Dec9Trial'
-    root_folder =  os.path.expanduser("/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-2/Data/2021-07-08_ScriptDebugging")
+    root_folder =  os.path.expanduser("/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-2/Data/2021-07-21_Gemina-Phase0_Trial4_Bioassay")
 
     #r'C:\Users\MapleLeafStage\Documents\Dec23Trial'
 
@@ -636,7 +723,7 @@ if __name__ == '__main__':
 
     ## Graphing the offset versus time.
     grapher(root=root_folder, p1_index=track_p1_peak, p2_index=track_p2_peak,
-            sweep_timestep=sweep_timestep, remove_spikes=False, pkProm=2, save_animation=0)
+            sweep_timestep=sweep_timestep, remove_spikes=False, pkProm=4, save_animation=0)
 
     print("Program Time=", datetime.now() - startTime)
     plt.show()
