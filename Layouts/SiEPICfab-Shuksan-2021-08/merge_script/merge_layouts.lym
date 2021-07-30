@@ -43,7 +43,7 @@ layout.dbu = 0.001
 dbu = layout.dbu
 
 from SiEPIC.utils import get_technology, get_technology_by_name
-TECHNOLOGY = get_technology_by_name('AIMPhotonics_PDK')
+TECHNOLOGY = get_technology_by_name('EBeam')
 
 # path for this python file
 import os, inspect
@@ -52,7 +52,7 @@ path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 # Load all the GDS files in gds_floorplan:
 path2 = os.path.join(path,"../gds_floorplan")
 _, _, files = next(os.walk(path2), (None, None, []))
-for fp in [f for f in files if 'oas' in f]:
+for fp in [f for f in files if 'GDS' in f]:
   print("gds_floorplan: %s" % fp)
   layout.read(os.path.join(path2,fp))
 
