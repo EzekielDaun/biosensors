@@ -1,0 +1,1071 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>pymacros</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut/>
+ <show-in-menu>false</show-in-menu>
+ <group-name/>
+ <menu-path/>
+ <interpreter>python</interpreter>
+ <dsl-interpreter-name/>
+ <text>'''
+Silicon photonic sensor chip using a fixed-wavelength laser 
+Patent pending
+by Lukas Chrostowski, 2020
+
+for EBeam - SiEPICfab-Shuksan
+
+'''
+
+
+
+def new_layout():
+    pass
+
+
+
+def y_splitter_tree(cell, tree_depth=4, y_splitter_cell="y_splitter_adiabatic_si_1310_te_25_100_100", library="AIM DP Library", wg_type='Si Strip TE 1310 nm, w=350', draw_waveguides=True):
+    '''
+    Create a tree of splitters
+    - cell: layout cell to create the structures in
+    - tree_depth: Tree depth (2^N outputs)
+    - y_splitter_cell: name of the y-splitter cell
+    - library: the library containing the y_splitter_cell
+    - wg_type: waveguide type from WAVEGUIDES.XML
+    - draw_waveguides: True draws the waveguides, False is faster for debugging
+    
+    Returns
+    - inst_in: instance of the input cell
+    - inst_out[]: array of instances of the output cells
+    - cell_tree: new cell created
+    This is useful for subsequent routing
+    
+    Limitations:
+    - the design uses regular 90 degree bends, rather than S-bends.
+      hence it could be made more compact
+    '''
+    
+    tech = "EBeam"
+
+    from SiEPIC.scripts import connect_pins_with_waveguide
+    from SiEPIC.extend import to_itype
+    from math import floor
+
+    # create a new sub-cell where the tree will go
+    ly = cell.layout()
+    cell_tree = ly.create_cell("y_splitter_tree")
+
+    # load the y-splitter from the library
+    if library:
+        y_splitter = ly.create_cell(y_splitter_cell, library)
+        if not y_splitter:
+            raise Exception ('Cannot import cell: y splitter')
+    else: # cell is already loaded
+        y_splitter = ly.cell(y_splitter_cell)
+
+
+    # Load waveguide information
+    waveguides = load_Waveguides_by_Tech(tech)
+    wg = [w for w in waveguides if wg_type in w['name'] ][0]
+    if not wg:
+        raise Exception("Waveguide type not defined in WAVEGUIDES.XML: %s" %wg_type )
+        return
+    wg_width = to_itype(float(wg['width']), ly.dbu)
+    wg_radius = to_itype(float(wg['radius']), ly.dbu)
+
+    # build the tree, using measurements from the cell and waveguide parameters
+    x = 0
+    dx = y_splitter.bbox().width() + wg_radius*2
+    # calculate the spacing for the y-splitters based on waveguide radius and 90 degree bends
+    y_wg_offset = (y_splitter.pinPoint("opt2").y-y_splitter.pinPoint("opt3").y)
+    dy = max(y_splitter.bbox().height(), wg_radius*4 + y_wg_offset)
+    # intialize loop
+    inst_out = []
+    y0 = 0
+    for i in range(0,tree_depth):
+        inst = []
+        y = y0
+        for j in range(0, int(2**(tree_depth-i-1))):
+            t = Trans(Trans.R0, x, y)
+            inst.append(cell_tree.insert(CellInstArray(y_splitter.cell_index(), t)))
+            # perform waveguide routing
+            if (i &gt; 0) and draw_waveguides:        
+                connect_pins_with_waveguide(
+                    inst[j], 'opt2',
+                    inst_higher[j*2+1], 'opt1', waveguide_type=wg_type)
+                connect_pins_with_waveguide(
+                    inst[j], 'opt3',
+                    inst_higher[j*2], 'opt1', waveguide_type=wg_type)
+            y += dy
+        inst_higher = inst
+        if i == 0:
+            inst_out = inst
+        if i == tree_depth-1:
+            inst_in = inst[0]
+        x += -dx
+        y0 = y0 + dy/2
+        dy = dy * 2
+        
+           
+    return inst_in, inst_out, cell_tree
+
+        
+def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_swg_ring_manualrouting=False):
+
+    # Create a layout for the sensor chip.
+    # uses:
+    #    - the DP AIM library
+    # creates the layout in the presently selected cell
+    # deletes everything first
+
+    # Import functions from SiEPIC-Tools, and get technology details
+    from SiEPIC.utils import get_layout_variables
+    from SiEPIC.utils import load_Waveguides_by_Tech
+    TECHNOLOGY, lv, ly, cell = get_layout_variables()
+    from SiEPIC.scripts import connect_pins_with_waveguide, connect_cell
+    from SiEPIC.extend import to_itype
+    from math import floor
+
+    tech = 'EBeam'
+    if TECHNOLOGY['technology_name'] != tech:
+        raise Exception ('This example needs to be executed in a layout with Technology = %s' % tech)
+
+    if SiEPIC.__version__ &lt; '0.3.72':
+        pya.MessageBox.warning("Errors", "This example requires SiEPIC-Tools version 0.3.72 or greater.", pya.MessageBox.Ok)
+
+
+    ########################################################################
+    # top cell
+    ########################################################################
+    # clean all cells within the present cell
+    top_cell = ly.top_cells()[0]
+    top_cell.name = 'sensor_chip'
+    lv.clear_object_selection()
+
+    # Layer mapping:
+    fpLayerN = top_cell.layout().layer(TECHNOLOGY['FloorPlan'])
+    textLayerN = top_cell.layout().layer(TECHNOLOGY['Text'])
+    metalLayer1N = ly.layer(TECHNOLOGY['12_M2'])
+    metalLayer2N = ly.layer(TECHNOLOGY['12_M2'])
+    sensor_oxideopen1_LayerN = ly.layer(TECHNOLOGY['Oxide open (to BOX)'])
+    sensor_oxideopen2_LayerN = ly.layer(TECHNOLOGY['Text'])
+#    deepetch_LayerN = ly.layer(TECHNOLOGY['DIAM'])
+
+    # make the top cell the active cell view
+    if top_cell != cell:
+        pya.CellView().active().cell_name=top_cell.name
+
+    # clean all cells and shapes within the present cell
+    ly.prune_subcells(top_cell.cell_index(), 10)
+    top_cell.shapes(fpLayerN).clear()
+    top_cell.shapes(metalLayer1N).clear()
+    top_cell.shapes(metalLayer2N).clear()
+    top_cell.shapes(textLayerN).clear()
+    
+    dbu = ly.dbu
+
+    '''
+    # Create a sub-cell for our layout
+    # place the sub-cell in the top cell
+    sub_cell = top_cell.layout().create_cell("sensor_chip")
+    t = Trans(Trans.R0, 0 / dbu, 0 / dbu)
+    top_cell.insert(CellInstArray(sub_cell.cell_index(), t))
+    '''
+    sub_cell = top_cell
+    
+    ########################################################################
+    # design parameters
+    ########################################################################
+    fluidics_wall_width_edge = to_itype(500, dbu) 
+    fluidics_wall_width_top = to_itype(400, dbu) 
+    fluidics_wall_width_inside = to_itype(300, dbu)
+    fluidics_channel_width = to_itype(200, dbu)
+    chip_width = to_itype(2240, dbu)
+    chip_height = to_itype(4740, dbu)
+    fluidics_n_channels = 2
+    sensors_n_per_channel = 4
+    if partial == True:
+        fluidics_n_channels = 1
+        sensors_n_per_channel = 1
+    sensors_n = fluidics_n_channels * sensors_n_per_channel
+    fludic_bottom = chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width
+    sensor_swg_pitch = to_itype(10, dbu)
+    sensor_swg_n = 10
+    sensor_swg_length = to_itype(100, dbu)
+    sensor_oxideopen_r = 80
+    sensor_oxideopen_extra = to_itype(10, dbu)
+    sensor_oxideopen_tzam_drc = to_itype(0.1, dbu)
+    sensor_dx = (chip_width-2*fluidics_wall_width_edge)/(sensors_n_per_channel+0)
+    sensor_x0 = fluidics_wall_width_edge + sensor_dx/2
+    sensor_swg_taper_length = 10 # micron
+    sensor_offset_left = 5    
+    bondpad_n = 3 * fluidics_n_channels * sensors_n_per_channel + 3
+    bondpad_max_height = to_itype(1110, dbu) 
+    bondpad_size = to_itype(100, dbu) 
+    bondpad_pitch = to_itype(125, dbu) 
+    bondpad_to_edge = to_itype(10, dbu) 
+    y_bondpad_extra = to_itype(600,dbu)  # extra space to leave between fluidic chip and bond pads
+    fluidic_to_tuningsubcircuit = to_itype(10,dbu) # extra space to leave between the fluidic chip and tuning circuit (to accommodate waveguide routing)
+    wavelength = 1310    # in nanometers
+    metal_width = to_itype(15,dbu)
+    metal_space = to_itype(10,dbu)
+    metal_width_gnd = to_itype(20,dbu)
+#    wg_bend_radius_um = 5
+    mm_pitch = to_itype(5,dbu)  # pitch for the multimode waveguides
+    detector_offset_y = to_itype(-10.1,dbu)
+    laser_to_tuningcircuit = 178000  # space between the laser edge and tuning circuits
+    dxt = 127000  # pitch for the tuning circuits
+    
+    wg_type='Strip TE 1310 nm, w=350 nm'
+    wg_type_mm='Multimode Strip TE 1550 nm, w=3000 nm'
+#    wg_type_sn='DRP SiN (SN) Strip TE 1310, w=1300'
+#    wg_type_rib='DRP Si Rib TE 1310 nm, w=410'
+    fp_exclusion = to_itype(5, dbu) # leave this space between this design and the floorplan
+    waveguides = load_Waveguides_by_Tech(TECHNOLOGY['technology_name'])   
+    wg_component_devrec = [wa for wa in [w['component'] for w in waveguides if wg_type in w['name']][0] if wa['layer'] in 'DevRec' ][0]
+    wg_devrec_width = float(wg_component_devrec['width'])
+            
+    # Load waveguide information, for routing
+    waveguides = load_Waveguides_by_Tech(tech)   
+    wg = [w for w in waveguides if wg_type in w['name'] ][0]
+    if not wg:
+        raise Exception("Waveguide type not defined in WAVEGUIDES.XML: %s" %wg_type )
+        return
+    wg_width = to_itype(float(wg['width']), ly.dbu)
+    wg_radius = to_itype(float(wg['radius']), ly.dbu)
+
+        
+    ########################################################################
+    # Import cells from the Library
+    ########################################################################
+    wg_swg_assist = ly.create_cell("Waveguide_SWG_Assist", "EBeam_Beta",
+        { "duty": 0.5, "length": sensor_swg_length*dbu, "strip_wg_width": 0.1, "swg_wg_width": 0.5, "target_period": 0.2 } )
+    if not wg_swg_assist:
+        raise Exception ('Cannot import cell Waveguide_SWG_Assist')
+    wg_swg_to_strip = ly.create_cell("Waveguide_SWG_to_Strip", "EBeam_Beta",
+        {"fishbone":True, "wg_width_strip":0.35, "wg_width_taper":0.1, "duty_swg":0.5, "length": sensor_swg_taper_length})
+    if not wg_swg_to_strip:
+        raise Exception ('Cannot import cell Waveguide_SWG_to_Strip')
+#    ge_detector = ly.create_cell("ge_detector_1310_highresponsivity_m1", "AIM DP Library")
+    phase_shifter1 = ly.create_cell("thermal_phase_shifter_te_1310_500um", "EBeam_Beta")
+    phase_shifter2 = ly.create_cell("thermal_phase_shifter_te_1310_500um", "EBeam_Beta")
+    if (not phase_shifter1) or (not phase_shifter2):
+        raise Exception ('Cannot import cell thermal_phase_shifter_te_1310_500um')
+    si_pchd = ly.create_cell("thermal_phase_shifter_te_1310_500um", "EBeam_Beta")
+    if not si_pchd:
+        raise Exception ('Cannot import cell thermal_phase_shifter_te_1310_500um')
+    splitter = ly.create_cell("ebeam_splitter_swg_assist_te1310", "EBeam")
+    bondpad = ly.create_cell('ebeam_BondPad', 'EBeam_Beta')
+    if not bondpad:
+        raise Exception ('Cannot import cell ebeam_BondPad')
+    taper_si_simm = ly.create_cell("ebeam_taper", "EBeam_Beta", 
+            {"wg_width1":0.35, "wg_width2":3.0, "wg_length":50})
+    metal_escalator = ly.create_cell("metal_via_15", "EBeam_Beta")
+    if not metal_escalator:
+        raise Exception ('Cannot import cell metal_via')
+    metal_escalator_gnd = metal_escalator
+    waveguide_sbend = ly.create_cell("Waveguide_SBend", "EBeam", {"wg_width":wg_width})
+    if not waveguide_sbend:
+        raise Exception ('Cannot import cell Waveguide_SBend')
+    laser_PWB = ly.create_cell("siepic_o_pwbstlas_si_BB", "EBeam_Beta")
+    if not laser_PWB:
+        raise Exception ('Cannot import cell siepic_o_pwbstlas_si_BB')
+        
+        
+    import os, inspect
+    path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+    # Load all the GDS design cells from the "cells" folder
+    path2 = os.path.join(path,"cells")
+    _, _, files = next(os.walk(path2), (None, None, []))
+    options = pya.LoadLayoutOptions()
+    options.cell_conflict_resolution = pya.LoadLayoutOptions.CellConflictResolution.OverwriteCell
+    for fp in [f for f in files if 'gds' in f]:
+        print("gds_floorplan: %s" % fp)
+        ly.read(os.path.join(path2,fp), options)
+
+    # Passive SWG rings
+    swg_ring_parameters = [
+        {"ff":0.65,"gap2":0.40}, 
+        {"ff":0.7,"gap2":0.40}, 
+        {"ff":0.65,"gap2":0.45}, 
+        {"ff":0.7,"gap2":0.45}, 
+        {"ff":0.65,"gap2":0.50}, 
+        {"ff":0.7,"gap2":0.50}, 
+        {"ff":0.65,"gap2":0.55}, 
+        {"ff":0.7,"gap2":0.55}, 
+        ]
+    swg_rings = []
+    for i in range(len(swg_ring_parameters)):
+        params = {"pitch":0.25, "w":0.5, "r":30, "row":1, "busL":30, "taperL":10, "wport":0.35,
+            "oxideopen":TECHNOLOGY['Oxide open (to BOX)']}
+        params.update(swg_ring_parameters[i]) 
+        swg_rings.append(
+           ly.create_cell("SWG_MultiBox_Ring", "EBeam_Beta", params) )
+        if not swg_rings[i]:
+            raise Exception ('Cannot import cell SWG_MultiBox_Ring')
+    gc = ly.create_cell("ebeam_gc_te1310", "EBeam_Beta")
+    if not gc:
+        raise Exception ('Cannot import cell ebeam_gc_te1310')
+
+
+    ########################################################################
+    # Draw the floor plan
+    ########################################################################
+    sensor_edge_left = round((sensor_x0 - sensor_swg_length/2 - to_itype(sensor_swg_taper_length,dbu) - 3*wg_radius )/10000-1)*10000
+    sensor_edge_right = chip_width+ round((-sensor_x0 + sensor_swg_length/2 - to_itype(sensor_swg_taper_length,dbu) + (2*fluidics_n_channels+2*sensors_n_per_channel)*mm_pitch)/10000-1)*10000
+    pts = [DPoint(0,0), 
+        DPoint(0, chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width),
+        DPoint(sensor_edge_left- mm_pitch, chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width),
+        DPoint(sensor_edge_left- mm_pitch, chip_height-fluidics_wall_width_top),
+        DPoint(sensor_edge_right, chip_height-fluidics_wall_width_top),
+        DPoint(sensor_edge_right, chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width),
+        DPoint(chip_width, chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width),
+        DPoint(chip_width, 0)]
+    fp_r1 = Region(Polygon(pts))
+            
+    ########################################################################
+    # fluidics gasket, layer 1
+    ########################################################################
+    if gasket_v == 1:
+        y = chip_height
+        sub_cell.shapes(textLayerN).insert(Box(0,y, chip_width, y-fluidics_wall_width_top))
+        y += -fluidics_wall_width_top -fluidics_channel_width
+        for i in range(0, fluidics_n_channels):
+            sub_cell.shapes(textLayerN).insert(Box(0,y, chip_width, y-fluidics_wall_width_inside))
+            y += -fluidics_wall_width_inside -fluidics_channel_width
+        y = chip_height-fluidics_wall_width_top
+        for i in range(0, fluidics_n_channels):
+            sub_cell.shapes(textLayerN).insert(Box(chip_width-fluidics_wall_width_edge,y, chip_width, y-fluidics_channel_width))
+            sub_cell.shapes(textLayerN).insert(Box(0,y, fluidics_wall_width_edge, y-fluidics_channel_width))
+            y += -fluidics_wall_width_inside -fluidics_channel_width
+
+    ########################################################################
+    # electrical pads
+    ########################################################################
+    dy, dx = bondpad_pitch, -bondpad_pitch
+    inst_bondpads_shifter = []
+    inst_bondpads_pchd = []
+    inst_bondpads_coupler = []
+    # 1st bottom row
+    x = chip_width - bondpad.bbox().right - bondpad_to_edge + dx
+    y = -bondpad.bbox().bottom + bondpad_to_edge
+    i = 0
+#    while (x&gt;bondpad_size/2+bondpad_to_edge):
+    while i&lt;16:
+        t = Trans(Trans.R0, x, y)
+        inst_bondpads_shifter.append(sub_cell.insert(CellInstArray(bondpad.cell_index(), t)))
+        x += dx
+        i += 1
+    '''
+    # 2nd bottom row
+    x = chip_width - bondpad.bbox().right - bondpad_to_edge + dx + dx/2
+    y = -bondpad.bbox().bottom + bondpad_to_edge + dy + dy/2
+    while  (x&gt;bondpad_size/2+bondpad_to_edge):
+        t = Trans(Trans.R0, x, y)
+        inst_bondpads_coupler.append(sub_cell.insert(CellInstArray(bondpad.cell_index(), t)))
+        x += dx
+    '''
+    
+    # 1st right column
+    x = chip_width - bondpad.bbox().right - bondpad_to_edge 
+    y = -bondpad.bbox().bottom + bondpad_to_edge + dy
+    i = 0
+#    while  (y+bondpad_size/2 &lt; (-y_bondpad_extra+chip_height-fluidics_wall_width_top-fluidics_n_channels*fluidics_wall_width_inside-fluidics_n_channels*fluidics_channel_width)):
+    while i&lt;16:
+        t = Trans(Trans.R0, x, y)
+        inst_bondpads_coupler.append(sub_cell.insert(CellInstArray(bondpad.cell_index(), t)))
+        y += dy
+        i += 1
+    '''
+    # 2nd right column
+    x = chip_width - bondpad.bbox().right - bondpad_to_edge  + dx + dx/2
+    y = -bondpad.bbox().bottom + bondpad_to_edge + dy/2 + dy*3
+    while (len(inst_bondpads_pchd) &lt; sensors_n+1) &amp; (y+bondpad_size/2 &lt; (chip_height-fluidics_wall_width_top-fluidics_n_channels*fluidics_wall_width_inside-fluidics_n_channels*fluidics_channel_width)):
+        t = Trans(Trans.R0, x, y)
+        inst_bondpads_pchd.append(sub_cell.insert(CellInstArray(bondpad.cell_index(), t)))
+        y += dy
+    '''
+    
+    # sort the inst_bondpads_pchd in order from top to bottom y
+    inst_bondpads_pchd.sort(key=lambda x: x.pinPoint('m_pin_top').y, reverse=True)
+       
+    ########################################################################
+    # laser cell
+    ########################################################################
+    t_laser = Trans(Trans.R90, 450000, 340000)
+    inst_laser = sub_cell.insert(CellInstArray(laser_PWB.cell_index(), t_laser))
+    inst_esc_laser = inst_laser
+
+
+    ########################################################################
+    # y-splitter tree
+    ########################################################################
+    inst_in, inst_out, cell_tree = y_splitter_tree(top_cell, tree_depth=3, 
+        y_splitter_cell="y_splitter_adiabatic_si_1310_te_25_100_100", library=None, wg_type=wg_type, draw_waveguides=draw_waveguides)
+    t = Trans(Trans.R90, 752125, 610000)
+    sub_cell.insert(CellInstArray(cell_tree.cell_index(), t))
+    if draw_waveguides:
+        connect_pins_with_waveguide(inst_esc_laser, 'opt1', inst_in, 'opt1', waveguide_type=wg_type, 
+         turtle_A = [10,-90, 100, -90], 
+         turtle_B=[10,-90, 100, 90] )
+
+ 
+    ########################################################################
+    # sensor unit cell
+    ########################################################################
+    sensor_cell = sub_cell.layout().create_cell("sensor_unit")
+    # sensor SWG regions
+    dy = sensor_swg_pitch
+    y = -sensor_swg_n/2*dy
+    sensor_swg = []
+    sensor_strip_swg_l = []
+    sensor_strip_swg_r = []
+    for i in range(0, sensor_swg_n):
+        t = Trans(Trans.R0, -sensor_swg_length/2, y)
+        sensor_swg.append (sensor_cell.insert(CellInstArray(wg_swg_assist.cell_index(), t)))
+        t = Trans(Trans.R180, -sensor_swg_length/2, y)
+        sensor_strip_swg_l.append (sensor_cell.insert(CellInstArray(wg_swg_to_strip.cell_index(), t)))
+        if (i&gt;0) and (i&lt;sensor_swg_n-1):
+            t = Trans(Trans.R0, sensor_swg_length/2, y)
+            sensor_strip_swg_r.append (sensor_cell.insert(CellInstArray(wg_swg_to_strip.cell_index(), t)))
+        y += dy
+    for i in range(0, sensor_swg_n-1, 2):
+        if draw_waveguides | 1:
+            if dy &lt; 2*wg_radius*dbu:
+                connect_pins_with_waveguide(sensor_strip_swg_l[i], 'pin2', sensor_strip_swg_l[i+1], 'pin2', waveguide_type=wg_type, turtle_A=[(1+i)*wg_radius*dbu,90,2*wg_radius*dbu,-90, 2*wg_radius*dbu,-90])
+            else:
+                connect_pins_with_waveguide(sensor_strip_swg_l[i], 'pin2', sensor_strip_swg_l[i+1], 'pin2', waveguide_type=wg_type)
+    for i in range(0, sensor_swg_n-2, 2):
+        if draw_waveguides | 1:
+            connect_pins_with_waveguide(sensor_strip_swg_r[i], 'pin2', sensor_strip_swg_r[i+1], 'pin2', waveguide_type=wg_type)
+            
+    # sensor oxide open
+    sensor_cell.shapes(sensor_oxideopen1_LayerN).insert(Box(
+        -sensor_swg_n/2*dy-sensor_oxideopen_extra-1*wg_radius-to_itype(wg_devrec_width,dbu),-y-sensor_oxideopen_extra, 
+         sensor_swg_n/2*dy+sensor_oxideopen_extra+1*wg_radius+to_itype(wg_devrec_width,dbu),+y ))
+    sensor_cell.shapes(sensor_oxideopen2_LayerN).insert(Box(
+        -sensor_swg_n/2*dy-sensor_oxideopen_extra-sensor_oxideopen_tzam_drc-1*wg_radius-to_itype(wg_devrec_width,dbu),-y-sensor_oxideopen_extra-sensor_oxideopen_tzam_drc, 
+         sensor_swg_n/2*dy+sensor_oxideopen_extra+sensor_oxideopen_tzam_drc+1*wg_radius+to_itype(wg_devrec_width,dbu),+y+sensor_oxideopen_tzam_drc ))
+    
+    sensor_out1_y = -sensor_swg_n/2*dy
+    sensor_out2_y = y
+    sensor_out_x = sensor_swg_length
+    
+    '''
+    sensor_oxide_open_etchstop = ly.create_cell("CIRCLE", "Basic",
+        { "layer": sensor_oxideopen1_LayerN , "radius": sensor_oxideopen_r, "npoints": 64 } )
+    sensor_cell.insert(CellInstArray(sensor_oxide_open_etchstop.cell_index(), t))
+    '''
+
+    ########################################################################
+    # sensor circuits
+    ########################################################################
+    sensor_circuit_cells = []
+    sensor_circuit_splitter1 = []
+    sensor_circuit_splitter2 = []
+    sensor_strip_swg_in = []
+    sensor_strip_swg_out = []
+    sensor_to_detector = []
+    sensor_pchd = []
+    sensor_shifters = []
+    fp_unused_space_bottom = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
+    fp_unused_space_left = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
+    fp_unused_space_top = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
+    fp_unused_space_right = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
+    # variables for sensor unit cell
+    y0 = chip_height-fluidics_wall_width_top-(fluidics_n_channels-1)*fluidics_wall_width_inside- (fluidics_n_channels-1/2)*fluidics_channel_width
+    dy = fluidics_wall_width_inside+fluidics_channel_width
+    # variables for tuning sub-circuit
+    yt = -fluidic_to_tuningsubcircuit +chip_height -fluidics_wall_width_top -(fluidics_n_channels)*fluidics_wall_width_inside-fluidics_n_channels*fluidics_channel_width
+    xt0 = laser_PWB.bbox().height() + laser_to_tuningcircuit
+    xt  = xt0
+    # variable for output to detector
+    yd = yt - 5 * wg_radius
+    # variable for fan-out routing between circuit and mm taper, to provide vertical offsets for waveguides, one per column
+    route_go_left_count = [0] * 4
+    route_go_right_count = [0] * 4
+    dx = sensor_dx 
+    x = sensor_x0
+    # for pchd metal routing
+    count2 = 0
+    pchd_me = []
+    # for mzi shifter
+    shifter_pad_y_max = 0
+    # loop: [0,0] is the bottom left sensor, i is vertical, j is horizontal 
+#    for j in range(0, 1):
+    for j in range(0, sensors_n_per_channel):
+        y = y0
+#        for i in range(0, 2):
+        for i in range(0, fluidics_n_channels):
+            # create a circuit cell
+            print ("sensor_circuit_c%s_r%s" % (j,i))
+            sensor_circuit_cells.append (sub_cell.layout().create_cell("sensor_circuit_c%s_r%s" % (j,i)))
+            t = Trans(Trans.R0, 0, 0)
+            sub_cell.insert(CellInstArray(sensor_circuit_cells[-1].cell_index(), t))
+
+            # place sensor SWG unit cell
+            t = Trans(Trans.R0, x-to_itype(sensor_offset_left,dbu), y)
+            sensor_circuit_cells[-1].insert(CellInstArray(sensor_cell.cell_index(), t)) 
+
+            # add 2x SWG to strip converters
+            t = Trans(Trans.R0, x+sensor_swg_length/2-to_itype(sensor_offset_left,dbu), y-sensor_swg_n/2*sensor_swg_pitch)
+            sensor_swg_in = sensor_circuit_cells[-1].insert(CellInstArray(wg_swg_to_strip.cell_index(), t)) 
+            t = Trans(Trans.R0, x+sensor_swg_length/2-to_itype(sensor_offset_left,dbu), y+floor((sensor_swg_n-1)/2)*sensor_swg_pitch)
+            sensor_swg_out = sensor_circuit_cells[-1].insert(CellInstArray(wg_swg_to_strip.cell_index(), t)) 
+
+            # add 2x strip to MM converters at the sensor unit
+            strip_mm1 = connect_cell(sensor_swg_in, 'pin2', taper_si_simm, 'opt1', translation=Trans(Trans.R270, (2*i+1)*mm_pitch+to_itype(sensor_offset_left,dbu),-1*wg_radius))
+            strip_mm2 = connect_cell(sensor_swg_out, 'pin2', taper_si_simm, 'opt1', translation=Trans(Trans.R270, (2*i+2)*mm_pitch+to_itype(sensor_offset_left,dbu),-1*wg_radius))
+
+            # add 2x strip to MM converters at the bottom, near the sensor tuning
+            strip_mm3 = connect_cell(strip_mm1, 'opt2', taper_si_simm, 'opt2')
+            strip_mm4 = connect_cell(strip_mm2, 'opt2', taper_si_simm, 'opt2')
+#            strip_mm3_y = fludic_bottom+(sensors_n*2 + 2 - 2*j*sensors_n_per_channel-2*i+1)*mm_pitch
+            strip_mm3_y = fludic_bottom+fluidics_n_channels*2 *mm_pitch
+            strip_mm3.trans=Trans(strip_mm3.trans.rot, 0, strip_mm3.trans.disp.x, strip_mm3_y)
+            strip_mm4.trans=Trans(strip_mm4.trans.rot, 0, strip_mm4.trans.disp.x, strip_mm3_y)
+
+            # record the design edge to remove from the floor plan space
+            # fp box [i,j] represents the space below the sensor [i,j]
+            bbox = [i for i in sensor_circuit_cells[-1].each_inst() if 'sensor_unit' in i.cell.name][0].bbox()
+            fp_unused_space_top[i][j] = bbox.bottom - fp_exclusion
+            if i==fluidics_n_channels-1: # top sensor
+                pass
+            elif i==0: # bottom sensor
+                fp_unused_space_bottom[i][j] = strip_mm4.bbox().top + fp_exclusion
+                fp_unused_space_bottom[i+1][j] = bbox.top + fp_exclusion
+            else: # middle sensors
+                fp_unused_space_bottom[i+1][j] = bbox.top + fp_exclusion
+            fp_unused_space_right[i][j] = strip_mm1.bbox().left - fp_exclusion
+            if j==0:
+                fp_unused_space_left[i][j] =  fp_exclusion
+            if j&lt;sensors_n_per_channel-1:
+                fp_unused_space_left[i][j+1] = strip_mm2.bbox().right + fp_exclusion
+            
+            # build tuning sub-circuit
+            # top splitter
+            t = Trans(Trans.R90, xt, yt-splitter.bbox().right-2*wg_radius)
+            sensor_circuit_splitter2.append ( 
+                sensor_circuit_cells[-1].insert(CellInstArray(splitter.cell_index(), t)) )
+            # left phase shifter
+            inst_phase_shifter1 = connect_cell(sensor_circuit_splitter2[-1], 'opt1', phase_shifter1, 'opt1')
+            inst_phase_shifter1.transform(Trans(-2*wg_radius,-2*wg_radius))
+            # right phase shifter
+            inst_phase_shifter2 = connect_cell(sensor_circuit_splitter2[-1], 'opt2', phase_shifter2, 'opt1')
+            inst_phase_shifter2.transform(Trans(2*wg_radius,-2*wg_radius))
+            sensor_shifters.append (inst_phase_shifter2)
+            # bottom splitter
+            sensor_circuit_splitter1.append ( 
+                connect_cell(inst_phase_shifter1, 'opt2', splitter, 'opt3', translation=Trans(Trans.R0, -2*wg_radius,-2*wg_radius)) )
+#            sensor_circuit_splitter1[-1].transform(Trans(2*wg_radius,-2*wg_radius))
+            # photoconductive heater detector
+            inst_si_pchd = connect_cell(inst_phase_shifter1, 'opt2', si_pchd, 'opt1') 
+            inst_si_pchd.trans = Trans(inst_si_pchd.trans.angle, 0, inst_phase_shifter1.bbox().left - to_itype(wg_devrec_width/2, dbu), inst_si_pchd.trans.disp.y - metal_width)
+            sensor_pchd.append(inst_si_pchd)
+#            inst_si_pchd.transform(Trans(-1*wg_radius,0))
+
+            inst_gc = connect_cell(inst_si_pchd, 'opt2', gc, 'opt1') 
+            inst_gc.trans = Trans(inst_gc.trans.angle, 0, 
+                inst_gc.bbox().left + to_itype(50, dbu), 
+                inst_gc.trans.disp.y - to_itype(10, dbu))
+
+            # output from the sensor circuit to the detector, crossing over waveguides using SiN
+#            t = Trans(Trans.R0, sensor_circuit_splitter2[-1].pinPoint("opt4").x+wg_radius*1, sensor_circuit_splitter2[-1].pinPoint("opt4").y+wg_radius*1)
+#            t = Trans(Trans.R0, sensor_circuit_splitter2[-1].pinPoint("opt4").x+wg_radius*3, yd)
+#            inst_escalator_si_fn = sensor_circuit_cells[-1].insert(CellInstArray(escalator_si_fn.cell_index(), t))
+#            inst_escalator_fn_sn = connect_cell(inst_escalator_si_fn, 'opt2', escalator_fn_sn, 'opt1') 
+            # SiN to Si on the right hand side
+            
+#            inst_escalator_fn_sn2 = connect_cell(inst_escalator_fn_sn, 'opt2', escalator_fn_sn, 'opt2') 
+#            inst_escalator_fn_sn2.trans=Trans(inst_escalator_fn_sn2.trans.rot, 0, 
+#                xt0 + dxt*sensors_n_per_channel*fluidics_n_channels+0, inst_escalator_fn_sn.trans.disp.y)
+#            sensor_to_detector.append ( 
+#                connect_cell(inst_escalator_fn_sn2, 'opt1', escalator_si_fn, 'opt2') )
+
+            if draw_waveguides:
+                # connections from the sensor unit to the multi-mode waveguide taper
+                connect_pins_with_waveguide(strip_mm1, 'opt1', sensor_swg_in, 'pin2', waveguide_type=wg_type)
+                connect_pins_with_waveguide(strip_mm2, 'opt1', sensor_swg_out, 'pin2', waveguide_type=wg_type)
+                # multi-mode waveguides
+                connect_pins_with_waveguide(strip_mm1, 'opt2', strip_mm3, 'opt2', waveguide_type=wg_type_mm)
+                connect_pins_with_waveguide(strip_mm2, 'opt2', strip_mm4, 'opt2', waveguide_type=wg_type_mm)
+                # connections in the sensor tuning circuit
+                connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt1', inst_phase_shifter1, 'opt1', waveguide_type=wg_type)
+                connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt2', inst_phase_shifter2, 'opt1', waveguide_type=wg_type)
+                connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt3', inst_phase_shifter1, 'opt2', waveguide_type=wg_type)
+                connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt4', inst_phase_shifter2, 'opt2', waveguide_type=wg_type)
+                connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt1', inst_si_pchd, 'opt2', waveguide_type=wg_type)
+
+                # connection to the sensor unit
+                # check which way the route will go:
+                if strip_mm3.pinPoint('opt1').x &gt; inst_si_pchd.pinPoint('opt2').x:
+                    # down, left, down
+                    # turtle starts at strip_mm, and turns as soon as possible
+                    turtle_B = [(wg_radius+mm_pitch*route_go_left_count[j])*dbu, -90, 0, 90] 
+                    route_go_left_count[j] += 1
+                else:
+                    # down, right, down
+                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]))*dbu, 90, 0, -90]
+                    route_go_right_count[j] += 1
+                r = connect_pins_with_waveguide(inst_si_pchd, 'opt1', strip_mm3, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
+                if type(r) == type(False) and r == False:
+                    # route did not work
+                    inst1 = inst_si_pchd
+                    inst1_pin = 'opt1'
+                    inst2 = strip_mm3
+                    inst2_pin = 'opt1'
+                    waveguide_sbend = ly.create_cell("Waveguide_SBend", "EBeam", {"wg_width":wg_width*dbu, 
+                        "height":-(inst2.pinPoint(inst2_pin).x - inst1.pinPoint(inst1_pin).x)*dbu, 
+                        "length":(inst2.pinPoint(inst2_pin).y - inst1.pinPoint(inst1_pin).y)*dbu, 
+                        "radius": wg_radius*dbu*2})
+                    if not waveguide_sbend:
+                        raise Exception ('Cannot import cell Waveguide_SBend')
+                    t = Trans(Trans.R90, inst1.pinPoint(inst1_pin).x, inst1.pinPoint(inst1_pin).y)
+                    sub_cell.insert(CellInstArray(waveguide_sbend.cell_index(), t))
+
+                if strip_mm4.pinPoint('opt1').x &gt; sensor_circuit_splitter2[-1].pinPoint('opt3').x:
+                    # down, left, down
+                    turtle_B = [(wg_radius+mm_pitch*route_go_left_count[j])*dbu, -90, 0, 90]
+                    route_go_left_count[j] += 1
+                else:
+                    # down, right, down
+                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]))*dbu, 90, 0, -90]
+                    route_go_right_count[j] += 1
+                r = connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt3', strip_mm4, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
+                if type(r) == type(False) and r == False:
+                    # route did not work
+                    waveguide_sbend = ly.create_cell("Waveguide_SBend", "AIM DP Library", {"wg_width":wg_width*dbu, 
+                        "height":-(strip_mm4.pinPoint('opt1').x - sensor_circuit_splitter2[-1].pinPoint('opt3').x)*dbu, 
+                        "length":(strip_mm4.pinPoint('opt1').y - sensor_circuit_splitter2[-1].pinPoint('opt3').y)*dbu, 
+                        "radius": wg_radius*dbu*2})
+                    if not waveguide_sbend:
+                        raise Exception ('Cannot import cell Waveguide_SBend')
+                    t = Trans(Trans.R90, sensor_circuit_splitter2[-1].pinPoint('opt3').x, sensor_circuit_splitter2[-1].pinPoint('opt3').y)
+                    sensor_circuit_cells[-1].insert(CellInstArray(waveguide_sbend.cell_index(), t))
+
+
+                # connection from sensor tuning to Grating Coupler output
+                connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt4', inst_gc, 'opt1', waveguide_type=wg_type)
+                    #turtle_A=[5,-90,10, -90])
+                
+
+            # metal routing from PCHD (bottom) to escalators
+            # vertical wires: M1
+            # horizontal wires: M2
+            count = len(sensor_circuit_cells)
+            yy = inst_si_pchd.pinPoint('elec2').y + count * metal_width*2
+            if yy &gt; inst_si_pchd.pinPoint('elec1').y - metal_width_gnd/2 - metal_width*(1.5):
+                count2 += 1
+                yy = inst_si_pchd.pinPoint('elec2').y - count2 * metal_width*2                
+            # metal escalator
+            t = Trans(Trans.R0, inst_si_pchd.pinPoint('elec2').x+metal_width/2, inst_si_pchd.pinPoint('elec2').y)
+            me1 = sensor_circuit_cells[-1].insert(CellInstArray(metal_escalator.cell_index(), t))
+            t = Trans(Trans.R0, inst_si_pchd.pinPoint('elec2').x+metal_width/2, yy)
+            pchd_me.append(sensor_circuit_cells[-1].insert(CellInstArray(metal_escalator.cell_index(), t)))
+            # vertical wire
+            path = Path([
+                Point(me1.pinPoint('m_pin2').x, me1.pinPoint('m_pin2').y), 
+                Point(pchd_me[-1].pinPoint('m_pin4').x, pchd_me[-1].pinPoint('m_pin4').y)], metal_width)
+            sensor_circuit_cells[-1].shapes(metalLayer1N).insert(path)
+
+
+            # connect waveguide between y-splitter tree and sensor circuit
+            if draw_waveguides:
+                inst1 = sensor_circuit_splitter1[-1]
+                inst1_pin = 'opt2'
+                inst2 = inst_out[len(inst_out)-1-floor((len(sensor_circuit_splitter1)-1)/2)]
+                inst2_pin = 'opt%s'%(2+(len(sensor_circuit_splitter2)-1)%2)
+                r = connect_pins_with_waveguide(inst1, inst1_pin, inst2, inst2_pin, waveguide_type=wg_type,
+                    turtle_A = [len(sensor_circuit_splitter2)*wg_radius*dbu,90], error_min_bend_radius=False)
+                        
+            # layout location increments
+            y += dy
+            yd += -wg_radius
+            xt += dxt
+        x += dx
+
+    '''
+    ########################################################################
+    # GCs, connected to the bond pads
+    ########################################################################
+    inst_Gedetectors = []
+    for i in range(0, len(sensor_circuit_cells)):
+        # text label
+        sub_cell.shapes(textLayerN).insert(pya.Text("e_Ge_%s"%(i+1), inst_bondpads_ge[i].trans)).text_size = 15/dbu        
+        # location of the bond pad pin
+        pad_pin = inst_bondpads_ge[i].pinPoint('m_pin_top')
+        # place an escalator attached to the bond pad
+        inst_metal_escalator = cell.insert(CellInstArray(metal_escalator.cell_index(), 
+            Trans(Trans.R0, pad_pin.x, pad_pin.y+metal_width/2 )))
+        # attach a detector to the escalator
+#        inst_Gedetectors.append ( 
+#            connect_cell(inst_metal_escalator, 'm_pin2', ge_detector, 'm_pin1') )
+        # attach two escalators to the detector
+#        connect_cell(inst_Gedetectors[-1], 'm_pin2', metal_escalator_gnd, 'm_pin1') 
+#        esc=connect_cell(inst_Gedetectors[-1], 'm_pin3', metal_escalator_gnd, 'm_pin3') 
+        if i==0: # save for routing
+            inst_esc = esc
+            
+        if draw_waveguides:
+            if (inst_Gedetectors[i].pinPoint('pin1').x+2*wg_radius) &gt; (sensor_to_detector[i].pinPoint('opt1').x + mm_pitch*fluidics_n_channels*sensors_n_per_channel):
+                print(wg_radius)
+                print(inst_Gedetectors[i].pinPoint('pin1').x)
+                print(sensor_to_detector[i].pinPoint('opt1').x + mm_pitch*fluidics_n_channels*sensors_n_per_channel)
+                # easy L-shape route handled by the auto-router
+                turtle_A = None
+                turtle_B = None
+            elif (inst_Gedetectors[i].pinPoint('pin1').x) &gt; (sensor_to_detector[i].pinPoint('opt1').x + mm_pitch*fluidics_n_channels*sensors_n_per_channel):
+                # will need a few extra bends, add them in on both ends
+                turtle_A = [bondpad.bbox().height()*dbu * 3/2 + i*mm_pitch*dbu, -90, 0, 90]
+                turtle_B = [(fluidics_n_channels*sensors_n_per_channel-i)*mm_pitch*dbu+2*wg_radius*dbu, -90]
+            else:
+                # will need a few extra bends, add them in on both ends
+                turtle_A = [bondpad.bbox().height()*dbu * 3/2 + i*mm_pitch*dbu, -90, 0, 90]
+                turtle_B = [(fluidics_n_channels*sensors_n_per_channel-i)*mm_pitch*dbu+2*wg_radius*dbu, -90]
+            connect_pins_with_waveguide(inst_Gedetectors[i], 'pin1', sensor_to_detector[i], 'opt1', waveguide_type=wg_type, turtle_A=turtle_A, turtle_B=turtle_B, error_min_bend_radius=False)
+
+    # electrical short on ground, using M2
+    path = Path([
+        Point(inst_esc.pinPoint('m_pin1').x, inst_esc.pinPoint('m_pin1').y), 
+        Point(inst_bondpads_ge[-1].pinPoint('m_pin_top').x, inst_esc.pinPoint('m_pin1').y),
+        Point(inst_bondpads_ge[-1].pinPoint('m_pin_top').x, inst_bondpads_ge[-1].pinPoint('m_pin_top').y)], metal_width_gnd)
+    sub_cell.shapes(metalLayer2N).insert(path)
+
+    '''
+    # text label
+#    sub_cell.shapes(textLayerN).insert(pya.Text("e_Ge_GND", inst_bondpads_shift[-1].trans)).text_size = 15/dbu
+
+
+    ########################################################################
+    # Phase shifter electrical routing to the bond pads
+    ########################################################################
+    # vertical wires: M2
+    # horizontal wires: M2
+    # metal routing from MZI phase shifter (left) to pads
+    # sort the bond pads from left to right
+    inst_bondpads_shifter.sort(key=lambda x: x.pinPoint('m_pin_top').x)
+    # route starting with the short route lengths first
+    route_order=list(range(len(sensor_circuit_cells)))
+    route_order.sort(key=lambda x: abs(
+        inst_bondpads_shifter[x+1].pinPoint('m_pin_top').x - 
+        sensor_pchd[x].pinPoint('elec2').x) )
+    print('- tunable coupler routing order: %s' % route_order)
+    # separate routing trace offsets for the routes going left, vs going right
+    i_right = 0
+    i_left = 10
+    for count in route_order:
+        # Contact A:
+        pad_pin = inst_bondpads_shifter[2*count+0].pinPoint('m_pin_top')
+        # text label
+        sub_cell.shapes(textLayerN).insert(pya.Text("e_shifterA_%s"%(2*count+1), inst_bondpads_shifter[count+1].trans)).text_size = 15/dbu        
+        # check which way the route is going: left or right
+        if pad_pin.x &gt; sensor_shifters[count].pinPoint('elec2').x:
+            i_right += 2
+            i = i_right
+        else:
+            i_left += -2
+            i = i_left
+            
+        wire_dy = (metal_space + metal_width) * int(numpy.sign(i))
+        
+        # wire A
+        path = Path([
+            Point(pad_pin.x, pad_pin.y), 
+            Point(pad_pin.x, pad_pin.y + i*(metal_width+metal_space)),
+            Point(sensor_shifters[count].pinPoint('elec1').x-metal_space*2-metal_width*2, pad_pin.y + i*(metal_width+metal_space)),
+            Point(sensor_shifters[count].pinPoint('elec1').x-metal_space*2-metal_width*2, sensor_pchd[count].pinPoint('elec1').y), 
+            Point(sensor_shifters[count].pinPoint('elec1').x, sensor_pchd[count].pinPoint('elec1').y)], 
+                metal_width)
+        sensor_circuit_cells[count].shapes(metalLayer1N).insert(path)
+
+
+        # Contact B:
+        if pad_pin.x &gt; sensor_shifters[count].pinPoint('elec2').x:
+            i += 1 
+        else:
+            i += -1       
+        pad_pin = inst_bondpads_shifter[2*count+1].pinPoint('m_pin_top')
+        # text label
+        sub_cell.shapes(textLayerN).insert(pya.Text("e_shifterB_%s"%(2*count+2), inst_bondpads_shifter[count+1].trans)).text_size = 15/dbu        
+        # wire B
+        path = Path([
+            Point(pad_pin.x, pad_pin.y), 
+            Point(pad_pin.x, pad_pin.y + i*(metal_width+metal_space)),
+            Point(sensor_shifters[count].pinPoint('elec2').x-metal_space*1-metal_width*1, pad_pin.y + i*(metal_width+metal_space)),
+            Point(sensor_shifters[count].pinPoint('elec2').x-metal_space*1-metal_width*1, sensor_pchd[count].pinPoint('elec2').y), 
+            Point(sensor_shifters[count].pinPoint('elec2').x, sensor_pchd[count].pinPoint('elec2').y)], 
+                metal_width)
+        sensor_circuit_cells[count].shapes(metalLayer1N).insert(path)
+
+
+
+    '''
+    ########################################################################
+    # PCHD electrical routing to the bond pads
+    ########################################################################
+    # sort the pchd metal escalators in order from top to bottom
+    pchd_me.sort(key=lambda x: x.pinPoint('m_pin1').y, reverse=True)
+    # find left and right bond pad column x values
+    inst_bondpads_pchd.sort(key=lambda x: x.pinPoint('m_pin_left').x)
+    pad_pin_leftcol_x = inst_bondpads_pchd[0].pinPoint('m_pin_left').x
+    pad_pin_rightcol_x = inst_bondpads_pchd[-1].pinPoint('m_pin_left').x
+    # sort the bondpads_pchd in order from right to left, then top to bottom y
+    inst_bondpads_pchd.sort(key=lambda x: (x.pinPoint('m_pin_left').x, x.pinPoint('m_pin_left').y), reverse=True)
+    
+    r_dx_col1 = 0
+    r_dx_col2 = 0
+    r_dx_col1u = 0
+    for i in range(0, len(sensor_circuit_cells)):
+        pad_pin = inst_bondpads_pchd[i].pinPoint('m_pin_left')
+        # text label
+        sub_cell.shapes(textLayerN).insert(pya.Text("e_pchd_%s"%(i+1), inst_bondpads_pchd[i].trans)).text_size = 15/dbu
+        sensor_circuit_cell = pchd_me[i].parent_cell
+        if pchd_me[i].pinPoint('m_pin1').y &lt; pad_pin.y:
+            # upper routes
+            r_dx_col1u += -2*metal_width
+            t = Trans(Trans.R0, pad_pin.x+r_dx_col1u, pchd_me[i].pinPoint('m_pin1').y)
+            me3 = sensor_circuit_cell.insert(CellInstArray(metal_escalator.cell_index(), t))
+            t = Trans(Trans.R0, pad_pin.x+r_dx_col1u, pad_pin.y)
+            me4 = sensor_circuit_cell.insert(CellInstArray(metal_escalator.cell_index(), t))
+            path = Path([
+                Point(me3.pinPoint('m_pin2').x, me3.pinPoint('m_pin2').y), 
+                Point(me4.pinPoint('m_pin4').x, me4.pinPoint('m_pin4').y)], metal_width)
+            sensor_circuit_cell.shapes(metalLayer1N).insert(path)
+            path = Path([
+                Point(me4.pinPoint('m_pin1').x, me4.pinPoint('m_pin1').y), 
+                Point(pad_pin.x, pad_pin.y)], metal_width)
+            sensor_circuit_cell.shapes(metalLayer2N).insert(path)
+        else:
+            # lower routes
+            if pad_pin_rightcol_x == inst_bondpads_pchd[i].pinPoint('m_pin_left').x:
+                # right column
+                r_dx_col1 += -2*metal_width
+                r_dx_col = r_dx_col1
+            else:
+                # left column
+                r_dx_col2 += -2*metal_width
+                r_dx_col = r_dx_col2                
+            if pad_pin.y &lt; bondpad.bbox().height():
+                # treat the bottom pad as a special case to avoid the Ge detector
+                xpos = pad_pin.x+r_dx_col
+                # check that the metal route doesn't overlap with the coupler bond pad routing
+                if abs ( xpos - inst_bondpads_coupler[-1].pinPoint('m_pin_top').x ) &lt; 2*metal_width:
+                    xpos = inst_bondpads_coupler[-1].pinPoint('m_pin_top').x - 2*metal_width
+                t = Trans(Trans.R0, xpos , pchd_me[i].pinPoint('m_pin1').y)
+                me3 = sensor_circuit_cell.insert(CellInstArray(metal_escalator.cell_index(), t))
+                t = Trans(Trans.R0, pad_pin.x-metal_width/2, pad_pin.y)
+                me4 = sensor_circuit_cell.insert(CellInstArray(metal_escalator.cell_index(), t))
+                path = Path([
+                    Point(me3.pinPoint('m_pin4').x, me3.pinPoint('m_pin4').y), 
+                    Point(me3.pinPoint('m_pin4').x, inst_bondpads_pchd[i-1].pinPoint('m_pin_left').y-2*metal_width),
+                    Point(me4.pinPoint('m_pin3').x, inst_bondpads_pchd[i-1].pinPoint('m_pin_left').y-2*metal_width),
+                    Point(me4.pinPoint('m_pin3').x, me4.pinPoint('m_pin3').y),
+                    Point(me4.pinPoint('m_pin1').x, me4.pinPoint('m_pin3').y)], metal_width)
+                sensor_circuit_cell.shapes(metalLayer1N).insert(path)
+            else:
+                t = Trans(Trans.R0, pad_pin.x+r_dx_col, pchd_me[i].pinPoint('m_pin1').y)
+                me3 = sensor_circuit_cell.insert(CellInstArray(metal_escalator.cell_index(), t))
+                t = Trans(Trans.R0, pad_pin.x+r_dx_col, pad_pin.y)
+                me4 = sensor_circuit_cell.insert(CellInstArray(metal_escalator.cell_index(), t))
+                path = Path([
+                    Point(me3.pinPoint('m_pin4').x, me3.pinPoint('m_pin4').y), 
+                    Point(me4.pinPoint('m_pin2').x, me4.pinPoint('m_pin2').y)], metal_width)
+                sensor_circuit_cell.shapes(metalLayer1N).insert(path)
+                path = Path([
+                    Point(me4.pinPoint('m_pin1').x, me4.pinPoint('m_pin1').y), 
+                    Point(pad_pin.x, pad_pin.y)], metal_width)
+                sensor_circuit_cell.shapes(metalLayer2N).insert(path)
+        path = Path([
+            Point(pchd_me[i].pinPoint('m_pin1').x, pchd_me[i].pinPoint('m_pin1').y), 
+            Point(me3.pinPoint('m_pin3').x, me3.pinPoint('m_pin3').y)], metal_width)
+        sensor_circuit_cell.shapes(metalLayer2N).insert(path)
+
+    ########################################################################
+    # PCHD electrical routing to the bond pads
+    ########################################################################
+    # metal routing from PCHD (top) to pads - Ground
+    # vertical wires: M1
+    # horizontal wires: M2
+    # use the extra bond pad from the shifter pads
+    pad_pin = inst_bondpads_pchd[-1].pinPoint('m_pin_left')
+    # text label
+    sub_cell.shapes(textLayerN).insert(pya.Text("e_pchd_GND", inst_bondpads_pchd[-1].trans)).text_size = 15/dbu
+    # metal escalator
+    t = Trans(Trans.R0, pad_pin.x-2*bondpad.bbox().width(), inst_si_pchd.pinPoint('elec1').y)
+    me1 = sensor_circuit_cells[0].insert(CellInstArray(metal_escalator_gnd.cell_index(), t))
+    t = Trans(Trans.R0, pad_pin.x-2*bondpad.bbox().width(), pad_pin.y)
+    me2 = sensor_circuit_cells[0].insert(CellInstArray(metal_escalator_gnd.cell_index(), t))
+    # horizontal wire
+    path = Path([
+        Point(sensor_pchd[0].pinPoint('elec1').x, sensor_pchd[0].pinPoint('elec1').y), 
+        Point(me1.pinPoint('m_pin3').x, me1.pinPoint('m_pin3').y)], metal_width_gnd)
+    sensor_circuit_cells[0].shapes(metalLayer2N).insert(path)
+    # vertical wire
+    path = Path([
+        Point(me1.pinPoint('m_pin4').x, me1.pinPoint('m_pin4').y), 
+        Point(me2.pinPoint('m_pin2').x, me2.pinPoint('m_pin2').y)], metal_width_gnd)
+    sensor_circuit_cells[0].shapes(metalLayer1N).insert(path)
+    # horizontal wire
+    path = Path([
+        Point(me2.pinPoint('m_pin1').x, me2.pinPoint('m_pin1').y), 
+        Point(pad_pin.x, pad_pin.y)], metal_width_gnd)
+    sensor_circuit_cells[0].shapes(metalLayer2N).insert(path)
+    '''
+
+    ########################################################################
+    # Floor plan update: remove regions between the sensors 
+    ########################################################################
+    for i in range(0, fluidics_n_channels):
+        for j in range(0, sensors_n_per_channel):
+#            fp_unused_space_left[i][j] = fp_unused_space_left[0][j]
+            fp_r1 = fp_r1 - Region(Box(Point(fp_unused_space_left[-1][j],fp_unused_space_bottom[i][j]), Point(fp_unused_space_right[i][j],fp_unused_space_top[i][j]) )) 
+    # insert floorplan polygon
+    sub_cell.shapes(fpLayerN).insert(fp_r1) 
+    
+    
+    '''
+    ########################################################################
+    # SWG Ring sensors
+    #  place rings inside the empty regions
+    ########################################################################
+    # swg rings
+    swg_ring_cell = sub_cell.layout().create_cell("swg_rings")
+    t = Trans(Trans.R0, 0, 0)
+    sub_cell.insert(CellInstArray(swg_ring_cell.cell_index(), t))
+    c = 0
+    inst_swg_rings=[]
+    # grating couplers
+    inst_gc = []
+    gc_pitch = to_itype(127,dbu)
+    y_gc = chip_height - to_itype(70,dbu)
+    x = sensor_x0
+    for j in range(0, sensors_n_per_channel):
+#    for j in range(0, 1):
+        y = y0
+        for i in range(2, fluidics_n_channels):
+            t = Trans(Trans.R180, x + 27000 - 65000, 
+                                y - fluidics_wall_width_inside/2 - fluidics_channel_width/2)
+            inst_swg_rings.append(
+              swg_ring_cell.insert(CellInstArray(swg_rings[c].cell_index(), t)) )
+            t = Trans(Trans.R0, x + 27000, 
+                                y - fluidics_wall_width_inside/2 - fluidics_channel_width/2)
+            inst_swg_rings.append(
+              swg_ring_cell.insert(CellInstArray(swg_rings[c+1].cell_index(), t)) )
+
+            y += dy
+        c += 2  # cycle through all the rings
+        if c &gt;= len(swg_ring_parameters):
+            c = 0
+        x += dx
+        
+        # 5 GCs
+        x_gc = to_itype(20,dbu) + j*to_itype(415,dbu)
+        for k in range(5):
+            t = Trans(Trans.R270, x_gc, y_gc) 
+            inst_gc.append (
+              swg_ring_cell.insert(CellInstArray(gc.cell_index(), t)) )
+            if k==2:
+                # Y branch tree for middle GC
+                inst_in, inst_out, cell_tree = y_splitter_tree(top_cell, tree_depth=2, 
+                    y_splitter_cell="y_splitter_adiabatic_si_1310_te_25_100_100", library=None, wg_type=wg_type, draw_waveguides=True)
+                t = Trans(Trans.R270, 
+                    x_gc-(cell_tree.bbox().top+cell_tree.bbox().bottom)/2, 
+                    y_gc+cell_tree.bbox().left+50)
+                swg_ring_cell.insert(CellInstArray(cell_tree.cell_index(), t))
+#            if draw_waveguides:
+#                connect_pins_with_waveguide(inst_esc_laser, 'opt1', inst_in, 'opt1', waveguide_type=wg_type, 
+#                 turtle_A = [10,90], 
+#                 turtle_B=[10,-90] )
+            x_gc += gc_pitch
+        if not(load_swg_ring_manualrouting):
+            # bottom right 
+            x_swg_wg_offset = 167
+            y_swg_dist = 1820
+            connect_pins_with_waveguide(inst_gc[-5], 'opt1', 
+                inst_swg_rings[-3], 'pin2', waveguide_type=wg_type, 
+                turtle_B=[10,-90, x_swg_wg_offset-4,-90, y_swg_dist-32,90 ], error_min_bend_radius=False)
+            connect_pins_with_waveguide(inst_out[0], 'opt2', 
+                inst_swg_rings[-3], 'pin1', waveguide_type=wg_type, 
+                turtle_B=[10,90, x_swg_wg_offset-10,-90, y_swg_dist,90], error_min_bend_radius=False)
+            # bottom left 
+            connect_pins_with_waveguide(inst_gc[-4], 'opt1', 
+                inst_swg_rings[-4], 'pin1', waveguide_type=wg_type, 
+                turtle_B=[5,-90, x_swg_wg_offset-126.7-6,-90, y_swg_dist-20,90 ], error_min_bend_radius=False)
+            connect_pins_with_waveguide(inst_out[0], 'opt3', 
+                inst_swg_rings[-4], 'pin2', waveguide_type=wg_type, 
+                turtle_B=[5,90, x_swg_wg_offset-126.7-8,-90, y_swg_dist,90], error_min_bend_radius=False)
+            # top right 
+            x_swg_wg_offset = 167-10
+            y_swg_dist = 1820-400
+            connect_pins_with_waveguide(inst_out[1], 'opt3', 
+                inst_swg_rings[-1], 'pin2', waveguide_type=wg_type, 
+                turtle_B=[10,-90, x_swg_wg_offset-4,-90, y_swg_dist+20,90 ], error_min_bend_radius=False)
+            connect_pins_with_waveguide(inst_gc[-1], 'opt1', 
+                inst_swg_rings[-1], 'pin1', waveguide_type=wg_type, 
+                turtle_B=[10,90, x_swg_wg_offset-10,-90, y_swg_dist,90], error_min_bend_radius=False, 
+                )#turtle_A=[10,-90, 5,90])
+            # top left 
+            connect_pins_with_waveguide(inst_out[1], 'opt2', 
+                inst_swg_rings[-2], 'pin1', waveguide_type=wg_type, 
+                turtle_B=[5,-90, x_swg_wg_offset-126.7-6,-90, y_swg_dist+20,90 ], error_min_bend_radius=False)
+            connect_pins_with_waveguide(inst_gc[-2], 'opt1', 
+                inst_swg_rings[-2], 'pin2', waveguide_type=wg_type, 
+                turtle_B=[5,90, x_swg_wg_offset-126.7-8,-90, y_swg_dist,90], error_min_bend_radius=False,
+                )#turtle_A=[5,-90, 10,90])
+
+
+        y_gc += -to_itype(70,dbu)
+
+    if load_swg_ring_manualrouting:
+        dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
+            "swg_rings_manualrouting.gds")
+        ly.read(dir_path)
+        routing_cell = ly.cell("swg_rings_manualrouting")
+        t = Trans(Trans.R0, 0,0)
+        swg_ring_cell.insert(CellInstArray(routing_cell.cell_index(), t))
+
+    '''
+
+    if save:
+        # zoom out
+        lv.clear_object_selection()
+#        lv.zoom_fit()
+        lv.max_hier()
+
+        # Save a screenshot of the layout:
+        dir_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
+            "sensor_chip_g%s.png" % gasket_v)
+        lv.save_screenshot(dir_path)
+
+        # Save the layout, without PCell info, for fabrication
+        save_options = pya.SaveLayoutOptions()
+        save_options.write_context_info=False  # remove $$$CONTEXT_INFO$$$
+        save_options.format='OASIS' # smaller file size
+        save_options.oasis_compression_level=10
+        save_options.oasis_permissive=True
+        file_out = os.path.join(os.path.dirname(os.path.realpath(__file__)), 
+            "../gds_in/sensor_chip_g%s.%s" % (gasket_v, save_options.format[0:3]))
+        print("saving output %s: %s" % (save_options.format, file_out) )
+        ly.write(file_out,save_options)
+    
+
+# Import KLayout-Python API
+from pya import *
+
+from time import time
+t = time()
+
+sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1, load_swg_ring_manualrouting=False)
+#sensor_chip(save=True, partial=True, draw_waveguides=True, gasket_v=1)
+
+
+
+print('Time elapsed: %s' % (time() - t))        </text>
+</klayout-macro>
