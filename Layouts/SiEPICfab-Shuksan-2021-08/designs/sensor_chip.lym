@@ -186,7 +186,8 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     fluidics_wall_width_top = to_itype(500, dbu) 
     fluidics_wall_width_inside = to_itype(300, dbu)
     fluidics_channel_width = to_itype(200, dbu)
-    chip_width = to_itype(2240, dbu)
+    chip_width = to_itype(2240, dbu) # 1/2 ANT 4.74 mm chip
+    chip_width = to_itype(4740, dbu)
     chip_height = to_itype(4740, dbu)
     fluidics_n_channels = 2
     sensors_n_per_channel = 4
