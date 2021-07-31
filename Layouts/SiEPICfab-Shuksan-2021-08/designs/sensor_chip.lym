@@ -183,7 +183,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     # design parameters
     ########################################################################
     fluidics_wall_width_edge = to_itype(500, dbu) 
-    fluidics_wall_width_top = to_itype(800, dbu) 
+    fluidics_wall_width_top = to_itype(500, dbu) 
     fluidics_wall_width_inside = to_itype(300, dbu)
     fluidics_channel_width = to_itype(200, dbu)
     chip_width = to_itype(2240, dbu)
@@ -209,7 +209,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     bondpad_max_height = to_itype(1110, dbu) 
     bondpad_size = to_itype(100, dbu) 
     bondpad_pitch = to_itype(125, dbu) 
-    bondpad_to_edge = to_itype(10, dbu) 
+    bondpad_to_edge = to_itype(20, dbu) 
     y_bondpad_extra = to_itype(600,dbu)  # extra space to leave between fluidic chip and bond pads
     fluidic_to_tuningsubcircuit = to_itype(10,dbu) # extra space to leave between the fluidic chip and tuning circuit (to accommodate waveguide routing)
     wavelength = 1310    # in nanometers
@@ -221,8 +221,12 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     detector_offset_y = to_itype(-10.1,dbu)
     laser_to_tuningcircuit = 315000  # space between the laser edge and tuning circuits
     laser_x = 450000
-    laser_y = 390000
+    laser_y = 3240e3-1200e3-810e3   # 390000
     dxt = 127000  # pitch for the tuning circuits
+    gc_y = 800000 # Grating Coupler y position. 2300e3
+    fa_width = 2500e3   # Fibre Array (FA) 8 channel
+    fa_thickness = 1230e3
+    fa_lid = 100e3
     
     wg_type='Strip TE 1310 nm, w=350 nm'
     wg_type_mm='Multimode Strip TE 1550 nm, w=3000 nm'
@@ -312,9 +316,9 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
            ly.create_cell("SWG_MultiBox_Ring", "EBeam_Beta", params) )
         if not swg_rings[i]:
             raise Exception ('Cannot import cell SWG_MultiBox_Ring')
-    gc = ly.create_cell("ebeam_gc_te1310", "EBeam_Beta")
+    gc = ly.create_cell("siepic_o_gc_te1270_BB", "EBeam_Beta")
     if not gc:
-        raise Exception ('Cannot import cell ebeam_gc_te1310')
+        raise Exception ('Cannot import cell siepic_o_gc_te1270_BB')
 
 
     ########################################################################
@@ -376,7 +380,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     
     # 1st right column
     x = chip_width - bondpad.bbox().right - bondpad_to_edge 
-    y = -bondpad.bbox().bottom + bondpad_to_edge + bondpad_pitch*3
+    y = -bondpad.bbox().bottom + bondpad_to_edge + bondpad_pitch*2
     i = 0
 #    while  (y+bondpad_size/2 &lt; (-y_bondpad_extra+chip_height-fluidics_wall_width_top-fluidics_n_channels*fluidics_wall_width_inside-fluidics_n_channels*fluidics_channel_width)):
     while i&lt;16:
@@ -574,10 +578,18 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
 
             inst_gc = connect_cell(inst_si_pchd, 'opt2', gc, 'opt1') 
             inst_gc.trans = Trans(inst_gc.trans.angle, 0, 
-                inst_gc.bbox().left + to_itype(50, dbu), 
-                800000,
+                inst_gc.bbox().left + to_itype(55, dbu), 
+                gc_y,
 #                inst_gc.trans.disp.y - to_itype(10, dbu)
                 )
+            # Draw a Fibre Array (FA) block
+            fa_x = inst_gc.trans.disp.x + 3.5*127e3  # midpoint
+            fa_y = inst_gc.trans.disp.y # top of FA.
+            if len(sensor_circuit_cells) == 1:
+                sub_cell.shapes(textLayerN).insert(
+                    Box(fa_x-fa_width/2,fa_y-fa_thickness,
+                        fa_x+fa_width/2,fa_y+fa_lid))
+
 
             if draw_waveguides:
                 # connections from the sensor unit to the multi-mode waveguide taper
