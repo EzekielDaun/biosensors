@@ -222,11 +222,12 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     mm_pitch = to_itype(5,dbu)  # pitch for the multimode waveguides
     detector_offset_y = to_itype(-10.1,dbu)
 #    laser_to_tuningcircuit = 315000  # space between the laser edge and tuning circuits
-    laser_to_tuningcircuit = 1362e3  # space between the laser edge and tuning circuits
+#    laser_to_tuningcircuit = 1362e3  # space between the laser edge and tuning circuits
+    laser_to_tuningcircuit = 770e3+1362e3  # space between the laser edge and tuning circuits
     laser_x = 450000
-    laser_y = 390000 # low down
     laser_y = 3240e3-1200e3-810e3   # moved up
     laser_y = 20e3   # bottom of chip
+    laser_y = 500000 # low down
     dxt = 127000  # pitch for the tuning circuits
     gc_y = 800000 # Grating Coupler y position. near the bottom of chip
     gc_y = 2500e3 # Grating Coupler y position. moved up near fluidics
@@ -720,7 +721,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     print('- tunable coupler routing order: %s' % route_order)
     # separate routing trace offsets for the routes going left, vs going right
     i_right = 0
-    i_left = 18
+    i_left = 28
     wire_dy = (metal_space + metal_width)
     for count in route_order:
         # Contact A:
@@ -729,10 +730,10 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
         sub_cell.shapes(textLayerN).insert(pya.Text("e_shifterA_%s"%(2*count+1), inst_bondpads_shifter[2*count+0].trans)).text_size = 15/dbu        
         # check which way the route is going: left or right
         if pad_pin.x &gt; sensor_pchd[count].pinPoint('elec2').x:
-            i_right += 2
+            i_right += 1
             i = i_right
         else:
-            i_left += -2
+            i_left += -1
             i = i_left
                     
         # wire A
@@ -748,9 +749,11 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
 
         # Contact B:
         if pad_pin.x &gt; sensor_pchd[count].pinPoint('elec2').x:
-            i += 1 
+            i_right += 1
+            i = i_right
         else:
-            i += -1       
+            i_left += -1
+            i = i_left
         pad_pin = inst_bondpads_shifter[2*count+1].pinPoint('m_pin_top')
         # text label
         sub_cell.shapes(textLayerN).insert(pya.Text("e_shifterB_%s"%(2*count+2), inst_bondpads_shifter[2*count+1].trans)).text_size = 15/dbu        
@@ -764,16 +767,18 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
                 metal_width)
         sensor_circuit_cells[count].shapes(metalLayer1N).insert(path)
 
-
+        route_x_rightmost = sensor_pchd[count].pinPoint('elec2').x-wire_dy  # save info for the next block
 
     ########################################################################
     # Tunable Coupler electrical routing to the bond pads
     ########################################################################
     M = len(sensor_circuit_cells)
     inst_bondpads_coupler.sort(key=lambda x: x.pinPoint('m_pin_top').y)
-    i = len(sensor_circuit_cells)
+#    i = len(sensor_circuit_cells)
+    i = 0
+    j = 0
     wire_xoffset = -M*wire_dy
-    for count in range(0, M):
+    for count in range(M-1, -1, -1):
         # Contact B:
         pad_pin = inst_bondpads_coupler[M-count-1].pinPoint(bondpads_coupler_pin)
         # text label
@@ -789,16 +794,30 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
             Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
                 metal_width)
         elif 'top' in bondpads_coupler_pin:
-            path = Path([
-            Point(pad_pin.x, pad_pin.y), 
-            Point(pad_pin.x, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-            Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-            Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y), 
-            Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
-                metal_width)
+            if route_x_rightmost + wire_dy &gt; pad_pin.x:
+                route_x_rightmost = max(route_x_rightmost+wire_dy, sensor_shifters[-1].pinPoint('elec2').x+(2)*wire_dy)
+                i_left += -1
+                path = Path([
+                    Point(pad_pin.x, pad_pin.y), 
+                    Point(pad_pin.x, pad_pin.y + i_left*wire_dy),
+                    Point(route_x_rightmost, pad_pin.y + i_left*wire_dy),
+                    Point(route_x_rightmost, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
+                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
+                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y), 
+                    Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
+                    metal_width)
+            else:
+                path = Path([
+                    Point(pad_pin.x, pad_pin.y), 
+                    Point(pad_pin.x, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
+                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
+                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y), 
+                    Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
+                    metal_width)
         
         sensor_circuit_cells[count].shapes(metalLayer1N).insert(path)
-        i += -1
+        i += +1
+        pad_pin_last = pad_pin  # save info for the next block
 
     i = M
     for count in range(0, M):
