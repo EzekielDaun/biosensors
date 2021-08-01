@@ -183,7 +183,8 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     # design parameters
     ########################################################################
 #    fluidics_wall_width_edge = to_itype(500, dbu) 
-    fluidics_wall_width_edge = to_itype(1500, dbu) 
+    fluidics_wall_width_edge_left = to_itype(2300, dbu) 
+    fluidics_wall_width_edge_right = to_itype(1000, dbu) 
     fluidics_wall_width_top = to_itype(500, dbu) 
     fluidics_wall_width_inside = to_itype(300, dbu)
     fluidics_channel_width = to_itype(200, dbu)
@@ -192,6 +193,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     chip_height = to_itype(4740, dbu)
     fluidics_n_channels = 2
     sensors_n_per_channel = 4
+    M = fluidics_n_channels * sensors_n_per_channel
     if partial == True:
         fluidics_n_channels = 1
         sensors_n_per_channel = 1
@@ -203,8 +205,8 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     sensor_oxideopen_r = 80
     sensor_oxideopen_extra = to_itype(10, dbu)
     sensor_oxideopen_tzam_drc = to_itype(0.1, dbu)
-    sensor_dx = (chip_width-2*fluidics_wall_width_edge)/(sensors_n_per_channel+0)
-    sensor_x0 = fluidics_wall_width_edge + sensor_dx/2
+    sensor_dx = (chip_width-fluidics_wall_width_edge_left-fluidics_wall_width_edge_right)/(sensors_n_per_channel+0)
+    sensor_x0 = fluidics_wall_width_edge_left + sensor_dx/2
     sensor_swg_taper_length = 10 # micron
     sensor_offset_left = 5    
     bondpad_n = 3 * fluidics_n_channels * sensors_n_per_channel + 3
@@ -246,14 +248,15 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     wg_devrec_width = float(wg_component_devrec['width'])
             
     # Load waveguide information, for routing
-    waveguides = load_Waveguides_by_Tech(tech)   
     wg = [w for w in waveguides if wg_type in w['name'] ][0]
     if not wg:
         raise Exception("Waveguide type not defined in WAVEGUIDES.XML: %s" %wg_type )
         return
     wg_width = to_itype(float(wg['width']), ly.dbu)
     wg_radius = to_itype(float(wg['radius']), ly.dbu)
-
+    # multimode waveguide
+    wg_component_devrec_mm = [wa for wa in [w['component'] for w in waveguides if wg_type_mm in w['name']][0] if wa['layer'] in 'DevRec' ][0]
+    wg_devrec_width_mm = float(wg_component_devrec_mm['width'])
         
     ########################################################################
     # Import cells from the Library
@@ -267,13 +270,13 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     if not wg_swg_to_strip:
         raise Exception ('Cannot import cell Waveguide_SWG_to_Strip')
 #    ge_detector = ly.create_cell("ge_detector_1310_highresponsivity_m1", "AIM DP Library")
-    phase_shifter1 = ly.create_cell("thermal_phase_shifter_te_1310_500um", "EBeam_Beta")
-    phase_shifter2 = ly.create_cell("thermal_phase_shifter_te_1310_500um", "EBeam_Beta")
+    phase_shifter1 = ly.create_cell("thermal_phase_shifter_te_1310_500um_lowloss", "EBeam_Beta")
+    phase_shifter2 = phase_shifter1
     if (not phase_shifter1) or (not phase_shifter2):
-        raise Exception ('Cannot import cell thermal_phase_shifter_te_1310_500um')
-    si_pchd = ly.create_cell("thermal_phase_shifter_te_1310_500um", "EBeam_Beta")
+        raise Exception ('Cannot import cell thermal_phase_shifter_te_1310_500um_lowloss')
+    si_pchd = ly.create_cell("thermal_phase_shifter_multimode_500um", "EBeam_Beta")
     if not si_pchd:
-        raise Exception ('Cannot import cell thermal_phase_shifter_te_1310_500um')
+        raise Exception ('Cannot import cell thermal_phase_shifter_multimode_500um')
     splitter = ly.create_cell("ebeam_splitter_swg_assist_te1310", "EBeam")
     bondpad = ly.create_cell('ebeam_BondPad', 'EBeam_Beta')
     if not bondpad:
@@ -336,6 +339,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     ########################################################################
     sensor_edge_left = round((sensor_x0 - sensor_swg_length/2 - to_itype(sensor_swg_taper_length,dbu) - 3*wg_radius )/10000-1)*10000
     sensor_edge_right = chip_width+ round((-sensor_x0 + sensor_swg_length/2 - to_itype(sensor_swg_taper_length,dbu) + (2*fluidics_n_channels+2*sensors_n_per_channel)*mm_pitch)/10000-1)*10000
+    sensor_edge_right = sensor_edge_left + sensors_n_per_channel*sensor_dx
     pts = [DPoint(0,0), 
         DPoint(0, chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width),
         DPoint(sensor_edge_left- mm_pitch, chip_height-fluidics_n_channels*fluidics_wall_width_inside-fluidics_wall_width_top-fluidics_n_channels*fluidics_channel_width),
@@ -358,8 +362,8 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
             y += -fluidics_wall_width_inside -fluidics_channel_width
         y = chip_height-fluidics_wall_width_top
         for i in range(0, fluidics_n_channels):
-            sub_cell.shapes(textLayerN).insert(Box(chip_width-fluidics_wall_width_edge,y, chip_width, y-fluidics_channel_width))
-            sub_cell.shapes(textLayerN).insert(Box(0,y, fluidics_wall_width_edge, y-fluidics_channel_width))
+            sub_cell.shapes(textLayerN).insert(Box(chip_width-fluidics_wall_width_edge_right,y, chip_width, y-fluidics_channel_width))
+            sub_cell.shapes(textLayerN).insert(Box(0,y, fluidics_wall_width_edge_left, y-fluidics_channel_width))
             y += -fluidics_wall_width_inside -fluidics_channel_width
 
     ########################################################################
@@ -504,7 +508,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     sensor_strip_swg_out = []
     sensor_to_detector = []
     sensor_pchd = []
-    sensor_shifters = []
+    sensor_couplers = []
     fp_unused_space_bottom = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
     fp_unused_space_left = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
     fp_unused_space_top = [[0] * sensors_n_per_channel for i in range(fluidics_n_channels)]
@@ -535,8 +539,11 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
         # waveguide routing calculations. 
         # check if the next step overlaps the previous one, to offset the bend positions
         if j&gt;0:
-            if sensor_shifters[-1].trans.disp.x &lt; strip_mm4.trans.disp.x:
+            if sensor_couplers[-1].trans.disp.x &lt; strip_mm4.trans.disp.x:
                 route_go_left_count[j] = route_go_left_count[j-1]
+        if j&gt;0:
+            if sensor_couplers[-1].trans.disp.x &gt; strip_mm4.trans.disp.x:
+                route_go_right_count[j] = route_go_right_count[j-1]
 #        for i in range(0, 2):
         for i in range(0, fluidics_n_channels):
             # create a circuit cell
@@ -559,7 +566,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
             strip_mm1 = connect_cell(sensor_swg_in, 'pin2', taper_si_simm, 'opt1', translation=Trans(Trans.R270, (2*i+1)*mm_pitch+to_itype(sensor_offset_left,dbu),-1*wg_radius))
             strip_mm2 = connect_cell(sensor_swg_out, 'pin2', taper_si_simm, 'opt1', translation=Trans(Trans.R270, (2*i+2)*mm_pitch+to_itype(sensor_offset_left,dbu),-1*wg_radius))
 
-            # add 2x strip to MM converters at the bottom, near the sensor tuning
+            # add 2x strip to MM converters above the sensor tuning
             strip_mm3 = connect_cell(strip_mm1, 'opt2', taper_si_simm, 'opt2')
             strip_mm4 = connect_cell(strip_mm2, 'opt2', taper_si_simm, 'opt2')
 #            strip_mm3_y = fludic_bottom+(sensors_n*2 + 2 - 2*j*sensors_n_per_channel-2*i+1)*mm_pitch
@@ -590,21 +597,26 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
             sensor_circuit_splitter2.append ( 
                 sensor_circuit_cells[-1].insert(CellInstArray(splitter.cell_index(), t)) )
             # left phase shifter
-            inst_phase_shifter1 = connect_cell(sensor_circuit_splitter2[-1], 'opt1', phase_shifter1, 'opt1')
+            inst_phase_shifter1 = connect_cell(sensor_circuit_splitter2[-1], 'opt1', phase_shifter1, 'opt1', translation=Trans.M0)
             inst_phase_shifter1.transform(Trans(-2*wg_radius,-2*wg_radius))
             # right phase shifter
-            inst_phase_shifter2 = connect_cell(sensor_circuit_splitter2[-1], 'opt2', phase_shifter2, 'opt1')
+            inst_phase_shifter2 = connect_cell(sensor_circuit_splitter2[-1], 'opt2', phase_shifter2, 'opt1', translation=Trans.M0)
             inst_phase_shifter2.transform(Trans(2*wg_radius,-2*wg_radius))
-            sensor_shifters.append (inst_phase_shifter2)
+            sensor_couplers.append (inst_phase_shifter2)
             # bottom splitter
             sensor_circuit_splitter1.append ( 
                 connect_cell(inst_phase_shifter1, 'opt2', splitter, 'opt3', translation=Trans(Trans.R0, -2*wg_radius,-2*wg_radius)) )
 #            sensor_circuit_splitter1[-1].transform(Trans(2*wg_radius,-2*wg_radius))
             # photoconductive heater detector
             inst_si_pchd = connect_cell(inst_phase_shifter1, 'opt2', si_pchd, 'opt1') 
-            inst_si_pchd.trans = Trans(inst_si_pchd.trans.angle, 0, inst_phase_shifter1.bbox().left - to_itype(wg_devrec_width/2, dbu), inst_si_pchd.trans.disp.y - metal_width)
+            inst_si_pchd.trans = Trans(inst_si_pchd.trans.angle, 0, inst_phase_shifter1.trans.disp.x - to_itype(wg_devrec_width_mm*1.5, dbu), inst_si_pchd.trans.disp.y - metal_width)
             sensor_pchd.append(inst_si_pchd)
 #            inst_si_pchd.transform(Trans(-1*wg_radius,0))
+
+            # add 2x strip to MM converters in the sensor tuning circuit for the phase shifter
+            strip_mm5 = connect_cell(inst_si_pchd, 'opt2', taper_si_simm, 'opt2')
+            strip_mm6 = connect_cell(strip_mm5, 'opt2', taper_si_simm, 'opt2')
+            strip_mm6.trans = Trans(strip_mm6.trans.angle, 0, strip_mm6.trans.disp.x, sensor_circuit_splitter2[-1].bbox().top)
 
             inst_gc = connect_cell(inst_si_pchd, 'opt2', gc, 'opt1') 
             inst_gc.trans = Trans(inst_gc.trans.angle, 0, 
@@ -633,9 +645,11 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
                 connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt2', inst_phase_shifter2, 'opt1', waveguide_type=wg_type)
                 connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt3', inst_phase_shifter1, 'opt2', waveguide_type=wg_type)
                 connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt4', inst_phase_shifter2, 'opt2', waveguide_type=wg_type)
-                connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt1', inst_si_pchd, 'opt2', waveguide_type=wg_type)
+                connect_pins_with_waveguide(sensor_circuit_splitter1[-1], 'opt1', strip_mm5, 'opt1', waveguide_type=wg_type)
+                connect_pins_with_waveguide(inst_si_pchd, 'opt1', strip_mm6, 'opt2', waveguide_type=wg_type_mm)
 
                 # connection to the sensor unit
+                wg_route_extra_from_taper = 60
                 # check which way the route will go:
                 if strip_mm3.pinPoint('opt1').x &gt; inst_si_pchd.pinPoint('opt2').x:
                     # down, left, down
@@ -644,9 +658,9 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
                     route_go_left_count[j] += 1
                 else:
                     # down, right, down
-                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]+1))*dbu, 90, 0, -90]
+                    turtle_B = [wg_route_extra_from_taper + (wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]+1))*dbu, 90, 0, -90]
                     route_go_right_count[j] += 1
-                r = connect_pins_with_waveguide(inst_si_pchd, 'opt1', strip_mm3, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
+                r = connect_pins_with_waveguide(strip_mm6, 'opt1', strip_mm3, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
                 if type(r) == type(False) and r == False:
                     # route did not work
                     inst1 = inst_si_pchd
@@ -668,7 +682,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
                     route_go_left_count[j] += 1
                 else:
                     # down, right, down
-                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]+1))*dbu, 90, 0, -90]
+                    turtle_B = [wg_route_extra_from_taper + (wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]+1))*dbu, 90, 0, -90]
                     route_go_right_count[j] += 1
                 r = connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt3', strip_mm4, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
                 if type(r) == type(False) and r == False:
@@ -721,7 +735,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     print('- tunable coupler routing order: %s' % route_order)
     # separate routing trace offsets for the routes going left, vs going right
     i_right = 0
-    i_left = 28
+    i_left = 36
     wire_dy = (metal_space + metal_width)
     for count in route_order:
         # Contact A:
@@ -772,92 +786,91 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
     ########################################################################
     # Tunable Coupler electrical routing to the bond pads
     ########################################################################
-    M = len(sensor_circuit_cells)
-    inst_bondpads_coupler.sort(key=lambda x: x.pinPoint('m_pin_top').y)
+    inst_bondpads_coupler.sort(key=lambda x: x.pinPoint('m_pin_top').x)
+    [print(x.pinPoint('m_pin_top').x) for x in inst_bondpads_coupler]
 #    i = len(sensor_circuit_cells)
     i = 0
     j = 0
     wire_xoffset = -M*wire_dy
+    route_x_pos=[0]*M
     for count in range(M-1, -1, -1):
         # Contact B:
-        pad_pin = inst_bondpads_coupler[M-count-1].pinPoint(bondpads_coupler_pin)
+        pad_pin = inst_bondpads_coupler[2*M-2*count-2].pinPoint(bondpads_coupler_pin)
         # text label
-        sub_cell.shapes(textLayerN).insert(pya.Text("e_shifterB_%s"%(count+1), inst_bondpads_coupler[M-count-1].trans)).text_size = 15/dbu        
+        sub_cell.shapes(textLayerN).insert(pya.Text("e_couplerB_%s"%(count+1), inst_bondpads_coupler[2*M-2*count-2].trans)).text_size = 15/dbu        
         # wire B
         if 'left' in bondpads_coupler_pin:
             path = Path([
             Point(pad_pin.x, pad_pin.y), 
             Point(pad_pin.x - (M-i+1) * wire_dy + wire_xoffset, pad_pin.y), 
-            Point(pad_pin.x - (M-i+1) * wire_dy + wire_xoffset, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy),
-            Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-            Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y), 
-            Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
+            Point(pad_pin.x - (M-i+1) * wire_dy + wire_xoffset, sensor_couplers[count].pinPoint('elec2').y + i*wire_dy),
+            Point(sensor_couplers[count].pinPoint('elec2').x+wire_dy, sensor_couplers[count].pinPoint('elec2').y + i*wire_dy), 
+            Point(sensor_couplers[count].pinPoint('elec2').x+wire_dy, sensor_couplers[count].pinPoint('elec2').y), 
+            Point(sensor_couplers[count].pinPoint('elec2').x, sensor_couplers[count].pinPoint('elec2').y) ], 
                 metal_width)
         elif 'top' in bondpads_coupler_pin:
-            if route_x_rightmost + wire_dy &gt; pad_pin.x:
-                route_x_rightmost = max(route_x_rightmost+wire_dy, sensor_shifters[-1].pinPoint('elec2').x+(2)*wire_dy)
-                i_left += -1
-                path = Path([
+            route_x_rightmost = max(route_x_rightmost+2*wire_dy, sensor_couplers[-1].pinPoint('elec2').x+(2)*wire_dy, pad_pin.x)
+            route_x_pos[count] = route_x_rightmost
+            i_left += -2
+            path = Path([
                     Point(pad_pin.x, pad_pin.y), 
                     Point(pad_pin.x, pad_pin.y + i_left*wire_dy),
                     Point(route_x_rightmost, pad_pin.y + i_left*wire_dy),
-                    Point(route_x_rightmost, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y), 
-                    Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
+                    Point(route_x_rightmost, sensor_couplers[count].pinPoint('elec1').y + (0+2*i)*wire_dy if count&lt;M-1 else sensor_couplers[count].pinPoint('elec2').y), 
+                    Point(sensor_couplers[count].pinPoint('elec2').x+2*wire_dy, sensor_couplers[count].pinPoint('elec1').y + (0+2*i)*wire_dy if count&lt;M-1 else sensor_couplers[count].pinPoint('elec2').y), 
+                    Point(sensor_couplers[count].pinPoint('elec2').x+2*wire_dy, sensor_couplers[count].pinPoint('elec2').y), 
+                    Point(sensor_couplers[count].pinPoint('elec2').x, sensor_couplers[count].pinPoint('elec2').y) ], 
                     metal_width)
-            else:
-                path = Path([
-                    Point(pad_pin.x, pad_pin.y), 
-                    Point(pad_pin.x, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y + i*wire_dy), 
-                    Point(sensor_shifters[count].pinPoint('elec2').x+wire_dy, sensor_shifters[count].pinPoint('elec2').y), 
-                    Point(sensor_shifters[count].pinPoint('elec2').x, sensor_shifters[count].pinPoint('elec2').y) ], 
-                    metal_width)
+
         
         sensor_circuit_cells[count].shapes(metalLayer1N).insert(path)
         i += +1
-        pad_pin_last = pad_pin  # save info for the next block
-
-    i = M
-    for count in range(0, M):
+    i = 0
+    i_left += 2*M-1
+    # route between the B route paths
+    for count in range(M-1, -1, -1):
         # Contact A
-        pad_pin = inst_bondpads_coupler[count+M].pinPoint(bondpads_coupler_pin)
+        pad_pin = inst_bondpads_coupler[2*M-2*count-1].pinPoint(bondpads_coupler_pin)
         # text label
-        sub_cell.shapes(textLayerN).insert(pya.Text("e_couplerA_%s"%(count+1), inst_bondpads_coupler[count+M].trans)).text_size = 15/dbu
+        sub_cell.shapes(textLayerN).insert(pya.Text("e_couplerA_%s"%(count+1), inst_bondpads_coupler[2*M-2*count-1].trans)).text_size = 15/dbu
         # wire A
         if 'left' in bondpads_coupler_pin:
             path = Path([
             Point(pad_pin.x, pad_pin.y), 
             Point(pad_pin.x - (i) * wire_dy, pad_pin.y), 
-            Point(pad_pin.x - (i) * wire_dy, sensor_shifters[count].pinPoint('elec1').y - i*wire_dy),
-            Point(sensor_shifters[count].pinPoint('elec1').x+wire_dy, sensor_shifters[count].pinPoint('elec1').y - i*wire_dy), 
-            Point(sensor_shifters[count].pinPoint('elec1').x+wire_dy, sensor_shifters[count].pinPoint('elec1').y), 
-            Point(sensor_shifters[count].pinPoint('elec1').x, sensor_shifters[count].pinPoint('elec1').y) ], 
+            Point(pad_pin.x - (i) * wire_dy, sensor_couplers[count].pinPoint('elec1').y - i*wire_dy),
+            Point(sensor_couplers[count].pinPoint('elec1').x+wire_dy, sensor_couplers[count].pinPoint('elec1').y - i*wire_dy), 
+            Point(sensor_couplers[count].pinPoint('elec1').x+wire_dy, sensor_couplers[count].pinPoint('elec1').y), 
+            Point(sensor_couplers[count].pinPoint('elec1').x, sensor_couplers[count].pinPoint('elec1').y) ], 
                 metal_width)
         if 'top' in bondpads_coupler_pin:
+            i_left += -2
             path = Path([
-            Point(pad_pin.x, pad_pin.y), 
-            Point(pad_pin.x, sensor_shifters[count].pinPoint('elec1').y - i*wire_dy), 
-            Point(sensor_shifters[count].pinPoint('elec1').x+wire_dy, sensor_shifters[count].pinPoint('elec1').y - i*wire_dy), 
-            Point(sensor_shifters[count].pinPoint('elec1').x+wire_dy, sensor_shifters[count].pinPoint('elec1').y), 
-            Point(sensor_shifters[count].pinPoint('elec1').x, sensor_shifters[count].pinPoint('elec1').y) ], 
+                Point(pad_pin.x, pad_pin.y), 
+                Point(pad_pin.x, pad_pin.y + i_left*wire_dy),
+                Point(route_x_pos[count]+wire_dy, pad_pin.y + i_left*wire_dy), 
+                Point(route_x_pos[count]+wire_dy, sensor_couplers[count].pinPoint('elec1').y + (1+2*i)*wire_dy if count&lt;M-1 else sensor_couplers[count].pinPoint('elec1').y), 
+                Point(sensor_couplers[count].pinPoint('elec1').x+wire_dy, sensor_couplers[count].pinPoint('elec1').y + (1+2*i)*wire_dy if count&lt;M-1 else sensor_couplers[count].pinPoint('elec1').y), 
+                Point(sensor_couplers[count].pinPoint('elec1').x+wire_dy, sensor_couplers[count].pinPoint('elec1').y), 
+                Point(sensor_couplers[count].pinPoint('elec1').x, sensor_couplers[count].pinPoint('elec1').y) ], 
                 metal_width)
+
+
         sensor_circuit_cells[count].shapes(metalLayer1N).insert(path)
-        i += -1
-
-
+        i += 1
 
     ########################################################################
-    # Floor plan update: remove regions between the sensors 
+    # Floor plan
     ########################################################################
+    '''
+    # remove regions between the sensors 
     for i in range(0, fluidics_n_channels):
         for j in range(0, sensors_n_per_channel):
 #            fp_unused_space_left[i][j] = fp_unused_space_left[0][j]
             fp_r1 = fp_r1 - Region(Box(Point(fp_unused_space_left[-1][j],fp_unused_space_bottom[i][j]), Point(fp_unused_space_right[i][j],fp_unused_space_top[i][j]) )) 
+    '''
     # insert floorplan polygon
     sub_cell.shapes(fpLayerN).insert(fp_r1) 
-    
     
     '''
     ########################################################################
