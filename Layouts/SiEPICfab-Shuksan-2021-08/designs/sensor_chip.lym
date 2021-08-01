@@ -643,7 +643,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
                     route_go_left_count[j] += 1
                 else:
                     # down, right, down
-                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]))*dbu, 90, 0, -90]
+                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]+1))*dbu, 90, 0, -90]
                     route_go_right_count[j] += 1
                 r = connect_pins_with_waveguide(inst_si_pchd, 'opt1', strip_mm3, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
                 if type(r) == type(False) and r == False:
@@ -667,7 +667,7 @@ def sensor_chip(save=True, partial=False, draw_waveguides=True, gasket_v=1,load_
                     route_go_left_count[j] += 1
                 else:
                     # down, right, down
-                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]))*dbu, 90, 0, -90]
+                    turtle_B = [(wg_radius+mm_pitch*(fluidics_n_channels-route_go_right_count[j]+1))*dbu, 90, 0, -90]
                     route_go_right_count[j] += 1
                 r = connect_pins_with_waveguide(sensor_circuit_splitter2[-1], 'opt3', strip_mm4, 'opt1', waveguide_type=wg_type, turtle_B = turtle_B, error_min_bend_radius=False)
                 if type(r) == type(False) and r == False:
