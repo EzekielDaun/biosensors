@@ -3,6 +3,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import matplotlib
 import scipy
+import math
 import numpy as np
 from scipy import signal
 from scipy.io import loadmat
@@ -66,8 +67,9 @@ def get_sweep_data(filename, pkProm):
     # key parameter: peak prominence, which is the vertical distance between a peak and its lowest contour line.
     # There a lots of other parameters you could use here- i.e horizontal distances, min heights..
     # refer to scipy find_peaks docs to view additional parameters.
-    peaks1 = find_peaks((-1) * power1, prominence=pkProm)[0]
-    peaks2 = find_peaks((-1) * power2, prominence=pkProm)[0]
+    minPkSpacing = 20 # set the minimum distance between peaks to 20 datapoints (200 pm)
+    peaks1 = find_peaks((-1) * power1, prominence=pkProm, distance=minPkSpacing)[0]
+    peaks2 = find_peaks((-1) * power2, prominence=pkProm, distance=minPkSpacing)[0]
 
     if '852' in filename:
         print("852 sweep peak", peaks1)
@@ -95,42 +97,53 @@ def get_offset(sweep_data, past_power_1_peaks, past_power_2_peaks, force_dir=0):
     # set the edge tolerance here to 20% for now
     p1_hop = 0
     p2_hop = 0
-    edge_tolerance = 0.2
+    edge_tolerance = 0.15
     low_thresh = edge_tolerance*(np.max(wavelength)-np.amin(wavelength))+np.amin(wavelength)
     high_thresh = np.max(wavelength) - edge_tolerance*(np.max(wavelength) - np.amin(wavelength))
 
     # compute the rough FSRs (in indices, not WL) from the peak positions
-    fsr_1 = round(np.mean(np.diff(sweep_data.get('peaks1'))))
-    fsr_2 = round(np.mean(np.diff(sweep_data.get('peaks2'))))
+    print("peaks1 ", sweep_data.get('peaks1'))
+    print("peaks2 ", sweep_data.get('peaks2'))
+    if np.isnan(sweep_data.get('peaks1')).any() or len(sweep_data.get('peaks1'))<2:
+        fsr_1 = np.nan
+    else:
+        fsr_1 = round(np.mean(np.diff(sweep_data.get('peaks1'))))
+
+    if np.isnan(sweep_data.get('peaks2')).any() or len(sweep_data.get('peaks2'))<2:
+        fsr_2 = np.nan
+    else:
+        fsr_2 = round(np.mean(np.diff(sweep_data.get('peaks2'))))
 
     # check whether each peak was near either edge of the frame, and set the appropriate flag if so
     # (to 1 if we hopped to the peak to the right; to -1 if we hopped to the peak to the left)
     print("previous power1 ", past_power_1_peaks[-1])
     print("previous power2 ", past_power_2_peaks[-1])
 
-    if wavelength[past_power_1_peaks[-1]] < low_thresh:
-        for index, peak in enumerate(past_power_1_peaks):
-            past_power_1_peaks[index] += fsr_1
+    if not(np.isnan(past_power_1_peaks[-1])):
+        if wavelength[past_power_1_peaks[-1]] < low_thresh:
+            for index, peak in enumerate(past_power_1_peaks):
+                past_power_1_peaks[index] += fsr_1
 
-        p1_hop = 1
+            p1_hop = 1
 
-    if wavelength[past_power_2_peaks[-1]] < low_thresh:
-        for index, peak in enumerate(past_power_2_peaks):
-            past_power_2_peaks[index] += fsr_2
+        if wavelength[past_power_1_peaks[-1]] > high_thresh:
+            for index, peak in enumerate(past_power_1_peaks):
+                past_power_1_peaks[index] -= fsr_1
 
-        p2_hop = 1
+            p1_hop = -1
 
-    if wavelength[past_power_1_peaks[-1]] > high_thresh:
-        for index, peak in enumerate(past_power_1_peaks):
-            past_power_1_peaks[index] -= fsr_1
+    if not (np.isnan(past_power_2_peaks[-1])):
+        if wavelength[past_power_2_peaks[-1]] < low_thresh:
+            for index, peak in enumerate(past_power_2_peaks):
+                past_power_2_peaks[index] += fsr_2
 
-        p1_hop = -1
+            p2_hop = 1
 
-    if wavelength[past_power_2_peaks[-1]] > high_thresh:
-        for index, peak in enumerate(past_power_2_peaks):
-            past_power_2_peaks[index] -= fsr_2
+        if wavelength[past_power_2_peaks[-1]] > high_thresh:
+            for index, peak in enumerate(past_power_2_peaks):
+                past_power_2_peaks[index] -= fsr_2
 
-        p2_hop = -1
+            p2_hop = -1
 
     # Now, peak_tracker should look for the peak further from the edge of the frame, and the px_hop variable has
     # recorded whether we hopped peaks.
@@ -195,15 +208,23 @@ def peak_tracker_test(peaks, previous_peaks, force_dir=0):
         raise ValueError
 
     ## Getting the average of the previous peaks.
-    # prev_avg = np.mean(previous_peaks)
+    prev_avg = np.mean(previous_peaks)
 
     ## choose to compare against the most recent peak position only.
-    prev_avg = previous_peaks[-1]
+    # prev_avg = previous_peaks[-1]
 
     # find the fsr
-    fsr = round(np.mean(np.diff(peaks)))
+    if np.isnan(peaks).any() or len(peaks)<2:
+        fsr = np.nan
+    else:
+        fsr = round(np.mean(np.diff(peaks)))
 
     ## finding the new intervention peak:
+    min_diff = min(abs(peaks-prev_avg))
+    selected_index = np.argmin(abs(peaks-prev_avg))
+    selected_peak = peaks[selected_index]
+
+    """
     min_diff = abs(peaks[0]-prev_avg)  ## placeholder value for min_diff
     selected_peak = peaks[0]   ## placeholder value for the selected peak.
     selected_index = 0  ## placeholder value for the index
@@ -213,6 +234,8 @@ def peak_tracker_test(peaks, previous_peaks, force_dir=0):
             min_diff = difference
             selected_peak = peak
             selected_index = index
+    """
+
 
     # SG force correction in case of large shifts (here choose 1/3 FSR)
     if min_diff > fsr/3:
@@ -274,6 +297,7 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
 
     #Look at only part of file list
     #files_list = files_list[:int(len(files_list)*.1)]
+    #files_list = files_list[401:1330]
 
     # SG: Set up the default shift direction: 0 for no forcing, -1 for left shift, 1 for right shift
     # Code should not force the shift direction unless the magnitude of the shift (compared to previous position)
@@ -333,8 +357,8 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             p2a = sweep_data.get('power2')
             p1 = np.array(sweep_data.get('power1'))
             p2 = np.array(sweep_data.get('power2'))
-            p1b = p1.astype(np.float)
-            p2b = p2.astype(np.float)
+            p1b = p1.astype(float)
+            p2b = p2.astype(float)
             #ch1_spectrogram = p1b/np.min(p1b)
             #ch2_spectrogram = p2b/np.min(p2b)
             ch1_spectrogram = np.flip(p1b)
@@ -351,7 +375,7 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             ch2_spectrogram = np.vstack((ch2_spectrogram, np.flip(p2)))
 
         ## Check that we found peaks in this file and proceed if so.  If not, set this element of all of the arrays to NaN.
-        if len(sweep_data.get('peaks1')) >= p1_index and len(sweep_data.get('peaks2')) >= p2_index:
+        if len(sweep_data.get('peaks1')) >= np.max([p1_index+1,2]) and len(sweep_data.get('peaks2')) >= np.max([p2_index+1,2]):
 
             ## If we are just beggining the sweeps, chooses a specific set of datapoints for tracking. (SG change to just the first iteration with peaks)
             if first_peak_found == 0:
@@ -369,8 +393,11 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
 
             # If we are greater than 4 sweeps in, use the previous peak locations for tracking.
             else:
-                offset, power_1_peak, power_2_peak, pk1_hop, pk2_hop, pk1_idx, pk2_idx = get_offset(sweep_data, past_power_1_peaks[-3:],
-                                                                past_power_2_peaks[-3:], force_dir[iteration])
+                # Use only the non-NaN elements of the past power array to understand the historical peak positions
+                past_power_1_peaks_nonan = [item for item in past_power_1_peaks if not math.isnan(item)]
+                past_power_2_peaks_nonan = [item for item in past_power_2_peaks if not math.isnan(item)]
+                offset, power_1_peak, power_2_peak, pk1_hop, pk2_hop, pk1_idx, pk2_idx = get_offset(sweep_data, past_power_1_peaks_nonan [-3:],
+                                                                past_power_2_peaks_nonan[-3:], force_dir[iteration])
 
 
             ## Changing the peaks to their lorentzian form..
@@ -382,6 +409,7 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             lor_power_1_peak = Lorentz1.lorentzian_overlay(adjusted_power1, peak_index=power_1_peak, range_fraction=.2)
             arr1 = np.array([abs(lor_power_1_peak-x) for x in lor_wavelengths])
             power_1_peak = int(np.where(arr1 == np.amin(arr1))[0])
+
             # Power 2 Peaks
             Lorentz2 = LorentzianFitting(sweep_data.get('power2'),lor_wavelengths, pkProm)
             adjusted_power2 = Lorentz2.norm_power_array
@@ -393,6 +421,8 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             if iteration == 0:
                 init_power1_peak = power_1_peak
                 init_power2_peak = power_2_peak
+                init_lor_power_1_peak = lor_power_1_peak
+                init_lor_power_2_peak = lor_power_2_peak
 
             ## Calculating the FSRs
             lor_power_1_peak_list = []
@@ -425,12 +455,17 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             # If we hopped peaks, compute the correction factor (FSR). pkx_hop is -1 if hopped left; 1 if hopped right.
             # pkHopx_corr corrects the absolute wavelength offsets to what they would have been if we had continued tracking
             # the same peak. (want to add an FSR if we hopped left, want to subtract an FSR if we hopped right)
+            # also update the previous peaks list to the hopped-to peak so that we don't wind up re-hopping if the original peak comes back into the frame
             if pk1_hop != 0:
                 #fsr_1 = np.mean(np.diff(lor_wavelengths[sweep_data.get('peaks1')]))
                 # compute the difference in peak position between the tracked peaks before and after hopping (FSR)
                 fsr_1 = np.abs(lor_power_1_peak_list[pk1_idx] - lor_power_1_peak_list[pk1_idx - pk1_hop])
                 pkHop1_corr = pkHop1_corr - pk1_hop*fsr_1
                 print("p1 correction now: ", pkHop1_corr)
+                pkHop1_posCorr = peaks1[pk1_idx] - peaks1[pk1_idx - pk1_hop]
+                past_power_1_peaks[-1] = past_power_1_peaks[-1] + pkHop1_posCorr
+                past_power_1_peaks[-2] = past_power_1_peaks[-2] + pkHop1_posCorr
+
 
             if pk2_hop != 0:
                 #fsr_2 = np.mean(np.diff(lor_wavelengths[sweep_data.get('peaks2')]))
@@ -438,16 +473,19 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
                 fsr_2 = np.abs(lor_power_2_peak_list[pk2_idx] - lor_power_2_peak_list[pk2_idx - pk2_hop])
                 pkHop2_corr = pkHop2_corr - pk2_hop*fsr_2
                 print("p2 correction now: ", pkHop2_corr)
+                pkHop2_posCorr = peaks2[pk2_idx] - peaks2[pk2_idx - pk2_hop]
+                past_power_2_peaks[-1] = past_power_2_peaks[-1] + pkHop2_posCorr
+                past_power_2_peaks[-2] = past_power_2_peaks[-2] + pkHop2_posCorr
 
             #Appending peaks to past_peak_lists.
             past_power_1_peaks.append(power_1_peak)  # appending past power1 peaks
             past_power_2_peaks.append(power_2_peak)  # appending past power2 peaks
 
             ## Appending the offsets to the offset and absolute position lists.
-            power_1_offset_list.append(
-                (lor_power_1_peak + pkHop1_corr - (sweep_data.get('wavelength')[init_power1_peak])))
-            power_2_offset_list.append(
-                (lor_power_2_peak + pkHop2_corr - (sweep_data.get('wavelength')[init_power2_peak])))
+            #power_1_offset_list.append((lor_power_1_peak - init_lor_power_1_peak))
+            #power_2_offset_list.append((lor_power_2_peak - init_lor_power_2_peak))
+            power_1_offset_list.append((lor_power_1_peak + pkHop1_corr - init_lor_power_1_peak))
+            power_2_offset_list.append((lor_power_2_peak + pkHop2_corr - init_lor_power_2_peak))
             power_1_peakWL_list.append(lor_power_1_peak + pkHop1_corr)
             power_2_peakWL_list.append(lor_power_2_peak + pkHop2_corr)
 
@@ -459,6 +497,8 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
             power_2_fsr_list.append(np.nan)
             power_1_peakWL_list.append(np.nan)
             power_2_peakWL_list.append(np.nan)
+            past_power_1_peaks.append(np.nan)  # appending past power1 peaks
+            past_power_2_peaks.append(np.nan)  # appending past power2 peaks
 
 
         ## If we have the csv file with saved acquisition times, use that instead of the calculated times! (SG)
@@ -548,6 +588,39 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     figh.savefig(figfilename, bbox_inches='tight')
     plt.show()
 
+    plot_spectrogram_comparison = 0
+    if plot_spectrogram_comparison:
+        # test code to compare the two spectrograms (for splitter experiment, where we expect them to be ~the same
+        figh, ax = plt.subplots()
+        toPlot = np.transpose(np.divide(ch1_spectrogram, ch2_spectrogram))
+        im = ax.imshow(toPlot, cmap='inferno')
+        cbar = plt.colorbar(im, orientation='horizontal')
+        plt.title('Spectrogram Ratios (Ch1/Ch2)')
+        # axis labels
+        nx = t_array.shape[0]
+        no_labels = 7  # how many labels on x axis
+        step_x = int(nx / (no_labels - 1))  # step between labels
+        x_positions = np.arange(0, nx, step_x)  # pixel count at label position
+        x_labels = np.around(t_array[::step_x], 0)  # label values (rounded to nearest integer)
+        plt.xticks(x_positions, x_labels)
+        ny = np.flip(lor_wavelengths.shape[0])
+        no_labels = 7  # how many labels on y axis
+        step_y = int(ny / (no_labels - 1))  # step between labels
+        y_positions = np.arange(0, ny, step_y)  # pixel count at label position
+        y_labels = np.around(np.flip(lor_wavelengths[::step_y] * 1e9), 2)  # label values (rounded to nearest integer)
+        plt.yticks(y_positions, y_labels)
+        plt.xlabel('Time (minutes)')
+        plt.ylabel('Wavelength (pm)')
+        plt.axis('auto')
+        # colorbar label
+        cbar.set_label('Power (dBm)')
+        plt.show()
+        # save the spectrogram figure
+        figh.set_size_inches(8, 5)
+        figfilename = os.path.join(root, "ch1_ch2_spectrogram_ratio.png")
+        figh.savefig(figfilename, bbox_inches='tight')
+        figfilename = os.path.join(root, "ch1_ch2_spectrogram_ratio.pdf")
+        figh.savefig(figfilename, bbox_inches='tight')
 
     ## Plotting the offset versus the initial point versus time.
     fig = plt.figure()
@@ -588,9 +661,9 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     ymin = np.min(p1_offset_no_nan * 1e12) - 0.05 * yrange
     ymax = np.max(p1_offset_no_nan * 1e12) + 0.05 * yrange
     plt.axis([xmin, xmax, ymin, ymax])
-    figfilename = os.path.join(root, "peakshift_ch1.png")
+    figfilename = os.path.join(root, "ch1_peakshift.png")
     plt.savefig(figfilename, bbox_inches='tight')
-    figfilename = os.path.join(root, "peakshift_ch1.pdf")
+    figfilename = os.path.join(root, "ch1_peakshift.pdf")
     plt.savefig(figfilename, bbox_inches='tight')
     # save only ch2
     lines.append(ax1.plot(t_array, power_2_offset_list * 1e12, color='r', label='Detector Slot 2/Bottom'))
@@ -599,9 +672,9 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     ymin = np.min(p2_offset_no_nan * 1e12) - 0.05 * yrange
     ymax = np.max(p2_offset_no_nan * 1e12) + 0.05 * yrange
     plt.axis([xmin, xmax, ymin, ymax])
-    figfilename = os.path.join(root, "peakshift_ch2.png")
+    figfilename = os.path.join(root, "ch2_peakshift.png")
     plt.savefig(figfilename, bbox_inches='tight')
-    figfilename = os.path.join(root, "peakshift_ch2.pdf")
+    figfilename = os.path.join(root, "ch2_peakshift.pdf")
     plt.savefig(figfilename, bbox_inches='tight')
     lines.append(ax1.plot(t_array, power_1_offset_list * 1e12, color='blue', label='Detector Slot 1/Top'))
     plt.axis('auto')
@@ -708,7 +781,10 @@ if __name__ == '__main__':
 
     ## Enter the name of the folder that contians the matlab vectors of different sweeps.
     #root_folder = r'C:\Users\eric1\Google Drive\UBC\CBR\Vinny COVID Project\Dec9Trial'
-    root_folder =  os.path.expanduser("/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-2/Data/2021-07-21_Gemina-Phase0_Trial4_Bioassay")
+    root_folder = os.path.expanduser("/Users/sgrist/Dropbox/UBC_DP_Biosensor/"+
+                                     "2021-3/Data/2021-11-04_Sheri_Experiment_Data/"+
+                                     "2021-11-02_Hydration_Splitter")
+    print("Root folder is: "+root_folder)
 
     #r'C:\Users\MapleLeafStage\Documents\Dec23Trial'
 
@@ -723,7 +799,7 @@ if __name__ == '__main__':
 
     ## Graphing the offset versus time.
     grapher(root=root_folder, p1_index=track_p1_peak, p2_index=track_p2_peak,
-            sweep_timestep=sweep_timestep, remove_spikes=False, pkProm=4, save_animation=0)
+            sweep_timestep=sweep_timestep, remove_spikes=False, pkProm=6, save_animation=0)
 
     print("Program Time=", datetime.now() - startTime)
     plt.show()
