@@ -542,7 +542,7 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     y_labels = np.around(np.flip(lor_wavelengths[::step_y]*1e9), 2)  # label values (rounded to nearest integer)
     plt.yticks(y_positions, y_labels)
     plt.xlabel('Time (minutes)')
-    plt.ylabel('Wavelength (pm)')
+    plt.ylabel('Wavelength (nm)')
     plt.axis('auto')
     # colorbar label
     cbar.set_label('Power (dBm)')
@@ -569,7 +569,7 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
     plt.xticks(x_positions, x_labels)
     plt.yticks(y_positions, y_labels)
     plt.xlabel('Time (minutes)')
-    plt.ylabel('Wavelength (pm)')
+    plt.ylabel('Wavelength (nm)')
     plt.axis('auto')
     # colorbar label
     cbar.set_label('Power (dBm)')
@@ -610,10 +610,10 @@ Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset
         y_labels = np.around(np.flip(lor_wavelengths[::step_y] * 1e9), 2)  # label values (rounded to nearest integer)
         plt.yticks(y_positions, y_labels)
         plt.xlabel('Time (minutes)')
-        plt.ylabel('Wavelength (pm)')
+        plt.ylabel('Wavelength (nm)')
         plt.axis('auto')
         # colorbar label
-        cbar.set_label('Power (dBm)')
+        cbar.set_label('Power ratio (ch1/ch2)')
         plt.show()
         # save the spectrogram figure
         figh.set_size_inches(8, 5)
