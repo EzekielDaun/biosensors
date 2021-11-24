@@ -15,9 +15,9 @@ class hp816x_N77Det(hp816x_instr.hp816x):
     
     def connect(self, visaAddr, n77DetAddr, reset = 0, forceTrans=1, autoErrorCheck=1):
         super(hp816x_N77Det, self).connect(visaAddr, reset, forceTrans, autoErrorCheck)
-        print ('[self.SlotInfo: %s]' % ', '.join(map(str, self.slotInfo)))
-        print ('[pwmSlotIndex: %s]' % ', '.join(map(str, self.pwmSlotIndex)))  #### HERE - THIS IS THE IMPORTANT ONE WHICH SHOULD BECOME [0,1,2,3,4,5] - Index of each detector
-        print ('[pwmSlotMap: %s]' % ', '.join(map(str, self.pwmSlotMap)))
+        #print ('[self.SlotInfo: %s]' % ', '.join(map(str, self.slotInfo)))
+        #print ('[pwmSlotIndex: %s]' % ', '.join(map(str, self.pwmSlotIndex)))  #### HERE - THIS IS THE IMPORTANT ONE WHICH SHOULD BECOME [0,1,2,3,4,5] - Index of each detector
+        #print ('[pwmSlotMap: %s]' % ', '.join(map(str, self.pwmSlotMap)))
         self.hN77Det = c_int32();
 
         queryID = 1; # The instrument ignores this value.
@@ -30,11 +30,11 @@ class hp816x_N77Det(hp816x_instr.hp816x):
         self.N77SlotInfo = self.getN77SlotInfo(); # Keep mainframe slot info ### HERE ### This function is below... Lets try to get that. So its an aaray of pointers
         self.N77pwmSlotIndex,self.N77pwmSlotMap = self.enumerateN77PWMSlots(); ### HERE ### This function is below... Lets try to get that.
         self.N77activeSlotIndex = self.N77pwmSlotIndex; ### HERE ### This seems to be contradicting with what im seeing below - sort of confusing
-        print ('[activeSlotIndex: %s]' % ', '.join(map(str, self.N77activeSlotIndex)))
+        #print ('[activeSlotIndex: %s]' % ', '.join(map(str, self.N77activeSlotIndex)))
 
         self.modN77pwmSlotIndex = self.pwmSlotIndex + self.N77pwmSlotIndex;
         self.modactiveSlotIndex = self.pwmSlotIndex + self.N77activeSlotIndex;  ### HERE ### This seems to be contradicting with what im seeing below - sort of confusing
-        print ('[modactiveSlotIndex: %s]' % ', '.join(map(str, self.modactiveSlotIndex)))
+        #print ('[modactiveSlotIndex: %s]' % ', '.join(map(str, self.modactiveSlotIndex)))
 
         return
         
@@ -82,7 +82,7 @@ class hp816x_N77Det(hp816x_instr.hp816x):
         pwmSlotMap = list();
         slotIndex = 0; # Slot index
         enumeratedIndex = 2 # PWM index starting from zero
-        print ('[self.N77SlotInfo: %s]' % ', '.join(map(str,self.N77SlotInfo)))  ### HERE ### - Good to know what this thing is doing actually - 6 iterations or 4 iterations??
+        #print ('[self.N77SlotInfo: %s]' % ', '.join(map(str,self.N77SlotInfo)))  ### HERE ### - Good to know what this thing is doing actually - 6 iterations or 4 iterations??
         for slot in self.N77SlotInfo: #This should have 0:5 iterations??
             if slot == self.hp816x_SINGLE_SENSOR:  # 1
                 pwmSlotIndex.append(enumeratedIndex);
@@ -100,8 +100,8 @@ class hp816x_N77Det(hp816x_instr.hp816x):
                 enumeratedIndex += 1
             slotIndex += 1
         
-        print ('[N77pwmSlotIndex: %s]' % ', '.join(map(str, pwmSlotIndex)))  #### HERE - THIS IS THE IMPORTANT ONE WHICH SHOULD BECOME [0,1,2,3,4,5] - Index of each detector
-        print ('[N77pwmSlotMap: %s]' % ', '.join(map(str, pwmSlotMap)))
+        #print ('[N77pwmSlotIndex: %s]' % ', '.join(map(str, pwmSlotIndex)))  #### HERE - THIS IS THE IMPORTANT ONE WHICH SHOULD BECOME [0,1,2,3,4,5] - Index of each detector
+        #print ('[N77pwmSlotMap: %s]' % ', '.join(map(str, pwmSlotMap)))
         return (pwmSlotIndex,pwmSlotMap)
 
     ### HERE ### - # Slot info
