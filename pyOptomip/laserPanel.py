@@ -278,7 +278,8 @@ class laserPanel(wx.Panel):
         self.laser = laser;
         self.InitUI()
   
-    def InitUI(self):  
+    def InitUI(self):
+
         sb = wx.StaticBox(self, label='Laser');
         vbox = wx.StaticBoxSizer(sb, wx.VERTICAL)
         
@@ -326,7 +327,7 @@ class detectorPanel(wx.Panel):
         hbox.Add(self.initialRangeSt, proportion=1, flag=wx.ALIGN_LEFT)
         
         self.initialRangeTc = wx.TextCtrl(self, size=(40,20))
-        self.initialRangeTc.SetValue('-20')
+        self.initialRangeTc.SetValue('-20')    ## EDITABLE
         hbox.Add(self.initialRangeTc, proportion=0, flag=wx.EXPAND|wx.RIGHT, border=15)
         
         
@@ -347,16 +348,26 @@ class detectorPanel(wx.Panel):
         vbox.Add(sl, proportion=0, flag=wx.EXPAND)
         
         self.detectorPanelLst = list();
-        for ii,slotInfo in zip(self.laser.pwmSlotIndex,self.laser.pwmSlotMap):
-            name = 'Slot %d Det %d' % (slotInfo[0],slotInfo[1]+1)
+        self.N77detectorPanelLst = list();
+        for ii,slotInfo in zip(self.laser.pwmSlotIndex, self.laser.pwmSlotMap):
+            name = 'HP8164 Slot %d Det %d' % (slotInfo[0],slotInfo[1]+1)
             det = individualDetPanel(self, name=name, slot=slotInfo[0], chan=slotInfo[1])
             self.detectorPanelLst.append(det)
+            vbox.Add(det, proportion=1, flag=wx.LEFT, border=15)
+            sl = wx.StaticLine(self);
+            vbox.Add(sl, proportion=0, flag=wx.EXPAND)
+        for ii,slotInfo in zip(self.laser.N77pwmSlotIndex, self.laser.N77pwmSlotMap):
+            name = 'N7744 Slot %d Det %d' % (slotInfo[0],slotInfo[1]+1)
+            det = individualDetPanel(self, name=name, slot=slotInfo[0], chan=slotInfo[1])
+            self.N77detectorPanelLst.append(det)
             vbox.Add(det, proportion=1, flag=wx.LEFT, border=15)
             sl = wx.StaticLine(self);
             vbox.Add(sl, proportion=0, flag=wx.EXPAND)
         self.SetSizer(vbox)
         
         self.laser.setAutorangeAll()
+        self.laser.N77setAutorangeAll()
+        
         self.timer = wx.Timer(self, wx.ID_ANY)
         self.Bind(wx.EVT_TIMER, self.UpdateAutoMeasurement, self.timer)
         self.timer.Start(1000)
@@ -366,12 +377,18 @@ class detectorPanel(wx.Panel):
         for ii,panel in enumerate(self.detectorPanelLst):
             if panel.enableSweepCb.GetValue() == True:
                 activeDetectorLst.append(ii)
+        for ii,panel in enumerate(self.N77detectorPanelLst):
+            if panel.enableSweepCb.GetValue() == True:
+                activeDetectorLst.append(ii)
         return activeDetectorLst
         
     def UpdateAutoMeasurement(self, event):
         for ii,panel in enumerate(self.detectorPanelLst):
             if panel.autoMeasurementEnabled:
                 panel.PowerSt.SetLabel(str(self.laser.readPWM(panel.slot, panel.chan)))
+        for ii,panel in enumerate(self.N77detectorPanelLst):
+            if panel.autoMeasurementEnabled:
+                panel.PowerSt.SetLabel(str(self.laser.N77readPWM(panel.slot, panel.chan)))
                 
     def OnClose(self, event):
         self.timer.Stop();
