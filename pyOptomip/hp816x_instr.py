@@ -49,23 +49,21 @@ class hp816x(object):
     
     sweepStartWvl = 1530e-9;
     sweepStopWvl = 1570e-9;
-    sweepStepWvl = 1e-9;
-    sweepSpeed = '10nm';
+    sweepStepWvl = 8e-12;
+    sweepSpeed = '5nm';
     sweepUnit = 'dBm'
     sweepPower = 0;
-    sweepLaserOutput = 'lowsse';
+    sweepLaserOutput = 'highpower';
     sweepNumScans = 3;
     sweepPWMChannel = 'all';
-    sweepInitialRange = -20;
+    sweepInitialRange = -10;
     sweepRangeDecrement = 20;
     sweepUseClipping = 1;
     sweepClipLimit = -100;
     
 
     rangeModeDict = dict([('auto',1), ('manual',0)]);
-
     sweepSpeedDict = dict([('80nm',-1), ('40nm',0), ('20nm',1), ('10nm',2), ('5nm',3), ('0.5nm',4), ('auto',5)]);
-    # sweepSpeedDict = dict([('40nm',0), ('5nm',1), ('0.5nm',2)]);
     laserOutputDict = dict([('highpower',0), ('lowsse',1)]);
     laserStateDict = dict([('off',0), ('on',1)]);
     sweepUnitDict = dict([('dBm',0), ('W',1)]);
