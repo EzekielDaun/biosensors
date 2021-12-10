@@ -1,17 +1,33 @@
 #include "SerialTransfer.h"
 #include <Wire.h>
+#include <Adafruit_MCP4725.h>
+
+Adafruit_MCP4725 DAC1;
+Adafruit_MCP4725 DAC2;
 
 const int ADDRESS = 0x40; // Standard address for Liquid Flow Sensors
 
 SerialTransfer pc;
 
+struct RX {
+  float chan1;
+  float chan2;
+} pressure;
+
+struct TX {
+  float chan1;
+  float chan2;
+} flow;
+
+
 void setup()
 {
+//  pinMode(A2,OUTPUT);
+//  pinMode(A3,OUTPUT); 
+//  digitalWrite(A2,HIGH);
+//  digitalWrite(A3,LOW);
 
-  pinMode(A2,OUTPUT);
-  pinMode(A3,OUTPUT); 
-  digitalWrite(A2,HIGH);
-  digitalWrite(A3,LOW);
+  DAC1.begin(0x60);
   
   int ret;
     
@@ -45,19 +61,17 @@ void setup()
   pc.begin(Serial);
 }
 
-int pressureCode = 0; // 12 bit DAC code to control pressure sensor
+int pressureCode = 0; // 12 bit code to control pressure sensor
 
 void loop()
 {
   if(pc.available())
   {
-    pc.rxObj(pressureCode); // read pressure command from pc
-
-     //dac.setVoltage(pressureCode, false);
+    pc.rxObj(pressure, 0);
+    DAC1.setVoltage(pressure.chan1, false);
 
     int ret;
     uint16_t raw_sensor_value;
-    float sensor_reading;
   
     Wire.requestFrom(ADDRESS, 2); // reading 2 bytes ignores the CRC byte
     if (Wire.available() < 2) {
@@ -65,9 +79,10 @@ void loop()
     } else {
       raw_sensor_value  = Wire.read() << 8; // read the MSB from the sensor
       raw_sensor_value |= Wire.read();      // read the LSB from the sensor
-      sensor_reading = (float) ((int16_t) raw_sensor_value) / 270;  
+      flow.chan1 = (float) ((int16_t) raw_sensor_value) / 270;  
     }
-;
-    pc.sendDatum(sensor_reading); // send updated flow rate to pc
+    
+    uint16_t sendSize = pc.txObj(flow, 0);
+    pc.sendData(sendSize);
   }
 }

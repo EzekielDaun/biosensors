@@ -1,10 +1,12 @@
 import PySimpleGUI as sg
+import uProcess
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, FigureCanvasAgg
 from matplotlib.figure import Figure
 import numpy as np
 import time
 from pySerialTransfer import pySerialTransfer as txfer
 import csv
+from multiprocessing import Process
 
 def draw_figure(canvas, figure, loc=(0, 0)):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
@@ -17,8 +19,9 @@ def com_windows():
                  [sg.Text('Valve Control', size=(40, 1),
                     justification='center', font='Helvetica 20')],
                  [sg.Text('EIB200 COM port', size=(15, 1), font='Helvetica 12'), sg.InputText('6')],
-                 [sg.Text('Arduino COM port', size=(15, 1), font='Helvetica 12'), sg.InputText('4')],
+                 [sg.Text('Arduino1 COM port', size=(15, 1), font='Helvetica 12'), sg.InputText('4')],
                  [sg.Text('4VM Adress', size=(15, 1), font='Helvetica 12'), sg.InputText('10')],
+                 [sg.Text('Arduino2 COM port', size=(15, 1), font='Helvetica 12'), sg.InputText('4')],
 
                  [sg.Canvas(key='controls_cv')],
                  [sg.Canvas(size=(650, 30), key='-CANVAS-')],
@@ -81,63 +84,67 @@ def create_windows():
     
     return window, ax, fig_agg
 
-# write pressure to arduino, and read flow rate back
-def write_read(pressure):
-    int_size = link.tx_obj(pressure, 0)
 
-    send_size = int_size
-    link.send(send_size)
 
-    while not link.available():
-        if link.status < 0:
-            if link.status == txfer.CRC_ERROR:
-                print('ERROR: CRC_ERROR')
-            elif link.status == txfer.PAYLOAD_ERROR:
-                print('ERROR: PAYLOAD_ERROR')
-            elif link.status == txfer.STOP_BYTE_ERROR:
-                print('ERROR: STOP_BYTE_ERROR')
-            else:
-                print('ERROR: {}'.format(link.status))
+class packet:
+    chan1 = 1.0
+    chan2 = 4.5
 
-    flow = link.rx_obj(obj_type=float,
-                             obj_byte_size=4)
-    return flow
+#function for controlling fluidic delivery.
+def fluidic_control(eib_com, fourVM_addr, arduino_com):
+    # write pressure to arduino, and read flow rate back
+    def write_read(pressure):
 
-def main():
+        slope = (2**12 - 1)/15 # slope for converting pressure [psi] to 12bit DAC code
 
-    global link
+        code1 = max(min(2**12 - 1, int(slope*(pressure.chan1))), 0)
+        code2 = max(min(2**12 - 1, int(slope*(pressure.chan2))), 0)
 
-    COM_select = com_windows()
-    while True:
-        event, values = COM_select.read(timeout=10)
+        sendSize = 0
+        sendSize = link.tx_obj(code1, start_pos=sendSize)
+        sendSize = link.tx_obj(code2, start_pos=sendSize)
+        
+        link.send(sendSize)
 
-        if event in ('Submit', None):
-            eib_com = int(values[0])
-            arduino_com = int(values[1])
-            fourVM_addr = int(values[2])
+        while not link.available():
+            if link.status < 0:
+                if link.status == txfer.CRC_ERROR:
+                    print('ERROR: CRC_ERROR')
+                elif link.status == txfer.PAYLOAD_ERROR:
+                    print('ERROR: PAYLOAD_ERROR')
+                elif link.status == txfer.STOP_BYTE_ERROR:
+                    print('ERROR: STOP_BYTE_ERROR')
+                else:
+                    print('ERROR: {}'.format(link.status))
 
-            eib.InitConnection(eib_com) # COM port we just chose
+        recSize = 0
+        flow = [0,0]
 
-            if eib.New4VM(fourVM_addr) is None:
-                print('Invalid COM or Address')
-                continue
-            else:
-                break
+        flow[0] = link.rx_obj(obj_type='f', start_pos=recSize)
+        recSize += txfer.STRUCT_FORMAT_LENGTHS['f']
+        
+        flow[1] = link.rx_obj(obj_type='f', start_pos=recSize)
+        recSize += txfer.STRUCT_FORMAT_LENGTHS['f']
 
+        return flow
+
+    eib = uProcess.CEIB()
+    eib.InitConnection(eib_com)
     a = eib.New4VM(fourVM_addr)
-
-    COM_select.close()
 
     link = txfer.SerialTransfer('COM'+str(arduino_com))
     link.open()
     time.sleep(2) # allow some time for the Arduino to completely reset
 
-    # Initialize system with known pressure to get starting value resistance value
-    pressure = 0.1 #Initial pressure [psi]    
-    flow = write_read(pressure) #initial flow rate [ml/min]
-    R = pressure/flow # initial resistance []
+    # create the data packets that will be transferred to/from Arduino
+    pressure = packet()
+    flow = packet()
 
-    slope = (2**12 - 1)/15 # slope for converting pressure [psi] to 12bit DAC code
+    # Initialize system with known pressure to get starting value resistance value
+    pressure.chan1, pressure.chan2 = 0,0             #Initial pressure [psi]
+    flow.chan1, flow.chan2 = write_read(pressure)    # write to DAC and read from flow sensor
+
+    R = pressure.chan1/flow.chan1 # initial resistance []
 
     Kp, Kd, Ki = 1, 0, 0
     err = np.zeros(100)
@@ -197,13 +204,12 @@ def main():
             break
 
         err = np.roll(err,1) # Update error history
-        err[0] = flow_setpoint - flow
-        pressure += float(( Kp*err[0] + Kd*(err[0] - np.mean(err[1:N])) + Ki*np.sum(err[1:N]) )*R) # Update pressure [psi]
+        err[0] = flow_setpoint - flow.chan1
+        pressure.chan1 += float(( Kp*err[0] + Kd*(err[0] - np.mean(err[1:N])) + Ki*np.sum(err[1:N]) )*R) # Update pressure [psi]
 
-        code = max(min(2**12 - 1, int(4090*flow)), 0)# Get 12bit code for DAC
-        flow = write_read(code)    # write to DAC and read from flow sensor
+        flow.chan1, flow.chan2 = write_read(pressure)    # write to DAC and read from flow sensor
 
-        R = pressure/flow
+        R = pressure.chan1/flow.chan1
 
         ax.cla()                    # clear the subplot
         ax.grid()                   # draw the grid
@@ -214,12 +220,89 @@ def main():
         fig_agg.draw()
 
         #print(1/(time.time()-last)) #print frequency
-        print(flow)
         last = time.time()
-        writer.writerow([time.time() - start, flow, pressure])
+        writer.writerow([time.time() - start, flow.chan1, pressure.chan1])
 
     window.close()
     log.close()
 
-if __name__ == '__main__':
+
+
+# function for reading out from arduino with PD output. Figure out how to display this data on the main GUI (different process)
+def photonic_readout(arduino):
+
+    # read 1 byte from arduino
+    def read():
+        while not link.available():
+            if link.status < 0:
+                if link.status == txfer.CRC_ERROR:
+                    print('ERROR: CRC_ERROR')
+                elif link.status == txfer.PAYLOAD_ERROR:
+                    print('ERROR: PAYLOAD_ERROR')
+                elif link.status == txfer.STOP_BYTE_ERROR:
+                    print('ERROR: STOP_BYTE_ERROR')
+                else:
+                    print('ERROR: {}'.format(link.status))
+
+        byte = link.rx_obj(obj_type=float)
+        return byte
+
+    link = txfer.SerialTransfer('COM'+str(arduino))
+    link.open()
+    time.sleep(2) # allow some time for the Arduino to completely reset 
+
+    start = time.time()
+    first = True
+
+    byte0, byte1 = 0,0
+    reading = 0
+
+    while True:
+        if(first):
+            byte0 = read() 
+            first = False 
+        else:
+            byte1 = read()
+            reading = byte0*256 + byte1
+            first = True
+
+            # do something with reading 
+
+def main():
+
+    eib = uProcess.CEIB() 
+    time.sleep(2)
+
+    COM_select = com_windows()
+    while True:
+        event, values = COM_select.read(timeout=10)
+
+        if event in ('Submit', None):
+            eib_com = int(values[0])
+            arduino_com = int(values[1])
+            fourVM_addr = int(values[2])
+            arduino = int(values[3]) #for photonic readout
+
+            eib.InitConnection(eib_com) # COM port we just chose
+
+            if eib.New4VM(fourVM_addr) is None:
+                print('Invalid COM or Address')
+                continue
+            else:
+                break
+
+    COM_select.close()
+    
+    eib.CloseConnection() #This connection will be re-made inside the fluidic_control process
+
+    #fluidic_control(eib, fourVM_addr, arduino_com)
+
+    fluidic = Process(target = fluidic_control, args = (eib_com, fourVM_addr, arduino_com))
+    # readout = Process(target = photonic_readout, args = (arduino,))
+    fluidic.start()
+    # readout.start()
+
+    fluidic.join()
+    
+if __name__ == '__main__':    
     main()
