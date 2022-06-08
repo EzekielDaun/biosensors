@@ -14,7 +14,7 @@ class RaFigureWidget(QWidget):
         self.figure_canvas = FigureCanvas(fig)
         self.toolbar = NavigationToolbar2QT(self.figure_canvas, self)
 
-        self.axes = self.figure_canvas.figure.subplots()
+        self.figure: Figure = self.figure_canvas.figure
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.toolbar)

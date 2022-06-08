@@ -51,6 +51,17 @@
         <bool>false</bool>
        </property>
       </widget>
+      <widget class="QTabWidget" name="tabWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>3</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="movable">
+        <bool>true</bool>
+       </property>
+      </widget>
       <widget class="QWidget" name="right_widgets" native="true">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -64,6 +75,13 @@
          <widget class="QPushButton" name="analyzeFolderButton">
           <property name="text">
            <string>Run script (folder)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="analyzeButton">
+          <property name="text">
+           <string>Analyze</string>
           </property>
          </widget>
         </item>
@@ -100,8 +118,17 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSave_as"/>
+   </widget>
+   <widget class="QMenu" name="menuOptions">
+    <property name="title">
+     <string>Options</string>
+    </property>
+    <addaction name="actionOp1"/>
    </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuOptions"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="logDockWidget">
@@ -234,11 +261,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>analyzeButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_analyze_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1345</x>
+     <y>111</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>709</x>
+     <y>443</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>slot_open_clicked()</slot>
   <slot>slot_file_changed(QModelIndex)</slot>
   <slot>slot_analyze_file()</slot>
   <slot>slot_analyze_folder()</slot>
+  <slot>slot_analyze_clicked()</slot>
  </slots>
 </ui>

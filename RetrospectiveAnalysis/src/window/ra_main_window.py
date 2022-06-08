@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 
 from typing import List
 
@@ -9,13 +10,22 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
 )
-from PySide6.QtCore import QDir, QProcess, QProcessEnvironment, Signal, Slot
+from PySide6.QtCore import (
+    QDir,
+    QProcess,
+    QProcessEnvironment,
+    QThreadPool,
+    Signal,
+    Slot,
+)
 
 from scipy.io import loadmat
 
 from ..uic.ra_main_window import Ui_RaMainWindow
 from ..widgets.ra_figure_widget import RaFigureWidget
+
 from ..core.MultiLorentzianFit import LorentzianFitting
+from ..core.Retrospective_Analysis_Script import RetrospectiveAnalyzer
 
 
 class RaMainWindow(QMainWindow):
@@ -29,8 +39,9 @@ class RaMainWindow(QMainWindow):
         self.ui.statusbar.showMessage("Retrospective Analysis")
 
         model = QFileSystemModel()
-        model.setRootPath(QDir.homePath())
+        model.setRootPath(QDir.rootPath())
         self.ui.treeView.setModel(model)
+        self.ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
 
         # Redirect stdout and stderr to log panel
         sys.stdout = self
@@ -44,9 +55,17 @@ class RaMainWindow(QMainWindow):
         self.ui.plot_widget.layout().addWidget(self.raw_figure_widget)
         self.ui.plot_widget.layout().setContentsMargins(0, 0, 0, 0)
 
+        #
+        self.figure_widget2 = RaFigureWidget()
+        self.ui.tabWidget.addTab(self.figure_widget2, "2")
+
+        #
+        self.figure_widget3 = RaFigureWidget()
+        self.ui.tabWidget.addTab(self.figure_widget3, "3")
+
     # Redirect stdout and stderr to log panel
-    def write(self, text):
-        self._signal_write.emit(text)
+    def write(self, m):
+        self._signal_write.emit(m)
 
     def flush(self):
         pass
@@ -57,7 +76,9 @@ class RaMainWindow(QMainWindow):
 
     # Slots
     def slot_open_clicked(self):
-        folder_path = QFileDialog.getExistingDirectory()
+        folder_path = QFileDialog.getExistingDirectory(
+            dir=os.path.expanduser("~"),
+        )
         if folder_path != "":
             tree_view = self.ui.treeView
             model: QFileSystemModel = tree_view.model()  # type: ignore
@@ -84,10 +105,14 @@ class RaMainWindow(QMainWindow):
             sweep_fit = LorentzianFitting(raw_power, wavelength, 1)
 
             figure_widget = self.raw_figure_widget
-            figure_widget.axes.clear()
-            figure_widget.axes.set_title(f"Raw Data: {file_basename}")
-            figure_widget.axes.plot(sweep_fit.nm_wavelength, sweep_fit.raw_power_array)
-            figure_widget.figure_canvas.draw()
+            figure_canvas = figure_widget.figure_canvas
+            figure = figure_widget.figure
+
+            figure.clear()
+            axes = figure.subplots()
+            axes.set_title(f"Raw Data: {file_basename}")
+            axes.plot(sweep_fit.nm_wavelength, sweep_fit.raw_power_array)
+            figure_canvas.draw()
 
     def slot_analyze_file(self):
         file_path, _ = QFileDialog.getOpenFileName(self, filter="*.py *.pyw")
@@ -135,3 +160,32 @@ class RaMainWindow(QMainWindow):
             self.ui.statusbar.showMessage(
                 f"Retrospective Analysis - Open script file cancelled"
             )
+
+    def slot_analyze_clicked(self):
+        selected_folder = self.ui.treeView.model().filePath(
+            self.ui.treeView.rootIndex()
+        )
+
+        # Clear previous tabs
+        tab_widget = self.ui.tabWidget
+        for index in range(0, self.ui.tabWidget.count()):
+            tab_widget.widget(index).deleteLater()
+        tab_widget.clear()
+
+        # Add new tabs as needed
+        figures = []
+        figure_canvass = []
+        for i in range(0, RetrospectiveAnalyzer.NUM_PLOTS):
+            ra_figure_widget = RaFigureWidget()
+            tab_widget.addTab(ra_figure_widget, f"Figure {i+1}")
+            figures.append(ra_figure_widget.figure)
+            figure_canvass.append(ra_figure_widget.figure_canvas)
+
+        analyzer = RetrospectiveAnalyzer(
+            folder_path=selected_folder,
+            figures=figures,
+            canvass=figure_canvass,
+        )
+
+        analyzer.setAutoDelete(False)
+        QThreadPool.globalInstance().start(analyzer)

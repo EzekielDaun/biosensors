@@ -19,8 +19,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QDockWidget, QHBoxLayout,
     QHeaderView, QMainWindow, QMenu, QMenuBar,
     QPushButton, QSizePolicy, QSpacerItem, QSplitter,
-    QStatusBar, QTextBrowser, QTreeView, QVBoxLayout,
-    QWidget)
+    QStatusBar, QTabWidget, QTextBrowser, QTreeView,
+    QVBoxLayout, QWidget)
 
 class Ui_RaMainWindow(object):
     def setupUi(self, RaMainWindow):
@@ -63,6 +63,15 @@ class Ui_RaMainWindow(object):
         self.plot_widget.setSizePolicy(sizePolicy1)
         self.plot_widget.setAutoFillBackground(False)
         self.splitter.addWidget(self.plot_widget)
+        self.tabWidget = QTabWidget(self.splitter)
+        self.tabWidget.setObjectName(u"tabWidget")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy2.setHorizontalStretch(3)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
+        self.tabWidget.setSizePolicy(sizePolicy2)
+        self.tabWidget.setMovable(True)
+        self.splitter.addWidget(self.tabWidget)
         self.right_widgets = QWidget(self.splitter)
         self.right_widgets.setObjectName(u"right_widgets")
         self.verticalLayout = QVBoxLayout(self.right_widgets)
@@ -76,6 +85,11 @@ class Ui_RaMainWindow(object):
         self.analyzeFolderButton.setObjectName(u"analyzeFolderButton")
 
         self.verticalLayout.addWidget(self.analyzeFolderButton)
+
+        self.analyzeButton = QPushButton(self.right_widgets)
+        self.analyzeButton.setObjectName(u"analyzeButton")
+
+        self.verticalLayout.addWidget(self.analyzeButton)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
@@ -91,6 +105,8 @@ class Ui_RaMainWindow(object):
         self.menubar.setGeometry(QRect(0, 0, 1280, 22))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
+        self.menuOptions = QMenu(self.menubar)
+        self.menuOptions.setObjectName(u"menuOptions")
         RaMainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(RaMainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -110,7 +126,11 @@ class Ui_RaMainWindow(object):
         RaMainWindow.addDockWidget(Qt.BottomDockWidgetArea, self.logDockWidget)
 
         self.menubar.addAction(self.menuFile.menuAction())
+        self.menubar.addAction(self.menuOptions.menuAction())
         self.menuFile.addAction(self.actionOpen)
+        self.menuFile.addAction(self.actionSave)
+        self.menuFile.addAction(self.actionSave_as)
+        self.menuOptions.addAction(self.actionOp1)
 
         self.retranslateUi(RaMainWindow)
         self.actionOpen.triggered.connect(RaMainWindow.slot_open_clicked)
@@ -118,6 +138,7 @@ class Ui_RaMainWindow(object):
         self.treeView.activated.connect(RaMainWindow.slot_file_changed)
         self.analyzeFileButton.clicked.connect(RaMainWindow.slot_analyze_file)
         self.analyzeFolderButton.clicked.connect(RaMainWindow.slot_analyze_folder)
+        self.analyzeButton.clicked.connect(RaMainWindow.slot_analyze_clicked)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -139,7 +160,9 @@ class Ui_RaMainWindow(object):
         self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
         self.analyzeFileButton.setText(QCoreApplication.translate("RaMainWindow", u"Run script (file)", None))
         self.analyzeFolderButton.setText(QCoreApplication.translate("RaMainWindow", u"Run script (folder)", None))
+        self.analyzeButton.setText(QCoreApplication.translate("RaMainWindow", u"Analyze", None))
         self.menuFile.setTitle(QCoreApplication.translate("RaMainWindow", u"File", None))
+        self.menuOptions.setTitle(QCoreApplication.translate("RaMainWindow", u"Options", None))
         self.logDockWidget.setWindowTitle(QCoreApplication.translate("RaMainWindow", u"Log", None))
     # retranslateUi
 
