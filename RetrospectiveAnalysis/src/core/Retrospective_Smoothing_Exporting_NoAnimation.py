@@ -1,0 +1,483 @@
+import os
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import signal
+from scipy.io import loadmat
+from scipy.signal import find_peaks
+from PeakTracking.MultiLorentzianFit import LorentzianFitting
+from numpy import asarray
+from numpy import savetxt
+
+# import pandas as pd
+# TODO: Pandas library not installed, would need internet- or maybe can manually install somehow??
+# Otherwise replace with a numpy version (pandas only used for one line on interpolation)
+
+
+def spike_remover(offset_data, std_multiplier=1):
+    # Creating a median smoothed array to find std:
+    median_smoothed = signal.medfilt(offset_data, kernel_size=15)
+    med_smooth_std = np.std(median_smoothed)
+    upper_bound = np.array(
+        [x + med_smooth_std * std_multiplier for x in median_smoothed]
+    )
+    lower_bound = np.array(
+        [x - med_smooth_std * std_multiplier for x in median_smoothed]
+    )
+
+    # Replacing data outside of bounds with NaN:
+    for i, x in enumerate(offset_data):
+        if x > upper_bound[i]:
+            offset_data[i] = np.nan
+        elif x < lower_bound[i]:
+            offset_data[i] = np.nan
+
+    # Filling NaN zones via linear interpolation:
+    df = pd.Series(offset_data)
+    interpolated_data = df.interpolate(method="linear")
+
+    return interpolated_data
+
+
+def get_sweep_data(filename):
+    """
+    This function converts the sweep data from a MATLAB vector in to a dictionary datatype that is
+    easier for python to read.
+
+    :param filename: the name of the MATLAB vector representing a single sweep
+    :return: a dictionary containing:
+            array of wavelengths (m)
+            array of power 1 (I believe units are dBm)
+            array of power 2 (I believe units are dBm)
+            array of peaks in power 1 (where the peaks are the array index values where peaks occur in power 1 array)
+            array of peaks in power 2 (where the peaks are the array index values where peaks occur in power 2 array)
+    """
+    matlab_vector = loadmat(filename)  # loading the matlab vector
+    # retrieving the wavelengths used during the sweep (nm)
+    wavelength = matlab_vector["wavelength"][0]
+    # retrieving the values for the power1 channel. (dBm)
+    power1 = matlab_vector["power1"][0]
+    # retrieving the values for the power2 channel. (dBm)
+    power2 = matlab_vector["power2"][0]
+
+    # Using the scipy find_peaks algorithm to find peaks in the power & power 2 channels. Operating on the raw data here.
+    # key parameter: peak prominence, which is the vertical distance between a peak and its lowest contour line.
+    # There a lots of other parameters you could use here- i.e horizontal distances, min heights..
+    # refer to scipy find_peaks docs to view additional parameters.
+    peaks1 = find_peaks((-1) * power1, prominence=10)[0]
+    peaks2 = find_peaks((-1) * power2, prominence=10)[0]
+
+    if "852" in filename:
+        print("852 sweep peak", peaks1)
+    return {
+        "wavelength": wavelength,
+        "power1": power1,
+        "peaks1": peaks1,
+        "power2": power2,
+        "peaks2": peaks2,
+    }
+
+
+def get_offset(sweep_data, past_power_1_peaks, past_power_2_peaks):
+    """
+    Finds the offset between two given peaks.
+
+    :param sweep_data: a dictionary containing data from a single sweep
+    :param past_power_1_peaks: index of the previous peak in power 1
+    :param past_power_2_peaks: index of the previous peak in power 2
+    :return: offset = Power 1 peak - power 2 peak
+            power_1_peak = the peak for power 1 as defined by peak tracker (closest peak to previous peak location)
+            power_2_peak = the peak for power 2 defined by peak tracker (closest peak to previous peak location)
+    """
+    wavelength = sweep_data.get("wavelength")
+
+    power_1_peak = peak_tracker(sweep_data.get("peaks1"), past_power_1_peaks)
+    power_2_peak = peak_tracker(sweep_data.get("peaks2"), past_power_2_peaks)
+    offset = wavelength[power_1_peak] - wavelength[power_2_peak]
+    return [offset, power_1_peak, power_2_peak]
+
+
+def peak_tracker(peaks, previous_peaks):
+    """
+
+    This function finds the new peak based off the location of previous peaks.
+    This allows us to effectively "track" peaks, ensuring we are analysing the same peak each time.
+
+    :param peaks: contains the indexes of all the peak of for a given channel.
+    :param previous_peaks: contains the previous 3 peaks of a given channel.
+    Unless we are analyzing the first 3 peaks- in this case, will contain a single peak
+    :param wavelength: an array containing the wavelengths
+    :return: the index of the selected peak in the wavelength array
+    """
+    # making sure there are actually peaks in the dataset :
+    if len(peaks) == 0:
+        print("No peaks found")
+        raise ValueError
+
+    # Getting the average of the previous peaks.
+    prev_avg = np.mean(previous_peaks)
+
+    # finging the new intervention peak:
+    min_diff = abs(peaks[0] - prev_avg)  # placeholder value for min_diff
+    selected_peak = peaks[0]  # placeholder value for the selected peak.
+    for peak in peaks:
+        difference = abs(peak - prev_avg)
+        if difference < min_diff:
+            min_diff = difference
+            selected_peak = peak
+    return selected_peak
+
+
+def file_num(filename):
+    """
+
+    Find the sweep number based on the filename.
+    For example, "laser_sweep_12" would be sweep number 12.
+
+    :param filename: the name of the matlab vector. Must be in the format "laser_sweep_1.mat"
+    :return: the filenumber ( the sweep iteration - for example, laser_sweep_1.mat is the first sweep
+            laser_sweep_12 is the 12th sweep
+    """
+    start_index = int(str.index(filename, "sweep_") + 6)
+    end_index = int(str.index(filename, ".mat"))
+    filenumber = int(filename[start_index:end_index])
+    return filenumber
+
+
+def grapher(root, p1_index=1, p2_index=1, sweep_timestep=0.25, remove_spikes=True):
+    """
+    Generates 3 graphs: (1) a initial point offset vs time graph, showing the offset between power 1 and power 2 peaks relative
+                        to their intiial points.
+                        (2) an animation fo the power-wavelength plot
+                        (3) an animation of the offset-time plot
+
+        :param root: the root folder containing matlab vectors from each sweep
+        :param p1_index: the initial index of the power 1 peak for tracking
+        :param p2_index: the initial index of the power 2 peak for tracking
+        :param sweep_timestep: the time in minutes between each laser sweep
+    """
+
+    # Getting all the files currently in the root folder:
+    files_list = []
+    for path, subdirs, files in os.walk(root):
+        for name in files:
+            x = os.path.join(path, name)
+            files_list.append(x)
+
+    # Sorting all these files by their number from lowest to highest
+    files_list.sort(key=file_num)
+
+    # Look at only part of file list
+    # files_list = files_list[:int(len(files_list)*.3)]
+
+    # making array to store the offsets
+    # contains the offsets between power 1 and its initial location
+    power_1_offset_list = []
+    # contains the offsets between power 2 and its initial location
+    power_2_offset_list = []
+    lor_p1_offset = []
+    # contains all the time points (min) at which each sweep was conducted.
+    t_array = []
+
+    # Making a array of past peaks indexes:
+    past_power_1_peaks = []
+    past_power_2_peaks = []
+    past_lor_power_1_peaks = []
+
+    # An array containing the sweep data from each sweep
+    all_sweeps_array = []
+
+    # Looping through all the matlab vectors from each sweep.
+    for iteration, filename in enumerate(files_list):
+        print(filename)
+
+        # getting the sweep data from matlab vector
+        sweep_data = get_sweep_data(filename)
+        all_sweeps_array.append(sweep_data)
+
+        # If we are just beggining the sweeps, chooses a specific set of datapoints for tracking.
+        if iteration < 3:
+
+            # Here, we choose to track the first peak on power 1 or power 2 at t=0
+            offset, power_1_peak, power_2_peak = get_offset(
+                sweep_data,
+                [sweep_data.get("peaks1")[p1_index]],
+                [sweep_data.get("peaks2")[p2_index]],
+            )
+            if iteration == 0:
+                init_power1_peak = power_1_peak
+                init_power2_peak = power_2_peak
+
+        # If we are greater than 4 sweeps in, use the previous peak locations for tracking.
+        else:
+            offset, power_1_peak, power_2_peak = get_offset(
+                sweep_data, past_power_1_peaks[-3:], past_power_2_peaks[-3:]
+            )
+
+        # Changing the peaks to their lorentzian form..
+        lor_wavelengths = sweep_data.get("wavelength")
+        # Power 1 Peaks
+        Lorentz1 = LorentzianFitting(sweep_data.get("power1"), lor_wavelengths)
+        adjusted_power1 = Lorentz1.norm_power_array
+        adjusted_power1 = Lorentz1.parabolic_overlay()
+        lor_power_1_peak = Lorentz1.lorentzian_overlay(
+            adjusted_power1, peak_index=power_1_peak, range_fraction=0.2
+        )
+        arr1 = np.array([abs(lor_power_1_peak - x) for x in lor_wavelengths])
+        power_1_peak = int(np.where(arr1 == np.amin(arr1))[0])
+        # Power 2 Peaks
+        Lorentz2 = LorentzianFitting(sweep_data.get("power2"), lor_wavelengths)
+        adjusted_power2 = Lorentz2.norm_power_array
+        adjusted_power2 = Lorentz2.parabolic_overlay()
+        lor_power_2_peak = Lorentz2.lorentzian_overlay(
+            adjusted_power2, peak_index=power_2_peak, range_fraction=0.2
+        )
+        arr2 = np.array([abs(lor_power_2_peak - x) for x in lor_wavelengths])
+        power_2_peak = int(np.where(arr2 == np.amin(arr2))[0])
+
+        # Appending peaks to past_peak_lists.
+        past_power_1_peaks.append(power_1_peak)  # appending past power1 peaks
+        past_power_2_peaks.append(power_2_peak)  # appending past power2 peaks
+        # appending the time, assuming each sweep is .25 min apart.
+        t_array.append(sweep_timestep * iteration)
+
+        # Appending the offsets to the offset lists.
+        power_1_offset_list.append(
+            (lor_power_1_peak - sweep_data.get("wavelength")[init_power1_peak])
+        )
+        power_2_offset_list.append(
+            lor_power_2_peak - sweep_data.get("wavelength")[init_power2_peak]
+        )
+
+    # Applying a median filter to the offsets. This smooths out bumps
+    if remove_spikes:
+        power_1_offset_list = signal.medfilt(power_1_offset_list, kernel_size=9)
+        # power_1_offset_list = spike_remover(power_1_offset_list)
+        power_2_offset_list = signal.medfilt(power_2_offset_list, kernel_size=35)
+        # power_2_offset_list = spike_remover(power_2_offset_list)
+    else:
+        power_1_offset_list = np.array(power_1_offset_list)
+        power_2_offset_list = np.array(power_2_offset_list)
+
+    t_array = np.array(t_array)
+
+    # Plotting the offset versus the initial point versus time.
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.set_title("Offset from initial resonance peak location vs time", size=15)
+    ax1.set_ylabel("Offset (pm)", size=15)
+    ax1.set_xlabel("Time (min)", size=15)
+    ax1.set_xlim(0, int(np.max(t_array)))
+    ax1.plot(
+        t_array,
+        power_1_offset_list * 1e12,
+        color="blue",
+        label="Detector Slot 1/Array Channel 1/Top/Power 1",
+    )
+    # ax1.plot(t_array, lor_p1_offset*1e12,color='orange',label='Lorentzian Fit Power 1')
+    ax1.plot(
+        t_array,
+        power_2_offset_list * 1e12,
+        color="r",
+        label="Detector Slot 2/Array Channel 3/Bottom/Power 2",
+    )
+    # ax1.plot(t_array, power_1_offset_list*1e12-power_2_offset_list*1e12, color = 'g', label = 'Power1-Power2')
+    ax1.legend(loc="upper left")
+    plt.draw()
+
+    # Saving the time and power arrays into excel files:
+    excel_time = asarray(t_array)
+    excel_detect_1 = asarray(power_1_offset_list * 1e12)
+    excel_detect_2 = asarray(power_2_offset_list * 1e12)
+
+    savetxt("time.csv", excel_time, delimiter=",")
+    savetxt("pwr_detect1.csv", excel_detect_1, delimiter=",")
+    savetxt("pwr_detect2.csv", excel_detect_2, delimiter=",")
+
+    current_sweep_index = len(all_sweeps_array) - 1
+    wavelength_graph = sweep_data.get("wavelength") * 1e9
+    fig = plt.figure()
+    ax = fig.add_subplot(121)
+    ax.set_title("Initial Power- Wavelength Spectrum")
+    ax.set_ylabel("Power (dBm)")
+    ax.set_xlabel("Wavelength (nm)")
+    ax.plot(wavelength_graph, all_sweeps_array[0].get("power1"), label="Power1")
+    ax.plot(wavelength_graph, all_sweeps_array[0].get("power2"), label="Power1")
+
+    ax2 = fig.add_subplot(122)
+    ax2.set_title("Current Power - Wavelength Spectrum")
+    ax2.set_ylabel("Power (dBm)")
+    ax2.set_xlabel("Wavelength (nm)")
+    ax2.plot(
+        wavelength_graph,
+        all_sweeps_array[current_sweep_index].get("power1"),
+        label="Power1",
+    )
+    ax2.plot(
+        wavelength_graph,
+        all_sweeps_array[current_sweep_index].get("power2"),
+        label="Power2",
+    )
+
+    plt.legend()
+    plt.draw()
+
+    # plotting the 3rd graph - an animation of the power-wavlength graph.
+    # generate_animation(all_sweeps_array, past_power_1_peaks, past_power_2_peaks,
+    #                   power_1_offset_list, power_2_offset_list, t_array)
+
+
+def generate_animation(
+    all_sweep_data, p1peaks, p2peaks, p1_offset_list, p2_offset_list, time_array
+):
+    """
+    Makes a replay of the power-wavlength graph.
+
+        :param all_sweep_data: and array containing sweep data dictionaries.
+        :param p1peaks: The past power 1 peaks at every sweep
+        :param p2peaks: The past power 2 peaks at every sweep.
+        :return:
+    """
+    x_wavelengths = all_sweep_data[0].get("wavelength")
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax2 = fig.add_subplot(1, 2, 2)
+
+    # Setting up skeleton of power-wavelength graph
+    ax1.set_title("Power vs wavelength replay")
+    ax1.set_ylabel("Power (dBm)")
+    ax1.set_xlabel("Wavelength (nm)")
+    ax1.axvline(
+        x=all_sweep_data[0].get("wavelength")[p1peaks[0]],
+        color=(0.8, 0.8, 0.99),
+        label="power1 initial",
+    )
+    ax1.axvline(
+        x=all_sweep_data[0].get("wavelength")[p2peaks[0]],
+        color=(0.99, 0.8, 0.8),
+        label="power2 initial",
+    )
+
+    # Setting up skeleton of initial point offset vs time graph:
+    ax2.set_title("Offset from initial resonance peak location vs time")
+    ax2.set_ylabel("Offset (m)")
+    ax2.set_xlabel("Time (min)")
+    ax2.set_xlim(0, int(np.max(time_array)))
+
+    def update(
+        num,
+        x_wavelengths,
+        all_sweep_data,
+        p1peaks,
+        p2peaks,
+        p1_offset_list,
+        p2_offset_list,
+        time_array,
+    ):
+
+        # Updating power-wavelength graph:
+        (power_1_line,) = ax1.plot(
+            x_wavelengths,
+            all_sweep_data[num].get("power1"),
+            color="blue",
+            label="P1 Wave",
+        )
+        (power_2_line,) = ax1.plot(
+            x_wavelengths,
+            all_sweep_data[num].get("power2"),
+            color="red",
+            label="P2 Wave",
+        )
+
+        (p1_pt,) = ax1.plot(
+            x_wavelengths[p1peaks[num]],
+            all_sweep_data[num].get("power1")[p1peaks[num]],
+            marker="*",
+            color="black",
+            label="Comparison point",
+        )
+        (p2_pt,) = ax1.plot(
+            x_wavelengths[p2peaks[num]],
+            all_sweep_data[num].get("power2")[p2peaks[num]],
+            marker="X",
+            color="black",
+            label="Reference point",
+        )
+
+        # Updating initial point offset vs time graph:
+        (p1_offset_line,) = ax2.plot(
+            time_array[:num], p1_offset_list[:num], color="blue", label="Power 1"
+        )
+        (p2_offset_line,) = ax2.plot(
+            time_array[:num],
+            p2_offset_list[:num],
+            color="red",
+            label="Power 2",
+            linestyle="dashed",
+        )
+
+        return (
+            power_1_line,
+            power_2_line,
+            p1_pt,
+            p2_pt,
+            p1_offset_line,
+            p2_offset_line,
+        )
+
+    # Running the animation. Here, interval is the tim (ms) between frames.
+    # The interval is the speed of the aminiation (how often it updates im ms)
+
+    ani = animation.FuncAnimation(
+        fig,
+        update,
+        len(all_sweep_data),
+        fargs=[
+            x_wavelengths,
+            all_sweep_data,
+            p1peaks,
+            p2peaks,
+            p1_offset_list,
+            p2_offset_list,
+            time_array,
+        ],
+        blit=True,
+        repeat=False,
+        interval=1,
+    )
+
+    plt.show()
+
+
+if __name__ == "__main__":
+
+    from datetime import datetime
+
+    startTime = datetime.now()
+
+    # Sweep times: How many minutes each sweep is apart from the next:
+    sweep_timestep = 0.25  # minutes
+
+    # Enter the name of the folder that contians the matlab vectors of different sweeps.
+    # root_folder = r'C:\Users\eric1\Google Drive\UBC\CBR\Vinny COVID Project\Dec9Trial'
+    root_folder = os.path.expanduser("~/Desktop/sweeps")
+    # root_folder = 'wave_power_vectors'
+
+    # Enter the index of the power 1 peak that you would like to track (0, 1 or 2)
+    track_p1_peak = 4
+
+    # Enter the index of the power 2 peak that you would like to track (0,1 or 2)
+    track_p2_peak = 4
+
+    # Graphing the offset versus time.
+    grapher(
+        root=root_folder,
+        p1_index=track_p1_peak,
+        p2_index=track_p2_peak,
+        sweep_timestep=sweep_timestep,
+        remove_spikes=True,
+    )
+
+    print("Program Time=", datetime.now() - startTime)
+    plt.show()
