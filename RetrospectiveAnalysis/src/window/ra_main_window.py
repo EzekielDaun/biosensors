@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
 )
-from PySide6.QtCore import QDir, QProcess, QProcessEnvironment
+from PySide6.QtCore import QDir, QProcess, QProcessEnvironment, Signal, Slot
 
 from scipy.io import loadmat
 
@@ -19,6 +19,8 @@ from ..core.MultiLorentzianFit import LorentzianFitting
 
 
 class RaMainWindow(QMainWindow):
+    _signal_write = Signal(str)
+
     def __init__(self):
         super().__init__()
         self.ui = Ui_RaMainWindow()
@@ -33,6 +35,7 @@ class RaMainWindow(QMainWindow):
         # Redirect stdout and stderr to log panel
         sys.stdout = self
         sys.stderr = self
+        self._signal_write.connect(self.slot_write)
         print("-----Retrospective Analysis-----")
 
         # Raw data plot for selected file
@@ -41,7 +44,15 @@ class RaMainWindow(QMainWindow):
         self.ui.plot_widget.layout().addWidget(self.raw_figure_widget)
         self.ui.plot_widget.layout().setContentsMargins(0, 0, 0, 0)
 
+    # Redirect stdout and stderr to log panel
     def write(self, text):
+        self._signal_write.emit(text)
+
+    def flush(self):
+        pass
+
+    @Slot()
+    def slot_write(self, text):
         self.ui.textBrowser.insertPlainText(text)
 
     # Slots
