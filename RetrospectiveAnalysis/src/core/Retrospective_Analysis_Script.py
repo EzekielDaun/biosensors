@@ -383,11 +383,11 @@ class RetrospectiveAnalyzer(QRunnable):
         # Plotting the spectrograms
 
         # TODO: Figure 1
-        plt = self._figures[0]
-        ax: Axes = plt.subplots()
+        figure = self._figures[0]
+        ax: Axes = figure.subplots()
 
         im = ax.imshow((np.transpose(ch1_spectrogram)), cmap="inferno")
-        cbar = plt.colorbar(im, orientation="horizontal")
+        cbar = figure.colorbar(im, orientation="horizontal")
         ax.set_title("Ch1 Spectrogram")
         # axis labels
         nx = t_array.shape[0]
@@ -410,12 +410,12 @@ class RetrospectiveAnalyzer(QRunnable):
         # colorbar label
         cbar.set_label("Power (dBm)")
 
-        # # save the spectrogram figure
-        # figh.set_size_inches(8, 5)
-        # figfilename = os.path.join(root, "ch1_spectrogram.png")
-        # figh.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "ch1_spectrogram.pdf")
-        # figh.savefig(figfilename, bbox_inches="tight")
+        # save the spectrogram figure
+        figure.set_size_inches(8, 5)
+        figfilename = os.path.join(root, "ch1_spectrogram.png")
+        figure.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch1_spectrogram.pdf")
+        figure.savefig(figfilename, bbox_inches="tight")
 
         # plot line plot over it with tracked peak
         ax.plot(
@@ -425,18 +425,18 @@ class RetrospectiveAnalyzer(QRunnable):
             linewidth=2,
             color="black",
         )
-        # figfilename = os.path.join(root, "ch1_spectrogram_overlay.png")
-        # figh.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "ch1_spectrogram_overlay.pdf")
-        # figh.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch1_spectrogram_overlay.png")
+        figure.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch1_spectrogram_overlay.pdf")
+        figure.savefig(figfilename, bbox_inches="tight")
         # plt.show()
 
         # TODO: Figure 2
-        plt = self._figures[1]
-        ax: Axes = plt.subplots()
+        figure = self._figures[1]
+        ax: Axes = figure.subplots()
 
         im2 = ax.imshow((np.transpose(ch2_spectrogram)), cmap="inferno")
-        cbar = plt.colorbar(im2, orientation="horizontal")
+        cbar = figure.colorbar(im2, orientation="horizontal")
         ax.set_title("Ch2 Spectrogram")
         # axis labels
         ax.set_xticks(x_positions, x_labels)
@@ -447,12 +447,12 @@ class RetrospectiveAnalyzer(QRunnable):
         # colorbar label
         cbar.set_label("Power (dBm)")
 
-        # # save the spectrogram figure
-        # figh.set_size_inches(8, 5)
-        # figfilename = os.path.join(root, "ch2_spectrogram.png")
-        # figh.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "ch2_spectrogram.pdf")
-        # figh.savefig(figfilename, bbox_inches="tight")
+        # save the spectrogram figure
+        figure.set_size_inches(8, 5)
+        figfilename = os.path.join(root, "ch2_spectrogram.png")
+        figure.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch2_spectrogram.pdf")
+        figure.savefig(figfilename, bbox_inches="tight")
 
         # plot line plot over it with tracked peak
         ax.plot(
@@ -462,10 +462,10 @@ class RetrospectiveAnalyzer(QRunnable):
             linewidth=2,
             color="black",
         )
-        # figfilename = os.path.join(root, "ch2_spectrogram_overlay.png")
-        # figh.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "ch2_spectrogram_overlay.pdf")
-        # figh.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch2_spectrogram_overlay.png")
+        figure.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch2_spectrogram_overlay.pdf")
+        figure.savefig(figfilename, bbox_inches="tight")
         # plt.show()
 
         # plot_spectrogram_comparison = 0
@@ -550,24 +550,24 @@ class RetrospectiveAnalyzer(QRunnable):
         p1_offset_no_nan = power_1_offset_list[~np.isnan(power_1_offset_list)]
         p2_offset_no_nan = power_2_offset_list[~np.isnan(power_2_offset_list)]
 
-        # # save the peak shift figure (SG)
-        # fig.set_size_inches(8, 4)
-        # figfilename = os.path.join(root, "peakshift.png")
-        # plt.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "peakshift.pdf")
-        # plt.savefig(figfilename, bbox_inches="tight")
-        # # save only ch1
+        # save the peak shift figure (SG)
+        fig.set_size_inches(8, 4)
+        figfilename = os.path.join(root, "peakshift.png")
+        fig.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "peakshift.pdf")
+        fig.savefig(figfilename, bbox_inches="tight")
+        # save only ch1
         ax1.lines.pop(1)
         xmin, xmax, ymin, ymax = ax1.axis()
         yrange = np.max(p1_offset_no_nan * 1e12) - np.min(p1_offset_no_nan * 1e12)
         ymin = np.min(p1_offset_no_nan * 1e12) - 0.05 * yrange
         ymax = np.max(p1_offset_no_nan * 1e12) + 0.05 * yrange
         ax1.axis([xmin, xmax, ymin, ymax])
-        # figfilename = os.path.join(root, "ch1_peakshift.png")
-        # plt.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "ch1_peakshift.pdf")
-        # plt.savefig(figfilename, bbox_inches="tight")
-        # # save only ch2
+        figfilename = os.path.join(root, "ch1_peakshift.png")
+        fig.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch1_peakshift.pdf")
+        fig.savefig(figfilename, bbox_inches="tight")
+        # save only ch2
         lines.append(
             ax1.plot(
                 t_array,
@@ -581,10 +581,10 @@ class RetrospectiveAnalyzer(QRunnable):
         ymin = np.min(p2_offset_no_nan * 1e12) - 0.05 * yrange
         ymax = np.max(p2_offset_no_nan * 1e12) + 0.05 * yrange
         ax1.axis([xmin, xmax, ymin, ymax])
-        # figfilename = os.path.join(root, "ch2_peakshift.png")
-        # plt.savefig(figfilename, bbox_inches="tight")
-        # figfilename = os.path.join(root, "ch2_peakshift.pdf")
-        # plt.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch2_peakshift.png")
+        fig.savefig(figfilename, bbox_inches="tight")
+        figfilename = os.path.join(root, "ch2_peakshift.pdf")
+        fig.savefig(figfilename, bbox_inches="tight")
         lines.append(
             ax1.plot(
                 t_array,
