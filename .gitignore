@@ -1,12 +1,14 @@
 # IDE configuration
-*/.idea
-*/.vscode
+.idea/
+.vscode/
 
 # Virtual environment and build
-*/venv
-*/build
+*[Vv]env/
+.[Vv]env/
+[Bb]uild/
 
 # Python compiled files
 *.pyc
+__pycache__/
 
 .DS_Store
