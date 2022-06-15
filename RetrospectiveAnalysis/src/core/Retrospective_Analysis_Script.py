@@ -31,7 +31,7 @@ from .MultiLorentzianFit import LorentzianFitting
 
 
 class RetrospectiveAnalyzer(QRunnable):
-    NUM_PLOTS = 5
+    NUM_PLOTS = 12
 
     def __init__(
         self,
@@ -49,6 +49,33 @@ class RetrospectiveAnalyzer(QRunnable):
             root=self._folder_path,
             p1_index=1,
             p2_index=1,
+            p1_name="power1",
+            p2_name="power2",
+            figure_index=0,
+            sweep_timestep=0.22,
+            remove_spikes=False,
+            pkProm=6,
+            save_animation=0,
+        )
+        self._grapher(
+            root=self._folder_path,
+            p1_index=1,
+            p2_index=1,
+            p1_name="power3",
+            p2_name="power4",
+            figure_index=4,
+            sweep_timestep=0.22,
+            remove_spikes=False,
+            pkProm=6,
+            save_animation=0,
+        )
+        self._grapher(
+            root=self._folder_path,
+            p1_index=1,
+            p2_index=1,
+            p1_name="power5",
+            p2_name="power6",
+            figure_index=8,
             sweep_timestep=0.22,
             remove_spikes=False,
             pkProm=6,
@@ -60,6 +87,9 @@ class RetrospectiveAnalyzer(QRunnable):
     def _grapher(
         self,
         root,
+        p1_name: str,
+        p2_name: str,
+        figure_index: int,
         p1_index=1,
         p2_index=1,
         sweep_timestep=0.25,
@@ -150,7 +180,7 @@ class RetrospectiveAnalyzer(QRunnable):
             print(os.path.relpath(filename, root))
 
             # getting the sweep data from matlab vector
-            sweep_data = _get_sweep_data(filename, pkProm)
+            sweep_data = _get_sweep_data(filename, pkProm, p1_name, p2_name)
             all_sweeps_array.append(sweep_data)
 
             if iteration == 0:
@@ -383,12 +413,12 @@ class RetrospectiveAnalyzer(QRunnable):
         # Plotting the spectrograms
 
         # TODO: Figure 1
-        figure = self._figures[0]
+        figure = self._figures[figure_index + 0]
         ax: Axes = figure.subplots()
 
         im = ax.imshow((np.transpose(ch1_spectrogram)), cmap="inferno")
         cbar = figure.colorbar(im, orientation="horizontal")
-        ax.set_title("Ch1 Spectrogram")
+        ax.set_title(f"{p1_name} Spectrogram")
         # axis labels
         nx = t_array.shape[0]
         no_labels = 7  # how many labels on x axis
@@ -412,9 +442,9 @@ class RetrospectiveAnalyzer(QRunnable):
 
         # save the spectrogram figure
         figure.set_size_inches(8, 5)
-        figfilename = os.path.join(root, "ch1_spectrogram.png")
+        figfilename = os.path.join(root, f"{p1_name}_spectrogram.png")
         figure.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "ch1_spectrogram.pdf")
+        figfilename = os.path.join(root, f"{p1_name}_spectrogram.pdf")
         figure.savefig(figfilename, bbox_inches="tight")
 
         # plot line plot over it with tracked peak
@@ -425,19 +455,19 @@ class RetrospectiveAnalyzer(QRunnable):
             linewidth=2,
             color="black",
         )
-        figfilename = os.path.join(root, "ch1_spectrogram_overlay.png")
+        figfilename = os.path.join(root, f"{p1_name}_spectrogram_overlay.png")
         figure.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "ch1_spectrogram_overlay.pdf")
+        figfilename = os.path.join(root, f"{p1_name}_spectrogram_overlay.pdf")
         figure.savefig(figfilename, bbox_inches="tight")
         # plt.show()
 
         # TODO: Figure 2
-        figure = self._figures[1]
+        figure = self._figures[figure_index + 1]
         ax: Axes = figure.subplots()
 
         im2 = ax.imshow((np.transpose(ch2_spectrogram)), cmap="inferno")
         cbar = figure.colorbar(im2, orientation="horizontal")
-        ax.set_title("Ch2 Spectrogram")
+        ax.set_title(f"{p2_name} Spectrogram")
         # axis labels
         ax.set_xticks(x_positions, x_labels)
         ax.set_yticks(y_positions, y_labels)
@@ -449,9 +479,9 @@ class RetrospectiveAnalyzer(QRunnable):
 
         # save the spectrogram figure
         figure.set_size_inches(8, 5)
-        figfilename = os.path.join(root, "ch2_spectrogram.png")
+        figfilename = os.path.join(root, f"{p2_name}_spectrogram.png")
         figure.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "ch2_spectrogram.pdf")
+        figfilename = os.path.join(root, f"{p2_name}_spectrogram.pdf")
         figure.savefig(figfilename, bbox_inches="tight")
 
         # plot line plot over it with tracked peak
@@ -462,9 +492,9 @@ class RetrospectiveAnalyzer(QRunnable):
             linewidth=2,
             color="black",
         )
-        figfilename = os.path.join(root, "ch2_spectrogram_overlay.png")
+        figfilename = os.path.join(root, f"{p2_name}_spectrogram_overlay.png")
         figure.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "ch2_spectrogram_overlay.pdf")
+        figfilename = os.path.join(root, f"{p2_name}_spectrogram_overlay.pdf")
         figure.savefig(figfilename, bbox_inches="tight")
         # plt.show()
 
@@ -506,7 +536,7 @@ class RetrospectiveAnalyzer(QRunnable):
 
         # TODO: Figure 3
         # Plotting the offset versus the initial point versus time.
-        fig = self._figures[2]
+        fig = self._figures[figure_index + 2]
         ax1 = fig.subplots(1, 1)
         ax1.set_title("Offset from initial resonance peak location vs time", size=15)
         ax1.set_ylabel("Offset (pm)", size=15)
@@ -517,7 +547,7 @@ class RetrospectiveAnalyzer(QRunnable):
             t_array,
             power_1_offset_list * 1e12,
             color="blue",
-            label="Detector Slot 1/Top",
+            label=f"Detector Slot {p1_name}/Top",
         )
         # ax1.plot(t_array, lor_p1_offset*1e12,color='orange',label='Lorentzian Fit Power 1')
         # ax1.plot(t_array, power_2_offset_list*1e12, color='r', label='Detector Slot 2/Array Channel 3/Bottom/Power 2')
@@ -526,7 +556,7 @@ class RetrospectiveAnalyzer(QRunnable):
                 t_array,
                 power_2_offset_list * 1e12,
                 color="r",
-                label="Detector Slot 2/Bottom",
+                label=f"Detector Slot {p2_name}/Bottom",
             )
         )
         # ax1.plot(t_array, power_1_offset_list*1e12-power_2_offset_list*1e12, color = 'g', label = 'Power1-Power2')
@@ -534,7 +564,7 @@ class RetrospectiveAnalyzer(QRunnable):
         # plt.draw()
 
         # save the data to a MATLAB matrix (SG)
-        matfilename = os.path.join(root, "matlab_matrix.mat")
+        matfilename = os.path.join(root, f"{p1_name}_{p2_name}_matlab_matrix.mat")
         print(matfilename)
         mdic = {
             "t_array": t_array,
@@ -552,9 +582,9 @@ class RetrospectiveAnalyzer(QRunnable):
 
         # save the peak shift figure (SG)
         fig.set_size_inches(8, 4)
-        figfilename = os.path.join(root, "peakshift.png")
+        figfilename = os.path.join(root, f"{p1_name}_{p2_name}_peakshift.png")
         fig.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "peakshift.pdf")
+        figfilename = os.path.join(root, f"{p1_name}_{p2_name}_peakshift.pdf")
         fig.savefig(figfilename, bbox_inches="tight")
         # save only ch1
         ax1.lines.pop(1)
@@ -563,9 +593,9 @@ class RetrospectiveAnalyzer(QRunnable):
         ymin = np.min(p1_offset_no_nan * 1e12) - 0.05 * yrange
         ymax = np.max(p1_offset_no_nan * 1e12) + 0.05 * yrange
         ax1.axis([xmin, xmax, ymin, ymax])
-        figfilename = os.path.join(root, "ch1_peakshift.png")
+        figfilename = os.path.join(root, f"{p1_name}_peakshift.png")
         fig.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "ch1_peakshift.pdf")
+        figfilename = os.path.join(root, f"{p1_name}_peakshift.pdf")
         fig.savefig(figfilename, bbox_inches="tight")
         # save only ch2
         lines.append(
@@ -573,7 +603,7 @@ class RetrospectiveAnalyzer(QRunnable):
                 t_array,
                 power_2_offset_list * 1e12,
                 color="r",
-                label="Detector Slot 2/Bottom",
+                label=f"Detector Slot {p2_name}/Bottom",
             )
         )
         ax1.lines.pop(0)
@@ -581,16 +611,16 @@ class RetrospectiveAnalyzer(QRunnable):
         ymin = np.min(p2_offset_no_nan * 1e12) - 0.05 * yrange
         ymax = np.max(p2_offset_no_nan * 1e12) + 0.05 * yrange
         ax1.axis([xmin, xmax, ymin, ymax])
-        figfilename = os.path.join(root, "ch2_peakshift.png")
+        figfilename = os.path.join(root, f"{p2_name}_peakshift.png")
         fig.savefig(figfilename, bbox_inches="tight")
-        figfilename = os.path.join(root, "ch2_peakshift.pdf")
+        figfilename = os.path.join(root, f"{p2_name}_peakshift.pdf")
         fig.savefig(figfilename, bbox_inches="tight")
         lines.append(
             ax1.plot(
                 t_array,
                 power_1_offset_list * 1e12,
                 color="blue",
-                label="Detector Slot 1/Top",
+                label=f"Detector Slot {p1_name}/Top",
             )
         )
         ax1.axis("auto")
@@ -599,14 +629,14 @@ class RetrospectiveAnalyzer(QRunnable):
         wavelength_graph = sweep_data.get("wavelength") * 1e9
 
         # TODO: Figure 4
-        fig = self._figures[3]
+        fig = self._figures[figure_index + 3]
         axes = fig.subplots(1, 2)
         ax = axes[0]
         ax.set_title("Initial Power- Wavelength Spectrum")
         ax.set_ylabel("Power (dBm)")
         ax.set_xlabel("Wavelength (nm)")
-        ax.plot(wavelength_graph, all_sweeps_array[0].get("power1"), label="Power1")
-        ax.plot(wavelength_graph, all_sweeps_array[0].get("power2"), label="Power2")
+        ax.plot(wavelength_graph, all_sweeps_array[0].get("power1"), label=p1_name)
+        ax.plot(wavelength_graph, all_sweeps_array[0].get("power2"), label=p2_name)
 
         ax2 = axes[1]
         ax2.set_title("Current Power - Wavelength Spectrum")
@@ -615,12 +645,12 @@ class RetrospectiveAnalyzer(QRunnable):
         ax2.plot(
             wavelength_graph,
             all_sweeps_array[current_sweep_index].get("power1"),
-            label="Power1",
+            label=p1_name,
         )
         ax2.plot(
             wavelength_graph,
             all_sweeps_array[current_sweep_index].get("power2"),
-            label="Power2",
+            label=p2_name,
         )
 
         fig.legend()
@@ -664,7 +694,7 @@ def _spike_remover(offset_data, std_multiplier=1):
     return interpolated_data
 
 
-def _get_sweep_data(filename, pkProm):
+def _get_sweep_data(filename, pkProm, p1_name: str, p2_name: str):
     """
     This function converts the sweep data from a MATLAB vector in to a dictionary datatype that is
     easier for python to read.
@@ -681,9 +711,9 @@ def _get_sweep_data(filename, pkProm):
     # retrieving the wavelengths used during the sweep (nm)
     wavelength = matlab_vector["wavelength"][0]
     # retrieving the values for the power1 channel. (dBm)
-    power1 = matlab_vector["power1"][0]
+    power1 = matlab_vector[p1_name][0]
     # retrieving the values for the power2 channel. (dBm)
-    power2 = matlab_vector["power2"][0]
+    power2 = matlab_vector[p2_name][0]
 
     # Using the scipy find_peaks algorithm to find peaks in the power & power 2 channels. Operating on the raw data here.
     # key parameter: peak prominence, which is the vertical distance between a peak and its lowest contour line.
