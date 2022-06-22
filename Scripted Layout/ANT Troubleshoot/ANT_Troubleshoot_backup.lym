@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>pymacros</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut/>
+ <show-in-menu>false</show-in-menu>
+ <group-name/>
+ <menu-path/>
+ <interpreter>python</interpreter>
+ <dsl-interpreter-name/>
+ <text>"""
+  Script by: Kithmin Wickremasinghe, 2022
+  kithminr@ece.ubc.ca
+  Note:- Credits to sensor_chip script by Lukas Chrostowski, 2020
+  
+  Silicon photonic bio-sensor chip for Fixed-Wavelength Sensor Design Troubleshooting
+  Scripted layout using SiEPIC-Tools in the SiEPIC-EBeam-PDK "EBeam" technology
+  
+  Challenge: 
+  Our Feb-March 2022 testing revealed that the AIM-DP-2020-07 biosensor design suffers from 
+  considerable instability in aqueous solutions.  We hypothesized that accidental sensor undercut 
+  during the oxide-open could result in bubble nuclei during fluidic operation.  Although we tested 
+  a partially oxide-opened chip and this dramatically helped to address the issue, it did not completely 
+  solve the problem.  The sensor accidentally dried out, and we were unable to recover its original stable state.  
+  Here, we brainstorm future test structure designs to isolate the cause of the instability and improve 
+  our resonator performance overall.
+
+"""
+from pya import *
+import numpy as np
+
+# Import functions from SiEPIC-Tools, and get technology details
+from SiEPIC.utils import get_layout_variables
+from SiEPIC.utils import load_Waveguides_by_Tech
+TECHNOLOGY, lv, ly, cell = get_layout_variables()
+
+# Import functions from SiEPIC-Tools
+from SiEPIC.extend import to_itype
+from SiEPIC.scripts import connect_pins_with_waveguide, connect_cell
+from math import floor
+
+dbu = ly.dbu #dbu = 0.001
+
+tech = 'EBeam'
+if TECHNOLOGY['technology_name'] != tech:
+  raise Exception ('This example needs to be executed in a layout with Technology = %s' % tech)
+
+if SiEPIC.__version__ &lt; '0.3.81':
+  pya.MessageBox.warning("Errors", "This example requires SiEPIC-Tools version 0.3.81 or greater.", pya.MessageBox.Ok)
+
+# Layer mapping:
+LayerSiN = ly.layer(TECHNOLOGY['Si'])
+fpLayerN = ly.layer(TECHNOLOGY['FloorPlan'])
+textLayerN = ly.layer(TECHNOLOGY['Text'])
+metalLayer1N = ly.layer(TECHNOLOGY['M1_heater'])
+metalLayer2N = ly.layer(TECHNOLOGY['M2_router'])
+sensor_oxideopen1_LayerN = ly.layer(TECHNOLOGY['Oxide open (to BOX)'])
+sensor_oxideopen2_LayerN = ly.layer(TECHNOLOGY['Text'])
+
+# clean all cells within the present cell
+ly.prune_subcells(cell.cell_index(), 10)
+
+# Example layout function
+def test_UBC_Troubleshoot_ANT(lv, ly, cell, save=True, partial=False, draw_waveguides=True, gasket_v=1):
+
+  ########################################################################
+  # Design parameters
+  ########################################################################
+  
+  #### EDIT ONLY THESE ####
+  gc_wall_gap_edge = 850
+  fluid_wall_gap_edge = 2000
+  fluid_channel_width = 400
+  chip_LH = 8700
+  cladding = "Oxide"
+  #cladding = "Air"
+  
+  chip_width = to_itype(chip_LH, dbu)
+  chip_height = to_itype(chip_LH, dbu)
+  fluidics_wall_startx = to_itype(fluid_wall_gap_edge, dbu)
+  fluidics_wall_stopx = chip_width - to_itype(fluid_wall_gap_edge, dbu)
+  gc_wall_startx = to_itype(gc_wall_gap_edge, dbu)
+  gc_wall_stopx = chip_width - to_itype(gc_wall_gap_edge, dbu)
+  fluidics_channel_width = to_itype(fluid_channel_width, dbu)
+  fluidics_wall_y1 = to_itype(5700, dbu)
+  fluidics_wall_y2 = to_itype(4950, dbu)
+  fluidics_wall_y3 = to_itype(4150, dbu)
+  fluidics_wall_y4 = to_itype(3400, dbu)
+  
+  n_devices = 7
+  #### EDIT ONLY THESE ####
+  
+  ########################################################################
+  # Top cell
+  ########################################################################
+  # Create a top-cell for our layout
+  top_cell = ly.top_cells()[0]
+  top_cell.name = 'UBC_Troubleshoot_ANT'
+  lv.clear_object_selection()
+
+  # clean all cells and shapes within the present cell
+  ly.prune_subcells(top_cell.cell_index(), 10)
+  top_cell.shapes(fpLayerN).clear()
+  top_cell.shapes(metalLayer1N).clear()
+  top_cell.shapes(metalLayer2N).clear()
+  top_cell.shapes(textLayerN).clear()
+
+  # make the top cell the active cell view
+  if top_cell != cell:
+      pya.CellView().active().cell_name=top_cell.name
+  
+  ########################################################################
+  # Draw the floor plan
+  ########################################################################
+  cell.shapes(fpLayerN).insert(Box(0,0, chip_LH/dbu, chip_LH/dbu))
+  
+  ########################################################################
+  # fluidics gasket, layer 1
+  ########################################################################
+  if gasket_v == 1:
+      top_cell.shapes(textLayerN).insert(Box(gc_wall_startx, chip_height, gc_wall_stopx, chip_height-fluidics_channel_width)) # 850,8700 7850,8300
+      top_cell.shapes(textLayerN).insert(Box(fluidics_wall_startx, fluidics_wall_y1, fluidics_wall_stopx, fluidics_wall_y1-fluidics_channel_width)) # 2000,5700 6700,5400
+      top_cell.shapes(textLayerN).insert(Box(fluidics_wall_startx, fluidics_wall_y2, fluidics_wall_stopx, fluidics_wall_y2-fluidics_channel_width)) # 2000,4950 6700,4550
+      top_cell.shapes(textLayerN).insert(Box(fluidics_wall_startx, fluidics_wall_y3, fluidics_wall_stopx, fluidics_wall_y3-fluidics_channel_width)) # 2000,4150 6700,3850
+      top_cell.shapes(textLayerN).insert(Box(fluidics_wall_startx, fluidics_wall_y4, fluidics_wall_stopx, fluidics_wall_y4-fluidics_channel_width)) # 2000,3400 6700,3000
+      top_cell.shapes(textLayerN).insert(Box(gc_wall_startx, fluidics_channel_width, gc_wall_stopx, 0)) # 850,400 7850,0
+
+  for n in range(0,n_devices):
+    ########################################################################
+    # Sub cell - 1550nm
+    ########################################################################
+    # Configure parameter sweep  
+    wavelength = "1550"
+    
+    # Create a sub-cell for our layout
+    # place the sub-cell in the top cell
+    if (n==0)or(n==1)or(n==2)or(n==3):
+      sensor_cell = top_cell.layout().create_cell("%s_SWGFish_SWG_TE_r_30um_%s_gap_%d"%(wavelength, cladding, (n+1)))
+    elif (n==4):
+      sensor_cell = top_cell.layout().create_cell("%s_ANT1_ANT2_LPSWG1_LPSWG2_r_30um_%s_gap_%d%d"%(wavelength, cladding, (n-3), (n-2)))
+    else:
+      sensor_cell = top_cell.layout().create_cell("%s_ANT1_ANT2_LPSWG1_LPSWG2_r_30um_%s_gap_%d%d"%(wavelength, cladding, (n-2), (n-1)))
+    t = Trans(Trans.R0, 0 / dbu, 0 / dbu)
+    top_cell.insert(CellInstArray(sensor_cell.cell_index(), t))
+    sub_cell = sensor_cell.layout()
+    
+    # clean all sub-cells and shapes within the present cell
+    ly.prune_subcells(sensor_cell.cell_index(), 10)
+    sensor_cell.shapes(fpLayerN).clear()
+    sensor_cell.shapes(metalLayer1N).clear()
+    sensor_cell.shapes(metalLayer2N).clear()
+    sensor_cell.shapes(textLayerN).clear()
+    
+    ########################################################################
+    # Parameter Arrays - 1550nm
+    ########################################################################
+    if n==0:
+      p_array = [0.4,0.4,0.45,0.45,0.25,0.25,0.25,0.25] #1
+    elif n==1:
+      p_array = [0.45,0.45,0.5,0.5,0.3,0.3,0.3,0.3] #2
+    elif n==2:
+      p_array = [0.5,0.5,0.55,0.55,0.35,0.35,0.35,0.35] #3
+    elif n==3:
+      p_array = [0.55,0.55,0.6,0.6,0.4,0.4,0.4,0.4] #4
+    elif n==4:
+      p_array = [0.45,0.5,0.4,0.45,0.45,0.5,0.45,0.5] #5
+    elif n==5:
+      p_array = [0.55,0.6,0.5,0.55,0.55,0.6,0.55,0.6] #6
+    
+    ########################################################################
+    # Importing Grating Couplers and Y branches - 1550nm
+    ########################################################################
+    # Import cell from the SiEPIC EBeam Library
+    if cladding=="Oxide":
+      cell_ebeam_y = sub_cell.create_cell("ebeam_y_1550",tech)
+      if (n==7):
+        cell_ebeam_gc = sub_cell.create_cell("GratingCoupler_TM_Oxide_8degrees",tech)
+      else:
+        cell_ebeam_gc = sub_cell.create_cell("GratingCoupler_TE_Oxide_8degrees",tech)
+    elif cladding=="Air":
+      cell_ebeam_y = sub_cell.create_cell("ebeam_y_1550",tech)
+      if (n==7):
+        cell_ebeam_gc = sub_cell.create_cell("GratingCoupler_TM_Air_12degrees",tech)
+      else:
+        cell_ebeam_gc = sub_cell.create_cell("GratingCoupler_TE_Air_12degrees",tech)
+    # get the length of the grating coupler from the cell
+    gc_length = cell_ebeam_gc.bbox().width()*dbu
+    # spacing of the fibre array to be used for testing
+    GC_pitch = 127
+    
+    ########################################################################
+    # Place grating couplers and y branches - 1550nm
+    ######################################################################## 
+    # Grating couplers, Ports 0, 1 (from the bottom up)
+    
+    bias1 = 100
+    x = gc_wall_gap_edge+bias1+(GC_pitch*9)*n
+    y = 1.5*gc_length
+    
+    instGCs = []
+    for i in range(0,9):
+        t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+        instGCs.append(sensor_cell.insert(CellInstArray(cell_ebeam_gc.cell_index(), t)))
+        
+    y += 400-(gc_length+20)
+    for i in range(0,9):
+        t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+        instGCs.append(sensor_cell.insert(CellInstArray(cell_ebeam_gc.cell_index(), t)))
+    
+    x = gc_wall_gap_edge+bias1-(GC_pitch*4)+(GC_pitch*9)*n
+    y = 2.5*gc_length
+    
+    instYs = []
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y+=35
+    x-=20
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=40
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y+=35
+    x-=55
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=25
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=20
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=25
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    
+    x = gc_wall_gap_edge+bias1-(GC_pitch*4)+(GC_pitch*9)*n
+    y = gc_length/2+fluid_channel_width
+    instYys = []
+    t = Trans(Trans.R90, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y = 3.5*gc_length+fluid_channel_width/2
+    x-=40
+    t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x-=30
+    y-=20
+    t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y+=40
+    t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y = 3.5*gc_length+fluid_channel_width/2
+    x+=110
+    t = Trans(Trans.R0, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=30
+    y-=20
+    t = Trans(Trans.R0, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y+=40
+    t = Trans(Trans.R0, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    
+    ########################################################################
+    # Import cells from the Library - 1550nm
+    ########################################################################  
+    # Passive SWG rings
+    if (n==0)or(n==1)or(n==2)or(n==3):
+      swg_ring_parameters = [
+          {"pitch":0.29,"ff":0.65,"gap2":p_array[0],"taperL":15.08,"wtaper":0.10,"fishbone":True}, 
+          {"pitch":0.29,"ff":0.65,"gap2":p_array[1],"taperL":15.08,"wtaper":0.10,"fishbone":True},  
+          {"pitch":0.29,"ff":0.65,"gap2":p_array[2],"taperL":15.08,"wtaper":0.10,"fishbone":False}, 
+          {"pitch":0.29,"ff":0.65,"gap2":p_array[3],"taperL":15.08,"wtaper":0.10,"fishbone":False}]
+    else:
+      swg_ring_parameters = [
+          {"pitch":0.25,"ff":0.65,"gap2":p_array[0],"taperL":15.08,"wtaper":0.10,"fishbone":False}, 
+          {"pitch":0.25,"ff":0.65,"gap2":p_array[1],"taperL":15.08,"wtaper":0.10,"fishbone":False},  
+          {"pitch":0.25,"ff":0.70,"gap2":p_array[2],"taperL":15.08,"wtaper":0.10,"fishbone":False}, 
+          {"pitch":0.25,"ff":0.70,"gap2":p_array[3],"taperL":15.08,"wtaper":0.10,"fishbone":False}, 
+          {"pitch":0.25,"ff":0.50,"gap2":p_array[4],"taperL":15.08,"wtaper":0.18,"fishbone":True}, 
+          {"pitch":0.25,"ff":0.50,"gap2":p_array[5],"taperL":15.08,"wtaper":0.18,"fishbone":True},
+          {"pitch":0.25,"ff":0.60,"gap2":p_array[6],"taperL":15.08,"wtaper":0.10,"fishbone":True}, 
+          {"pitch":0.25,"ff":0.60,"gap2":p_array[7],"taperL":15.08,"wtaper":0.10,"fishbone":True}]
+    swg_rings_1550 = []
+    for i in range(len(swg_ring_parameters)):
+        params = {"w":0.5, "r":30, "row":1, "busL":40, "gap":0,"oxideopen":TECHNOLOGY['Oxide open (to BOX)']}
+        params.update(swg_ring_parameters[i])
+        cell_swg_ring = sub_cell.create_cell("SWG_MultiBox_Ring", "EBeam_Beta", params)
+        swg_rings_1550.append(cell_swg_ring)
+        if not swg_rings_1550[i]:
+            raise Exception ('Cannot import cell SWG_MultiBox_Ring')
+    
+    if (n==0)or(n==1)or(n==2)or(n==3):
+      cell_te_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.5, "r":30, "g":p_array[4], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1550.append(cell_te_strip_ring)
+      cell_te_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.5, "r":30, "g":p_array[5], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1550.append(cell_te_strip_ring)
+    if (n==7):          
+      cell_tm_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.5, "r":30, "g":p_array[6], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1550.append(cell_tm_strip_ring)
+      cell_tm_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.5, "r":30, "g":p_array[7], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1550.append(cell_tm_strip_ring)
+    
+    ########################################################################
+    # Sensor unit cell - 1550nm
+    ########################################################################
+  
+    # sensor SWG regions  
+    bias2 = bias1+40
+    x = fluid_wall_gap_edge+bias2+(GC_pitch*6)*n
+    k = 0.7
+    
+    for i in range(len(swg_rings_1550)):
+        if (i%2) == 0:
+          y = 4150-fluid_channel_width/2
+        else:
+          y = 3400-fluid_channel_width/2
+        if (i==4)or(i==5)or(i==6)or(i==7):
+          if (n==0)or(n==1)or(n==2)or(n==3):
+            t = Trans(Trans.R90, to_itype(x,dbu)+i*k*GC_pitch/dbu, to_itype(y,dbu))
+          else:
+            t = Trans(Trans.R0, to_itype(x,dbu)+i*k*GC_pitch/dbu, to_itype(y,dbu)) 
+        else:
+          t = Trans(Trans.R0, to_itype(x,dbu)+i*k*GC_pitch/dbu, to_itype(y,dbu)) 
+        sensor_cell.insert(CellInstArray(swg_rings_1550[i].cell_index(), t))   
+    
+    
+    ########################################################################
+    # Sub cell - 1310nm
+    ######################################################################## 
+    # Configure parameter sweep  
+    wavelength = "1310"
+    
+    # Create a sub-cell for our layout
+    # place the sub-cell in the top cell
+    if (n==0)or(n==1)or(n==2)or(n==3):
+      sensor_cell = top_cell.layout().create_cell("%s_SWGFish_SWG_TE_TM_r_30um_%s_gap_%d"%(wavelength, cladding, (n+1)))
+    elif (n==4):
+      sensor_cell = top_cell.layout().create_cell("%s_GF1_GF2_LPSWG1_LPSWG2_r_30um_%s_gap_%d%d"%(wavelength, cladding, (n-3), (n-2)))
+    else:
+      sensor_cell = top_cell.layout().create_cell("%s_GF1_GF2_LPSWG1_LPSWG2_r_30um_%s_gap_%d%d"%(wavelength, cladding, (n-2), (n-1)))
+    t = Trans(Trans.R0, 0 / dbu, 0 / dbu)
+    top_cell.insert(CellInstArray(sensor_cell.cell_index(), t))
+    sub_cell = sensor_cell.layout()
+    
+    # clean all sub-cells and shapes within the present cell
+    ly.prune_subcells(sensor_cell.cell_index(), 10)
+    sensor_cell.shapes(fpLayerN).clear()
+    sensor_cell.shapes(metalLayer1N).clear()
+    sensor_cell.shapes(metalLayer2N).clear()
+    sensor_cell.shapes(textLayerN).clear()
+    
+    ########################################################################
+    # Parameter Arrays - 1310nm
+    ########################################################################
+    if n==0:
+      p_array = [0.35,0.35,0.4,0.4,0.25,0.25,0.25,0.25] #1
+    elif n==1:
+      p_array = [0.4,0.4,0.45,0.45,0.3,0.3,0.3,0.3] #2
+    elif n==2:
+      p_array = [0.45,0.45,0.5,0.5,0.35,0.35,0.35,0.35] #3
+    elif n==3:
+      p_array = [0.5,0.5,0.55,0.55,0.4,0.4,0.4,0.4] #4
+    elif n==4:
+      p_array = [0.25,0.35,0.25,0.35,0.4,0.45,0.35,0.4] #5 
+    elif n==5:
+      p_array = [0.45,0.55,0.45,0.55,0.5,0.55,0.45,0.5] #6 
+    
+    ########################################################################
+    # Importing Grating Couplers  and Y branches - 1310nm
+    ########################################################################
+    # Import cell from the SiEPIC EBeam Library
+    if cladding=="Oxide":
+      cell_ebeam_y = sub_cell.create_cell("y_splitter_1310",tech)
+      if (n==7):
+        cell_ebeam_y = sub_cell.create_cell("ebeam_y_1310",tech)
+        cell_ebeam_gc = sub_cell.create_cell("GC_TM_1310_8degOxide_ANT",tech)
+      else:
+        cell_ebeam_gc = sub_cell.create_cell("GC_TE_1310_8degOxide_BB",tech)
+    elif cladding=="Air":
+      cell_ebeam_y = sub_cell.create_cell("y_splitter_1310",tech)
+      if (n==7):
+        cell_ebeam_y = sub_cell.create_cell("ebeam_y_1310",tech)
+        cell_ebeam_gc = sub_cell.create_cell("GC_TM_1310_8degAir_ANT",tech)
+      else:
+        cell_ebeam_gc = sub_cell.create_cell("GC_TE_1310_8degAir_BB",tech)
+        
+    # get the length of the grating coupler from the cell
+    gc_length = cell_ebeam_gc.bbox().width()*dbu
+    # spacing of the fibre array to be used for testing
+    GC_pitch = 127
+    
+    ########################################################################
+    # place grating couplers and y branches - 1310nm
+    ######################################################################## 
+    
+    # Grating couplers, Ports 0, 1 (from the bottom up)
+    
+    bias1 = 100
+    x = gc_wall_gap_edge+bias1+(GC_pitch*9)*n
+    y = chip_LH-fluid_channel_width/2-4.4*gc_length
+    
+    instGCs = []
+    for i in range(0,9):
+        t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+        instGCs.append(sensor_cell.insert(CellInstArray(cell_ebeam_gc.cell_index(), t)))
+        
+    y += 410-(gc_length+25)
+    for i in range(0,9):
+        t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+        instGCs.append(sensor_cell.insert(CellInstArray(cell_ebeam_gc.cell_index(), t)))
+    
+    x = gc_wall_gap_edge+bias1-(GC_pitch*4)+(GC_pitch*9)*n
+    y = chip_LH-fluid_channel_width/2+3*gc_length
+    
+    instYs = []
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y-=50
+    x-=20
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=40
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y-=50
+    x-=55
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=25
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=20
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=25
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYs.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    
+    x = gc_wall_gap_edge+bias1-(GC_pitch*4)+(GC_pitch*9)*n
+    y = chip_LH-(gc_length/4+fluid_channel_width)
+    instYys = []
+    t = Trans(Trans.R270, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y = chip_LH-(2.5*gc_length+fluid_channel_width/2)
+    x-=30
+    t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x-=50
+    y-=20
+    t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y+=40
+    t = Trans(Trans.R180, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y = chip_LH-(2.5*gc_length+fluid_channel_width/2)
+    x+=110
+    t = Trans(Trans.R0, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    x+=50
+    y-=20
+    t = Trans(Trans.R0, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    y+=40
+    t = Trans(Trans.R0, to_itype(x,dbu)+i*GC_pitch/dbu, to_itype(y,dbu))
+    instYys.append(sensor_cell.insert(CellInstArray(cell_ebeam_y.cell_index(), t)))
+    
+    ########################################################################
+    # Import cells from the Library - 1310nm
+    ########################################################################  
+    # Passive SWG rings
+    if (n==0)or(n==1)or(n==2)or(n==3):
+      swg_ring_parameters = [
+          {"w":0.5,"pitch":0.2,"ff":0.5,"gap2":p_array[0],"taperL":15,"wtaper":0.1,"fishbone":True}, 
+          {"w":0.5,"pitch":0.2,"ff":0.5,"gap2":p_array[1],"taperL":15,"wtaper":0.1,"fishbone":True},  
+          {"w":0.5,"pitch":0.2,"ff":0.5,"gap2":p_array[2],"taperL":15,"wtaper":0.1,"fishbone":False}, 
+          {"w":0.5,"pitch":0.2,"ff":0.5,"gap2":p_array[3],"taperL":15,"wtaper":0.1,"fishbone":False}]
+    else:
+      swg_ring_parameters = [
+          {"w":0.35,"pitch":0.200,"ff":0.5000,"gap2":p_array[0],"taperL":15,"wtaper":0.06,"fishbone":True}, 
+          {"w":0.35,"pitch":0.200,"ff":0.5000,"gap2":p_array[1],"taperL":15,"wtaper":0.06,"fishbone":True},  
+          {"w":0.28,"pitch":0.295,"ff":0.4567,"gap2":p_array[2],"taperL":15,"wtaper":0.12,"fishbone":True}, 
+          {"w":0.28,"pitch":0.295,"ff":0.4567,"gap2":p_array[3],"taperL":15,"wtaper":0.12,"fishbone":True}, 
+          {"w":0.5,"pitch":0.250,"ff":0.4000,"gap2":p_array[4],"taperL":15,"wtaper":0.10,"fishbone":True}, 
+          {"w":0.5,"pitch":0.250,"ff":0.4000,"gap2":p_array[5],"taperL":15,"wtaper":0.10,"fishbone":True},
+          {"w":0.5,"pitch":0.250,"ff":0.4000,"gap2":p_array[6],"taperL":15,"wtaper":0.14,"fishbone":True}, 
+          {"w":0.5,"pitch":0.250,"ff":0.4000,"gap2":p_array[7],"taperL":15,"wtaper":0.14,"fishbone":True}]
+    swg_rings_1310 = []
+    for i in range(len(swg_ring_parameters)):
+        params = {"wport":0.35, "r":30, "row":1, "busL":40, "gap":0,"oxideopen":TECHNOLOGY['Oxide open (to BOX)']}
+        params.update(swg_ring_parameters[i])
+        cell_swg_ring = sub_cell.create_cell("SWG_MultiBox_Ring", "EBeam_Beta", params)
+        swg_rings_1310.append(cell_swg_ring)
+        if not swg_rings_1310[i]:
+            raise Exception ('Cannot import cell SWG_MultiBox_Ring')
+    
+    if (n==0)or(n==1)or(n==2)or(n==3):
+      cell_te_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.35, "r":30, "g":p_array[4], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1310.append(cell_te_strip_ring)
+      cell_te_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.35, "r":30, "g":p_array[5], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1310.append(cell_te_strip_ring)        
+      cell_tm_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.35, "r":30, "g":p_array[6], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1310.append(cell_tm_strip_ring)
+      cell_tm_strip_ring = sub_cell.create_cell("Ring", "EBeam", {"w":0.35, "r":30, "g":p_array[7], "b":60, "oxideopen":TECHNOLOGY['Oxide open (to BOX)']})
+      swg_rings_1310.append(cell_tm_strip_ring)
+    
+    ########################################################################
+    # Sensor unit cell - 1310nm
+    ########################################################################
+  
+    # sensor SWG regions  
+    bias2 = bias1+40
+    x = fluid_wall_gap_edge+bias2+(GC_pitch*6)*n
+    k = 0.7
+    
+    for i in range(len(swg_rings_1310)):
+        if (i%2) == 0:
+          y = 4950-fluid_channel_width/2
+        else:
+          y = 5700-fluid_channel_width/2
+        if (i==4)or(i==5)or(i==6)or(i==7):
+          if (n==0)or(n==1)or(n==2)or(n==3):
+            t = Trans(Trans.R90, to_itype(x,dbu)+i*k*GC_pitch/dbu, to_itype(y,dbu))
+          else:
+            t = Trans(Trans.R0, to_itype(x,dbu)+i*k*GC_pitch/dbu, to_itype(y,dbu)) 
+        else:
+          t = Trans(Trans.R0, to_itype(x,dbu)+i*k*GC_pitch/dbu, to_itype(y,dbu)) 
+        sensor_cell.insert(CellInstArray(swg_rings_1310[i].cell_index(), t))    
+   
+   
+    
+  # Zoom out
+  lv.clear_object_selection()
+  lv.zoom_fit()
+  lv.max_hier()
+
+  # Save a screenshot of the layout:
+  # dir_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Test_structures.png")
+  # lv.save_screenshot(dir_path[12:])
+
+  # Save the layout, without PCell info, for fabrication
+  save_options = pya.SaveLayoutOptions()
+  save_options.write_context_info=False  # remove $$$CONTEXT_INFO$$$
+  #save_options.format='GDS' # standard format
+  save_options.format='OASIS' # smaller file size
+  save_options.oasis_compression_level=10
+  file_out = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Test_structures.%s" % save_options.format[0:3])
+  print("saving output %s: %s" % (save_options.format, file_out) )
+  #ly.write(file_out,save_options)
+  
+test_UBC_Troubleshoot_ANT(lv, ly, cell, save=True, partial=False, draw_waveguides=True, gasket_v=1)
+  
+
+
+
+
+
+
+
+
+</text>
+</klayout-macro>
