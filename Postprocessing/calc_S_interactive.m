@@ -19,14 +19,17 @@
 clear; close all; clc;
 
 % read in the config file get the number of files through which to loop
-configFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-3/Data/2021-10-26_Gemina_Phase_1_Trial_4/BulkRI/Quantification/Config.xlsx';
-outputFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-3/Data/2021-10-26_Gemina_Phase_1_Trial_4/BulkRI/Quantification/Output.xlsx';
+configFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2022-1/Results/2022-03-05_AIM_BulkRI_IPA_EtOH/Quantification/Config.xlsx';
+outputFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2022-1/Results/2022-03-05_AIM_BulkRI_IPA_EtOH/Quantification/Output.xlsx';
+
+solutionUnits = '% IPA';
+%solutionUnits = 'M NaCl';
 
 tbl = readtable(configFile);
 numFiles = height(tbl);
 
 % number of datapoints to average for each measurement
-num_avg = 10;
+num_avg = 100;
 % figure positions
 fig1Pos = [103 490 392 195];
 fig2Pos = [103 490 392 195];
@@ -77,7 +80,7 @@ for fileIdx = 1:numFiles
     for RIidx = 1:length(RIs)
         % get the user input for this region
         title(['File ', num2str(fileIdx), ': RI region ', num2str(RIidx), ': click on the centre of the ', ...
-                num2str(saltConc(RIidx)), 'M NaCl region.']);
+                num2str(saltConc(RIidx)), solutionUnits, ' region.']);
         [x,y,button] = ginput(1);
         RIloc(fileIdx, RIidx) = uint16(x);
         % check that we have enough data on both sides of the click to do
