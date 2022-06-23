@@ -1,14 +1,19 @@
-# IDE configuration
-.idea/
-.vscode/
+# Any hidden file or directory
+.*
+.*/
+!.gitignore
 
 # Virtual environment and build
 *[Vv]env/
-.[Vv]env/
 [Bb]uild/
 
 # Python compiled files
 *.pyc
 __pycache__/
+
+# Testing
+*test*/
+!test/
+!tests/
 
 .DS_Store
