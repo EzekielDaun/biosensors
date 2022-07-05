@@ -15,18 +15,21 @@
 clear; close all; clc;
 
 % read in the config file get the number of files through which to loop
-configFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-3/Data/2021-10-26_Gemina_Phase_1_Trial_4/Bioassay/ShiftQuantification/Config.xlsx';
-outputFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2021-3/Data/2021-10-26_Gemina_Phase_1_Trial_4/Bioassay/ShiftQuantification/Output.xlsx';
+configFile = '/Users/sgrist/Dropbox/UBC_DP_Biosensor/2022-02/Data/2022-06-02_Gemina-Phase-3b_Trial-1/Bioassay/ShiftQuantification/Config.xlsx';
 
 tbl = readtable(configFile);
 numFiles = height(tbl);
 
 % number of datapoints to average for each measurement
-num_avg = 5;
+num_avg = 10;
 % figure positions
 fig1Pos = [103 490 392 195];
 fig2Pos = [103 490 392 195];
 newcolors = [{[0 0 1]},{[1 0 0]},{[0.8 0 1]},{[0 0.8 0.2]},{[1 0.5 0]},{[0.7 0.7 0]},{[0 0.4 0.1]},{[0.2 0 0.8]}];
+
+% what is the expected format of the data (all channels in
+% 'collatedOffsets' or individual 'power_x_offset_list' variables?
+dataCollatedOffsets = 1;
 
 % loop through the files to do the analysis
 for fileIdx = 1:numFiles
@@ -46,6 +49,7 @@ for fileIdx = 1:numFiles
     
     % load in the data file
     load([filePath, '/matlab_matrix.mat'])
+    close all;
     
     % load in and plot the peak shift data
     h1 = figure(fileIdx); 
@@ -56,11 +60,19 @@ for fileIdx = 1:numFiles
     for sensorIdx = 1:numSensors
         % if the variable name exists, add the data to an array.  If not,
         % make warning
-        chExist = evalin( 'base', ['exist(', '''power_', num2str(sensorIdx), '_offset_list''',',''var'') == 1'] );
-        if chExist
-            evalin('base', ['powArray{fileIdx, sensorIdx} = ', 'power_', num2str(sensorIdx), '_offset_list;']);       
+        if ~dataCollatedOffsets
+            chExist = evalin( 'base', ['exist(', '''power_', num2str(sensorIdx), '_offset_list''',',''var'') == 1'] );
+            if chExist
+                evalin('base', ['powArray{fileIdx, sensorIdx} = ', 'power_', num2str(sensorIdx), '_offset_list;']);       
+            else
+                warning(['Warning: no data for sensor ', num2str(sensorIdx)])
+            end
         else
-            warning(['Warning: no data for sensor ', num2str(sensorIdx)])
+            if size(collatedOffsets, 1) >= sensorIdx
+                powArray{fileIdx, sensorIdx} = collatedOffsets(sensorIdx, :);
+            else 
+                warning(['Warning: no data for sensor ', num2str(sensorIdx)])
+            end
         end
         
         hold on;
