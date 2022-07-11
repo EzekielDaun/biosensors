@@ -77,7 +77,7 @@ nexttile
 plot(Time,flow2)
 title('Smoothened Set Fluigent Channel 2 Flow Rate (uL/min)')
 
-xlabel(t,'Time (hrs)','FontSize', 14)
+xlabel(t,'Time (hrs)','FontSize', 15)
 
 
 
