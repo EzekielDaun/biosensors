@@ -1,31 +1,32 @@
+import logging
 import os
+import re
 import sys
-import threading
 
-from typing import List
 
 from PySide6.QtWidgets import (
     QMainWindow,
     QFileSystemModel,
     QFileDialog,
-    QHBoxLayout,
+    QListWidgetItem,
+    QCheckBox,
 )
 from PySide6.QtCore import (
     QDir,
-    QProcess,
-    QProcessEnvironment,
-    QThreadPool,
+    Qt,
     Signal,
     Slot,
 )
-
-from scipy.io import loadmat
+from PySide6.QtGui import QTextCursor
 
 from ..uic.ra_main_window import Ui_RaMainWindow
-from ..widgets.ra_figure_widget import RaFigureWidget
+from ..widgets.ra_tab_plotter_widget import RaFilePlotter, RaFolderPlotter
+from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
 
-from ..core.MultiLorentzianFit import LorentzianFitting
-from ..core.Retrospective_Analysis_Script import RetrospectiveAnalyzer
+from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
+
+
+logger = logging.getLogger(__name__)
 
 
 class RaMainWindow(QMainWindow):
@@ -38,154 +39,173 @@ class RaMainWindow(QMainWindow):
 
         self.ui.statusbar.showMessage("Retrospective Analysis")
 
+        # initialize file treeview
         model = QFileSystemModel()
         model.setRootPath(QDir.rootPath())
         self.ui.treeView.setModel(model)
         self.ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
 
+        # file plotter
+        self.file_plotter = RaFilePlotter()
+        self.ui.splitter.insertWidget(0, self.file_plotter)
+        self.ui.splitter.setStretchFactor(0, 2)
+
+        # spectrum plotter
+        # intended to be popped up so not in any layout
+        self.folder_plotter = RaFolderPlotter()
+        self.folder_plotter.signal_spectrograms_work_done.connect(
+            self.ui.spectrogramButton.setEnabled
+        )
+
+        # peak tracker
+        self.peak_tracker_widget = RaPeakTrackerWidget()
+        self.ui.splitter_2.addWidget(self.peak_tracker_widget)
+        self.ui.splitter_2.setStretchFactor(1, 2)
+        self.peak_tracker_widget.signal_work_done.connect(
+            self.ui.trackPeakButton.setEnabled
+        )
+        self.peak_tracker_widget.signal_work_done.connect(
+            self.ui.saveResultsButton.setEnabled
+        )
+
         # Redirect stdout and stderr to log panel
+        self._signal_write.connect(self.slot_log_write)
         sys.stdout = self
         sys.stderr = self
-        self._signal_write.connect(self.slot_write)
-        print("-----Retrospective Analysis-----")
 
-        # Raw data plot for selected file
-        self.raw_figure_widget = RaFigureWidget()
-        self.ui.plot_widget.setLayout(QHBoxLayout())
-        self.ui.plot_widget.layout().addWidget(self.raw_figure_widget)
-        self.ui.plot_widget.layout().setContentsMargins(0, 0, 0, 0)
+        self.ui.analyzerSettingsGroupBox.setEnabled(False)
+        self.ui.plotSpectrogramsGroupBox.setEnabled(False)
+        self.ui.peakTracingGroupBox.setEnabled(False)
 
-        #
-        self.figure_widget2 = RaFigureWidget()
-        self.ui.tabWidget.addTab(self.figure_widget2, "2")
-
-        #
-        self.figure_widget3 = RaFigureWidget()
-        self.ui.tabWidget.addTab(self.figure_widget3, "3")
-
-    # Redirect stdout and stderr to log panel
+    # stdout redirection requirement
     def write(self, m):
         self._signal_write.emit(m)
 
+    # stdout redirection requirement
     def flush(self):
         pass
 
     @Slot()
-    def slot_write(self, text):
+    def slot_log_write(self, text):
+        self.ui.textBrowser.moveCursor(QTextCursor.End)
         self.ui.textBrowser.insertPlainText(text)
+        self.ui.textBrowser.ensureCursorVisible()
 
     # Slots
     def slot_open_clicked(self):
         folder_path = QFileDialog.getExistingDirectory(
             dir=os.path.expanduser("~"),
         )
-        if folder_path != "":
+        if folder_path == "":
+            self.ui.statusbar.showMessage(f"Retrospective Analysis - Open cancelled")
+        else:
             tree_view = self.ui.treeView
             model: QFileSystemModel = tree_view.model()  # type: ignore
             tree_view.setRootIndex(model.index(folder_path))
             self.ui.statusbar.showMessage(f"Retrospective Analysis - {folder_path}")
-        else:
-            self.ui.statusbar.showMessage(f"Retrospective Analysis - Open cancelled")
+            os.chdir(folder_path)
+
+            # clear
+            self.ui.powerListWidget.clear()
+            self.ui.peakTrackerPowerListWidget.clear()
+            self.ui.timeStampComboBox.clear()
+            self.peak_tracker_widget.clear()
+            self.file_plotter.clear()
+
+            # setup timestamp selector combo box
+            pat = re.compile(r".*time.*\.csv")
+            for f in filter(lambda x: pat.match(x), iter(os.listdir(folder_path))):
+                self.ui.timeStampComboBox.addItem(str(f))
+
+            self.ui.analyzerSettingsGroupBox.setEnabled(True)
+            self.ui.plotSpectrogramsGroupBox.setEnabled(False)
+            self.ui.peakTracingGroupBox.setEnabled(False)
+            self.ui.saveResultsButton.setEnabled(False)
 
     def slot_file_changed(self, model_index):
         tree_view = self.ui.treeView
         model: QFileSystemModel = tree_view.model()  # type: ignore
         file_path = model.filePath(model_index)
         file_name = os.path.basename(file_path)
-        file_basename, file_ext = os.path.splitext(file_name)
+        _, file_ext = os.path.splitext(file_name)
         if model.isDir(model.index(file_path)):
             tree_view.setRootIndex(model.index(file_path))
         elif file_ext != ".mat":
-            print(f"{file_name} is not a matlab workspace file")
+            logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            matlab_vector = loadmat(file_path)
-            raw_power: List[float] = matlab_vector["power1"][0]
-            wavelength: List[float] = matlab_vector["wavelength"][0]
+            self.file_plotter.plot_file(file_path)
 
-            sweep_fit = LorentzianFitting(raw_power, wavelength, 1)
+    def slot_load_analyzer(self):
+        # clear power list widget
+        self.ui.powerListWidget.clear()
+        self.ui.peakTrackerPowerListWidget.clear()
+        # clear peak tracker
+        self.peak_tracker_widget.clear()
 
-            figure_widget = self.raw_figure_widget
-            figure_canvas = figure_widget.figure_canvas
-            figure = figure_widget.figure
-
-            figure.clear()
-            axes = figure.subplots()
-            axes.set_title(f"Raw Data: {file_basename}")
-            axes.plot(sweep_fit.nm_wavelength, sweep_fit.raw_power_array)
-            figure_canvas.draw()
-
-    def slot_analyze_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, filter="*.py *.pyw")
-        file_name = os.path.basename(file_path)
-        file_basename, file_ext = os.path.splitext(file_name)
-
-        if (
-            file_path.__len__() > 0
-            and self.ui.treeView.selectedIndexes().__len__() != 0
-        ):
-            selected_mat_file = self.ui.treeView.model().filePath(  # type: ignore
-                self.ui.treeView.selectedIndexes()[0]
+        # load analyzer parameters
+        try:
+            pattern = eval(self.ui.patternLineEdit.text())
+            wavelength_multiplier = float(
+                eval(self.ui.wavelengthMultiplierLineEdit.text())
             )
+            time_multiplier = float(eval(self.ui.timeMultiplierLineEdit.text()))
+        except Exception as e:
+            logger.error(f"{e}")
+            raise e
 
-            # Start a process to run the specified script
-            proc = QProcess(self)
-            proc.setProcessEnvironment(QProcessEnvironment.systemEnvironment())
-            proc.startDetached("python", [f"{file_path}", f"{selected_mat_file}"])
-            self.ui.statusbar.showMessage(
-                f"Retrospective Analysis - Running {file_path}"
-            )
-        elif file_path.__len__() == 0:
-            self.ui.statusbar.showMessage(
-                f"Retrospective Analysis - Open script file cancelled"
-            )
-
-    def slot_analyze_folder(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, filter="*.py *.pyw")
-        file_name = os.path.basename(file_path)
-        file_basename, file_ext = os.path.splitext(file_name)
-
-        if file_path.__len__() > 0:
-            selected_folder = self.ui.treeView.model().filePath(  # type: ignore
-                self.ui.treeView.rootIndex()
-            )
-
-            # Start a process to run specified script
-            proc = QProcess(self)
-            proc.setProcessEnvironment(QProcessEnvironment.systemEnvironment())
-            proc.startDetached("python", [f"{file_path}", f"{selected_folder}"])
-            self.ui.statusbar.showMessage(
-                f"Retrospective Analysis - Running {file_path}"
-            )
-        elif file_path.__len__() == 0:
-            self.ui.statusbar.showMessage(
-                f"Retrospective Analysis - Open script file cancelled"
-            )
-
-    def slot_analyze_clicked(self):
-        selected_folder = self.ui.treeView.model().filePath(
+        path = self.ui.treeView.model().filePath(  # type: ignore
             self.ui.treeView.rootIndex()
         )
+        timestamp = self.ui.timeStampComboBox.currentText()
+        try:
+            timestamp = float(timestamp)
+        except ValueError as e:  # if parse float failed
+            if re.match(r".*\.csv", timestamp):
+                pass
+            else:
+                logger.error(f"'{timestamp}' is not a number or a csv file")
+                raise e
 
-        # Clear previous tabs
-        tab_widget = self.ui.tabWidget
-        for index in range(0, self.ui.tabWidget.count()):
-            tab_widget.widget(index).deleteLater()
-        tab_widget.clear()
-
-        # Add new tabs as needed
-        figures = []
-        figure_canvass = []
-        for i in range(0, RetrospectiveAnalyzer.NUM_PLOTS):
-            ra_figure_widget = RaFigureWidget()
-            tab_widget.addTab(ra_figure_widget, f"Figure {i+1}")
-            figures.append(ra_figure_widget.figure)
-            figure_canvass.append(ra_figure_widget.figure_canvas)
-
-        analyzer = RetrospectiveAnalyzer(
-            folder_path=selected_folder,
-            figures=figures,
-            canvass=figure_canvass,
+        self.__analyzer = Analyzer(
+            path, timestamp, pattern, wavelength_multiplier, time_multiplier
         )
 
-        analyzer.setAutoDelete(False)
-        QThreadPool.globalInstance().start(analyzer)
+        file_num, power_num = self.__analyzer.info()
+        logger.info(f"{path} has {file_num} files with {power_num} power channels")
+        for i in range(power_num):
+            item = QListWidgetItem()
+            checkbox = QCheckBox(f"Power {i+1}")
+            self.ui.powerListWidget.addItem(item)
+            self.ui.powerListWidget.setItemWidget(item, checkbox)
+
+            item = QListWidgetItem()
+            checkbox = QCheckBox(f"Power {i+1}")
+            checkbox.setChecked(True)
+            self.ui.peakTrackerPowerListWidget.addItem(item)
+            self.ui.peakTrackerPowerListWidget.setItemWidget(item, checkbox)
+
+        self.ui.plotSpectrogramsGroupBox.setEnabled(True)
+        self.ui.peakTracingGroupBox.setEnabled(True)
+
+    def slot_plot_spectrogram(self):
+        self.folder_plotter.analyzer = self.__analyzer
+        lw = self.ui.powerListWidget
+        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        self.folder_plotter.plot_spectrograms(
+            powers,
+            self.ui.sampleStepSpinBox.value(),
+            self.ui.xTicksSpinBox.value(),
+            self.ui.yTicksSpinBox.value(),
+            self.ui.powerUnitLineEdit.text(),
+        )
+        self.folder_plotter.show()
+
+        logger.info("Spectrogram plotting started!")
+
+    def slot_track_peak(self):
+        lw = self.ui.peakTrackerPowerListWidget
+        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        self.peak_tracker_widget.plot_initial(self.__analyzer, powers, 0.2)
+
+    def slot_save_results(self):
+        self.peak_tracker_widget.save_results()

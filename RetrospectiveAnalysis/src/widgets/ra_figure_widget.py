@@ -1,10 +1,11 @@
-from PySide6.QtGui import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+import matplotlib
 from matplotlib.figure import Figure
-from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout
+
+matplotlib.set_loglevel("info")
 
 
 class RaFigureWidget(QWidget):

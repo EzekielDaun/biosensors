@@ -1,29 +1,118 @@
-# Retrospective Analysis GUI
+# Retrospective Analysis GUI Alpha-1
 
 ## Setup
 
-The developing is under Python 3.9.13. Lower version of Python 3 should work but not verified.
+Python version >= 3.10
 
 Clone this repo and navigate to this folder.
 
 ### Virtual Environment (Recommended, Optional)
 
 ```
-python -m venv venv
+python -m venv .venv
 ```
+
+Then activate the virtual environment.
+
+Official tutorial for the [virtual environment](https://docs.python.org/3/tutorial/venv.html).
 
 ### Dependencies
 
-Activate the virtual environment and run:
-
 ```
 pip install -r requirements.txt
-python retrospective_analysis_gui.pyw
+pythonw retrospective_analysis_gui.pyw
 ```
 
 ## Usage
 
-- File->Open or `ctrl+O`
-- Select the folder contains the data files.
-- Click `Analyze`
-- Wait until all 12 figures are rendered and the log panel stop updating.
+1. In the menubar, click `File`->`Open Folder` or `ctrl+O`
+1. Select the folder containing the data files
+1. Specify analyzer parameters and click `Load`
+1. (Optional) In `(Optional) Plot Spectrograms`, select power channels and proper parameters, then click `Spectrogram`
+1. Select power channels and click `Start Track`
+1. Once the results show up, use the tab to navigate between power channels.
+1. If necessary, manually adjust the traces:
+   1. Select the trace (Trace1 Time x-xx) in the combo box
+   1. Adjust the offset by multiples of FSR or any arbitrary number in the spinboxes
+1. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the folder that was selected before.
+1. Assign an assay name to this channel in the `Assay` block.
+1. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (**This figure will not be saved automatically**).
+
+## FAQ
+
+TODO:
+
+## Contribute
+
+If you find (or believe that it is) a critical bug in this project, please submit an [issue](https://github.com/SiEPIC/biosensors/issues).
+
+If you are not sure about how to use a feature or have any suggestions or ideas for the project, feel free to start a [discussion](https://github.com/SiEPIC/biosensors/discussions).
+
+### Develop Notes
+
+- [Type Hints](https://peps.python.org/pep-0585/)
+
+  Although Python is a dynamically typed language, it is still possible to use type hints for better clarity. With type hint, IDE/Editor will also have better support for auto-completion and linting.
+
+- Use code formatter
+
+  A formatter is cool, right? I can't see any reason to refuse using a formatter.
+
+  Although using a formatter is not a must, if your cooperator is using a formatter, when they are modifying your unformatted code, they would either have a huge git `diff` or have to make a separate formatting commit. Either will corrupt the git `blame` history.
+
+  This project is using [black](https://black.readthedocs.io/en/stable/integrations/editors.html) with the default setting.
+
+- PySide/PyQt
+
+  This project is using PySide6 due to its LGPL license. (PyQt is under GPLv3 or commercial license.) But due to historical reasons, you may find more resources for PyQt. PySide and PyQt are 99% identical in usage, so the resources for PyQt are usually applicable to PySide as well.
+
+  [Get Started with PySide](https://doc.qt.io/qtforpython-6/index.html)
+
+  Most widgets are designed by `pyside6-designer` and converted to Python files by `pyside6-uic`. See [official tutorials](https://doc.qt.io/qtforpython-6/tutorials/basictutorial/uifiles.html) for guidance on how to use them. For creating signals and slots, currently, this project is using a mixed way of either creating them in designer or directly in code. Either way is fine, but it's preferred to be consistent inside one module/widget/window unless the function to be implemented can only be done in one specific way.
+
+- Pythonic, iterator, Functional Programming (FP) and parallelism
+
+  I like one concept in FP rather than `Pythonic`, that FP tries to avoid using temporary variables and instead uses `lambda` and `map` to describe the operation on the data.
+
+  For example, do a calculation on each of the elements in an array and collect the result:
+
+  ```C
+  /* C */
+  int results[];
+  ...
+  for(int index=0; index < items.length; index++) {
+     results[index] = calc(items[index]);
+  }
+  ```
+
+  ```Python
+  # Pythonic
+  results = [calc(x) for x in items]
+
+  # FP
+  results = map(lambda x: calc(x), items)
+  ```
+
+  But say, if each element is a list of data, and you want to first filter out some lists, then flatten the nested list, and want the calculation to be applied on every 2 adjacent elements.
+
+  ```Python
+  # Pythonic
+  results = [x for xs in items if is_good(xs) for x in xs] # this only do the filtering and flatten
+                                                           # how to make a sliding window in a Pythonic way?
+
+  # FP
+  from itertools import pairwise
+  results = map(calc2, pairwise(sum(filter(is_good, items),[])))
+  ```
+
+  I would prefer the FP way for better clarity. Just read in reverse order. We can see that the `items` are first filtered, then summed (connected) in a list and paired, then mapped by the calculation function.
+
+  The `pairwise` iterator is from the [itertools](https://docs.python.org/3/library/itertools.html#module-itertools) module. There are also handy iterators such as `product`, `combinations` and `permutations`. Have a look at them.
+
+  The FP style is also friendly to parallelism in most cases. The following example uses a process pool to do the same calculation in parallel.
+
+  ```Python
+  from multiprocessing import Pool
+  with Pool(processes=4) as pool:
+      results = pool.map(calc2, pairwise(sum(filter(is_good, items),[])))
+  ```
