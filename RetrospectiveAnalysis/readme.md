@@ -4,13 +4,30 @@
 
 Python version >= 3.10
 
-Clone this repo and navigate to this folder.
+### Windows 10/11
+
+```shell
+scoop install python310
+```
+
+### macOS 12 
+
+```shell
+brew install python@3.10
+```
+
+And follow the brew output to set Python 3.10 into your path.
+
+---
 
 ### Virtual Environment (Recommended, Optional)
 
-```
-python -m venv .venv
-```
+1. Clone this repo and navigate to this folder.
+1. Find out the correct command to call Python 3.10. On \*nix platforms, use `which python`, on Windows Powershell, use `get-command python`.
+1. Create a virtual environment by:
+   ```shell
+   python -m venv .venv
+   ```
 
 Then activate the virtual environment.
 
@@ -18,25 +35,30 @@ Official tutorial for the [virtual environment](https://docs.python.org/3/tutori
 
 ### Dependencies
 
-```
+If using a virtual environment, activate it. Double check that the commands are calling the right binaries.
+
+```shell
 pip install -r requirements.txt
-pythonw retrospective_analysis_gui.pyw
 ```
 
 ## Usage
 
-1. In the menubar, click `File`->`Open Folder` or `ctrl+O`
-1. Select the folder containing the data files
-1. Specify analyzer parameters and click `Load`
-1. (Optional) In `(Optional) Plot Spectrograms`, select power channels and proper parameters, then click `Spectrogram`
-1. Select power channels and click `Start Track`
-1. Once the results show up, use the tab to navigate between power channels.
-1. If necessary, manually adjust the traces:
+```shell
+pythonw retrospective_analysis_gui.pyw
+```
+
+1. In the menubar, click `File`->`Open Folder` or `ctrl/⌘+O`
+2. Select the folder containing the data files
+3. Specify analyzer parameters and click `Load`
+4. (Optional) In `(Optional) Plot Spectrograms`, select power channels and proper parameters, then click `Spectrogram`
+5. Select power channels and click `Start Track`
+6. Once the results show up, use the tab to navigate between power channels.
+7. If necessary, manually adjust the traces:
    1. Select the trace (Trace1 Time x-xx) in the combo box
-   1. Adjust the offset by multiples of FSR or any arbitrary number in the spinboxes
-1. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the folder that was selected before.
-1. Assign an assay name to this channel in the `Assay` block.
-1. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (**This figure will not be saved automatically**).
+   2. Adjust the offset by multiples of FSR or any arbitrary number in the spinboxes
+8. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the folder that was selected before.
+9. Assign an assay name to this channel in the `Assay` block.
+10. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (**This figure will not be saved automatically**).
 
 ## FAQ
 
