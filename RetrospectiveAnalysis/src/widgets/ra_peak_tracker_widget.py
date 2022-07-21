@@ -299,14 +299,18 @@ class RaPeakTrackerWidget(QWidget):
         savemat(
             f"peak_shifts.mat",
             {
-                (tab.name + "_" + tab.assay).replace(" ", "_").lower(): tab.full_trace
+                # (tab.name + "_" + tab.assay)
+                (tab.name).replace(" ", "_").lower() + "_peakWL_list": tab.full_trace
                 for tab in all_tabs
-            },
+            }
+            | {"t_array": self.__analyzer.timestamps},
         )
 
         # save all fitted peaks
         savemat(
-            f"peaks.mat", {"power" + str(k + 1): v for k, v in self.__all_peaks.items()}
+            f"peaks.mat",
+            {"power" + str(k + 1): v for k, v in self.__all_peaks.items()}
+            | {"t_array": self.__analyzer.timestamps},
         )
 
         mpl_default_colors: cycle[tuple[float]] = cycle(
