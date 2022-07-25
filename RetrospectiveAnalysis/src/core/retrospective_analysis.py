@@ -1,20 +1,17 @@
-import logging
-
 import csv
+import logging
+import multiprocessing as mp
 import os
 import re
-import multiprocessing as mp
 from functools import reduce
-from itertools import repeat, accumulate, starmap, pairwise, product
+from itertools import accumulate, pairwise, product, repeat, starmap
 
 import numpy as np
 from numpy.typing import NDArray
-
 from scipy.io import loadmat
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from scipy.spatial.distance import cdist
-
 
 logger = logging.getLogger(__name__)
 

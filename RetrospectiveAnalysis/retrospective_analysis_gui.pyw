@@ -1,11 +1,11 @@
 import logging
-import sys
 import os
+import sys
 import time
 
 from PySide6.QtWidgets import QApplication
-from src.window.ra_main_window import RaMainWindow
 
+from src.window.ra_main_window import RaMainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
