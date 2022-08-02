@@ -22,7 +22,7 @@ close all;
 outPath = 'output_resData'; % subfolder name in which to save output data
 dataFilename = 'quantifiedResonatorAnalysis.mat'; % filename for the .mat file
 waitBetweenDets = 0; % flag to choose whether to wait for user to confirm in between analysis of different detector data
-restartAnalysis = 1; % set to 0 to resume previous analysis of this folder, or 1 to redo
+restartAnalysis = 0; % set to 0 to resume previous analysis of this folder, or 1 to redo
 figPos = [0 350 1080 450]; % sets the default position of the figure windows [x, y, width, height]
 
 % allow user to select the analysis directory, and generate the file list
