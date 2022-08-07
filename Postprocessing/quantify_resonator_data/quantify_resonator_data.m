@@ -137,7 +137,7 @@ for fileIdx = startFile:length(fileList)
             h3 = figure(3);
             set(h3, 'Position', figPos);
             fname = strrep(fileList(fileIdx).name, '.mat', '');
-            title([fname, ' detector ', num2str(detIdx), ' peaks']);
+            title([fname, ' detector ', num2str(detIdx), ' baseline']);
             saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.fig']);
             saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.svg']);
             saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.png']);
