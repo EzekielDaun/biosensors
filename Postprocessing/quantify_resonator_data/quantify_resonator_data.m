@@ -201,15 +201,25 @@ return
 
 function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Qs, fitParams, gofs] = analyze_resonance(wavelength, power)
     minProminence = 2; % min 2 dB ER
-    minDistance = 1; % min 1 nm FSR
-    fitWidthMult = 5; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
+    minDistance = 2; % min 1 nm FSR
+    fitWidthMult = 7; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
     resampleFactor = 50; % factor by which to increase the wavelength sampling frequency in the fit
     RsqThresh = 0.8; % threshold for Rsq goodness of fit to decide if it is "good enough" to use for subsequent calculations
+    linearizeFit = 1; % set to 0 to run the Lorentzian fit on the decibel (dBm) data; set to 0 to linearize before fitting
+    dBThresh = [2,5]; % Extinction Ratio threshold for calculating FWHM and Q from fit.  
+                      % First element is the dB-scale ER threshold if we are fitting linearized power; 
+                      %second element is the dB-scale ER threshold if we are fitting dB scale power. 
+                      %Can only calculate FWHM and Q in dB scale if ER > 3; choose 5 here for safety for dB scale
 
     % plot the data
     wavelength = wavelength*1e9; % convert to nm
-    figure(2); clf; plot(wavelength, power, '.k');
-    xlabel('Wavelength (nm)'); ylabel('Power (dBm)')
+    if linearizeFit
+        figure(2); clf; plot(wavelength, 10.^(power./10), '.k'); % plot on linearized scale
+        xlabel('Wavelength (nm)'); ylabel('Power (mW)')
+    else
+        figure(2); clf; plot(wavelength, power, '.k'); % plot on dB scale
+        xlabel('Wavelength (nm)'); ylabel('Power (dBm)')
+    end
     
     % find the peaks (median filter the data to remove some of the noise
     % for peak finding only, not subsequent fitting)
@@ -233,7 +243,11 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
     end
     % overlay the plotted peaks and start assigning the parameters to be
     % returned
-    hold on; plot(locs, -pks, 'm^')
+    if linearizeFit
+        hold on; plot(locs, 10.^(-pks./10), 'm^')
+    else
+        hold on; plot(locs, -pks, 'm^')
+    end
     numPeaks = length(pks);
     avg_ER = mean(ERs);
     
@@ -250,13 +264,34 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
         
         % fit the data using the lorentzfit() file exchange function by
         % Jared Wells https://www.mathworks.com/matlabcentral/fileexchange/33775-lorentzfit-x-y-varargin
-        p0 = [-ERs(pkIdx), locs(pkIdx), w(pkIdx), mean(y)]; % starting values for the fit
-        bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), 10*mean(y)]; % bounds for the fit parameters
-        [~, fitpar, resnorm, res, jacobian] = lorentzfit(x,y,p0,bounds);
+        % either linearize the data or run the fit directly on the
+        % decibel-scale (dBm) power, depending on our flag.
+        if linearizeFit
+            % linearize and normalize the power data
+            y = 10.^(-y./10); % linearize the power data
+            ymax = max(y);
+            y = 1-y/ymax; % normalize the power data and turn it into a positive peak
+            % set up the linearized starting values and bounds and run the
+            % fit
+            p0 = [1, locs(pkIdx), w(pkIdx), mean(y)]; % starting values for the fit
+            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), 10*mean(y)]; % bounds for the fit parameters
+            [~, fitpar, resnorm, res, jacobian] = lorentzfit(x,y,p0,bounds);
+        else
+            p0 = [-ERs(pkIdx), locs(pkIdx), w(pkIdx), mean(y)]; % starting values for the fit
+            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), 10*mean(y)]; % bounds for the fit parameters
+            [~, fitpar, resnorm, res, jacobian] = lorentzfit(x,y,p0,bounds);
+        end
+        
+        
         % get higher-res yfit data and plot overlay
         xfit = min(x):xdiff/resampleFactor:max(x);
         yfit = -(fitpar(1)./((xfit - fitpar(2)).^2 + fitpar(3)) + fitpar(4));
-        plot(xfit, yfit, 'm');
+        if linearizeFit
+            yfit = (1+yfit); % convert back to a negative peak in linear normalized scale and plot
+            plot(xfit, yfit*ymax, 'm'); 
+        else
+            plot(xfit, yfit, 'm');
+        end
         
         % compute the R^2, store in gof alongside other gof parameters
         gofs(pkIdx).res = res;
@@ -277,11 +312,18 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
         % quality factor
         % calculate the FWHM (in dBm scale this is calculated at 3 dB below the baseline)
         if gofs(pkIdx).rsq > RsqThresh % only use the Lorentzian data if the fit is good
-            if ERs(pkIdx) > 5 % can only calculate FWHM and Q if ER > 3; choose 5 here for safety
-                temp = find(yfit < -(fitpar(4)+3)); % find array indices where yfit is < 3 dB below baseline
-                FWHMs(pkIdx) = abs(xfit(temp(1))-xfit(temp(end))); % FWHM is the wavelength difference between the first and last element
+            if ERs(pkIdx) > dBThresh(linearizeFit+1) % can only calculate FWHM and Q in dB scale if ER > 3.  Test the ER against our defined threshold (defined as an array since different thresholds for linear and dB scale).
+                if linearizeFit
+                    temp = find(yfit < mean([max(yfit),min(yfit)])); % find array indices where yfit (to the normalized data) is < 0.5
+                    FWHMs(pkIdx) = abs(xfit(temp(1))-xfit(temp(end))); % FWHM is the wavelength difference between the first and last element
+                    line([xfit(temp(1)),xfit(temp(end))],[(mean([max(yfit),min(yfit)])*ymax),(mean([max(yfit),min(yfit)])*ymax)], 'Color', 'm', 'LineStyle', ':', 'LineWidth', 3); % draw the FWHM on the axis
+                else
+                    temp = find(yfit < -(fitpar(4)+3)); % find array indices where yfit is < 3 dB below baseline
+                    FWHMs(pkIdx) = abs(xfit(temp(1))-xfit(temp(end))); % FWHM is the wavelength difference between the first and last element
+                    line([xfit(temp(1)),xfit(temp(end))],[(-fitpar(4)-3),(-fitpar(4)-3)], 'Color', 'm', 'LineStyle', ':', 'LineWidth', 3); % draw the FWHM on the axis
+                end
+                
                 Qs(pkIdx) = resLocs(pkIdx)/FWHMs(pkIdx); % Q is approx. by res wavelength divided by FWHM wavelength diff
-                line([xfit(temp(1)),xfit(temp(end))],[(-fitpar(4)-3),(-fitpar(4)-3)], 'Color', 'm', 'LineStyle', ':'); % draw the FWHM on the axis
             else
                 disp(['***Peak ', num2str(pkIdx), ' warning: could not calculate FWHM and Q due to low ER.']);
                 FWHMs(pkIdx) = NaN;
