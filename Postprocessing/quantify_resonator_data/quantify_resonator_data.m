@@ -22,7 +22,7 @@ close all;
 outPath = 'output_resData'; % subfolder name in which to save output data
 dataFilename = 'quantifiedResonatorAnalysis.mat'; % filename for the .mat file
 waitBetweenDets = 0; % flag to choose whether to wait for user to confirm in between analysis of different detector data
-restartAnalysis = 0; % set to 0 to resume previous analysis of this folder, or 1 to redo
+restartAnalysis = 1; % set to 0 to resume previous analysis of this folder, or 1 to redo
 figPos = [0 350 1080 450]; % sets the default position of the figure windows [x, y, width, height]
 
 % allow user to select the analysis directory, and generate the file list
@@ -133,6 +133,15 @@ for fileIdx = startFile:length(fileList)
         saveas(h2, [outPath, '/', fname, '_det', num2str(detIdx), '_fitPlot.fig']);
         saveas(h2, [outPath, '/', fname, '_det', num2str(detIdx), '_fitPlot.svg']);
         saveas(h2, [outPath, '/', fname, '_det', num2str(detIdx), '_fitPlot.png']);
+        if numPeaks>0
+            h3 = figure(3);
+            set(h3, 'Position', figPos);
+            fname = strrep(fileList(fileIdx).name, '.mat', '');
+            title([fname, ' detector ', num2str(detIdx), ' peaks']);
+            saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.fig']);
+            saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.svg']);
+            saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.png']);
+        end
         commandwindow
         if waitBetweenDets
             input('Press return to continue')
@@ -202,24 +211,16 @@ return
 function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Qs, fitParams, gofs] = analyze_resonance(wavelength, power)
     minProminence = 2; % min 2 dB ER
     minDistance = 2; % min 1 nm FSR
-    fitWidthMult = 7; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
+    fitWidthMult = 6; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
     resampleFactor = 50; % factor by which to increase the wavelength sampling frequency in the fit
     RsqThresh = 0.8; % threshold for Rsq goodness of fit to decide if it is "good enough" to use for subsequent calculations
     linearizeFit = 1; % set to 0 to run the Lorentzian fit on the decibel (dBm) data; set to 0 to linearize before fitting
-    dBThresh = [2,5]; % Extinction Ratio threshold for calculating FWHM and Q from fit.  
+    dBThresh = [5,2]; % Extinction Ratio threshold for calculating FWHM and Q from fit.  
                       % First element is the dB-scale ER threshold if we are fitting linearized power; 
                       %second element is the dB-scale ER threshold if we are fitting dB scale power. 
                       %Can only calculate FWHM and Q in dB scale if ER > 3; choose 5 here for safety for dB scale
 
-    % plot the data
     wavelength = wavelength*1e9; % convert to nm
-    if linearizeFit
-        figure(2); clf; plot(wavelength, 10.^(power./10), '.k'); % plot on linearized scale
-        xlabel('Wavelength (nm)'); ylabel('Power (mW)')
-    else
-        figure(2); clf; plot(wavelength, power, '.k'); % plot on dB scale
-        xlabel('Wavelength (nm)'); ylabel('Power (dBm)')
-    end
     
     % find the peaks (median filter the data to remove some of the noise
     % for peak finding only, not subsequent fitting)
@@ -239,16 +240,61 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
         Qs = NaN;
         fitParams = NaN;
         gofs = NaN;
+        
+        % plot the data 
+        if linearizeFit
+            figure(2); clf; plot(wavelength, 10.^(power./10), '.k'); % plot on linearized scale
+            xlabel('Wavelength (nm)'); ylabel('Power (mW)')
+        else
+            figure(2); clf; plot(wavelength, power, '.k'); % plot on dB scale
+            xlabel('Wavelength (nm)'); ylabel('Power (dBm)')
+        end
         return
     end
-    % overlay the plotted peaks and start assigning the parameters to be
-    % returned
-    if linearizeFit
-        hold on; plot(locs, 10.^(-pks./10), 'm^')
-    else
-        hold on; plot(locs, -pks, 'm^')
-    end
     numPeaks = length(pks);
+    
+    % polynomial-fit the non-peak data and subtract the polynomial fit to
+    % correct for the GC response
+    baseline = power;
+    % remove the peaks from the power spectrum
+    for pkIdx = 1:numPeaks
+        % get the x- and y-data around the peak to be fitted
+        [~, pkCentreIdx] = min(abs(wavelength - locs(pkIdx)));
+        xdiff = mean(diff(wavelength));
+        fitWidth = ceil(w(pkIdx)*0.5*fitWidthMult/xdiff); 
+        startIdx = max([1, pkCentreIdx-fitWidth]); % start at the first element of the arrays if we don't have enough room for full fit window
+        endIdx = min([length(wavelength), pkCentreIdx+fitWidth]); % end at the last element of the arrays if we don't have enough room for full fit window
+        baseline((startIdx):(endIdx)) = nan(size(baseline((startIdx):(endIdx))));
+    end
+    
+    % do a 3rd degree polynomial fit to the baseline data and subtract it
+    % from the power spectrum
+    excludeIdx = isnan(baseline);
+    [p, S, mu] = polyfit(wavelength(~excludeIdx), baseline(~excludeIdx), 3);
+    figure(3); clf; plot(wavelength, baseline, '.k');
+    xlabel('Wavelength (nm)'); ylabel('Baseline Power (dB)')
+    hold on; plot(wavelength, polyval(p, wavelength, S, mu), 'c');
+    % subtract the polynomial fit from the power
+    power = power - polyval(p, wavelength, S, mu);
+    
+    % plot the data 
+    if linearizeFit
+        figure(2); clf; plot(wavelength, 10.^(power./10), '.k'); % plot on linearized scale
+        xlabel('Wavelength (nm)'); ylabel('Power (mW)')
+    else
+        figure(2); clf; plot(wavelength, power, '.k'); % plot on dB scale
+        xlabel('Wavelength (nm)'); ylabel('Power (dBm)')
+    end
+    
+    % overlay the plotted peaks and start assigning the parameters to be
+    % returned (baseline correct plotted peaks with the baseline polynomial fit)
+    pks_plot = -pks;
+    pks_plot = pks_plot-polyval(p, locs, S, mu);
+    if linearizeFit
+        hold on; plot(locs, 10.^(pks_plot./10), 'm^')
+    else
+        hold on; plot(locs, pks_plot, 'm^')
+    end
     avg_ER = mean(ERs);
     
     % Lorentzian-fit each peak and then plot and strore the fitted parameters
