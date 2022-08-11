@@ -209,6 +209,7 @@ return
 %     peak
 
 function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Qs, fitParams, gofs] = analyze_resonance(wavelength, power)
+    noiseLevel = -60; % set the threshold for noise: if >half the power values are less than this, don't analyze
     minProminence = 2; % min 2 dB ER
     minDistance = 2; % min 1 nm FSR
     fitWidthMult = 6; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
@@ -225,9 +226,15 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
     % find the peaks (median filter the data to remove some of the noise
     % for peak finding only, not subsequent fitting)
     [pks, locs, w, ERs] = findpeaks(medfilt1(-power, 5), wavelength, 'MinPeakProminence', minProminence, 'MinPeakDistance', minDistance);
-    % do not do further processing if we did not find any peaks
-    if length(pks) < 1
-        disp('***Warning: No peaks found in spectrum.');
+    % do not do further processing if we did not find any peaks or if
+    % spectrum is mostly below the noise threshold
+    if length(pks) < 1 || length(find(power<noiseLevel)) > length(power)/2
+        if length(pks) < 1    
+            disp('***Warning: No peaks found in spectrum. Skipping analysis.');
+        end
+        if length(find(power<noiseLevel)) > length(power)/2
+            disp('***Warning: Spectrum found to be mostly noise. Skipping analysis.');
+        end
         numPeaks = 0;
         avg_ER = NaN;
         avg_Q = NaN;
