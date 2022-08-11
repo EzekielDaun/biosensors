@@ -49,7 +49,11 @@ def get_lorentzian_peaks(
         width=int(len(powers) / 300),
         height=0,
     )
-    while len(indices) <= 1:
+
+    for _ in range(20):
+        # set a iteration limit to prevent infinite loops in case the sweep only have one peak
+        if len(indices) >= 2:
+            break
         prominence /= 2
         indices, properties = find_peaks(
             (-1) * powers,
@@ -60,6 +64,8 @@ def get_lorentzian_peaks(
         )
 
     fsr: float = abs(np.mean(np.diff(wavelengths[indices])))
+    # if only one peak, there will be a numpy runtime warning and fsr will be nan
+    fsr = 0.5 * abs(wavelengths[0] - wavelengths[-1]) if np.isnan(fsr) else fsr
 
     ret: list[tuple[float, float, float, float]] = []
     for i, peak_index in enumerate(indices):
