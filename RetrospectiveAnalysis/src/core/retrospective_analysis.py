@@ -45,7 +45,6 @@ def get_lorentzian_peaks(
     indices, properties = find_peaks(
         (-1) * powers,
         prominence=prominence,
-        distance=int(len(powers) / 6),
         width=int(len(powers) / 300),
         height=0,
     )
@@ -58,7 +57,6 @@ def get_lorentzian_peaks(
         indices, properties = find_peaks(
             (-1) * powers,
             prominence=prominence,
-            distance=int(len(powers) / 6),
             width=int(len(powers) / 1000),
             height=0,
         )
