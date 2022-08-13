@@ -150,6 +150,7 @@ for fileIdx = startFile:length(fileList)
         % organize the data to prepare to be stored in a table
         Filename{spectrumNum} = fname;
         Detector(spectrumNum) = detIdx;
+        WL_Range{spectrumNum} = [num2str(1e9*min(wavelength)), ', ', num2str(1e9*max(wavelength))];
         numResonances(spectrumNum) = numPeaks;
         avgER(spectrumNum) = avg_ER;
         avgQ(spectrumNum) = avg_Q;
@@ -164,16 +165,18 @@ for fileIdx = startFile:length(fileList)
         GOFs{spectrumNum} = resGofs;
         if isstruct(resGofs)
             Rsq{spectrumNum} = [resGofs.rsq];
+            Rsq_peak{spectrumNum} = [resGofs.rsq_peak];
         else
             Rsq{spectrumNum} = NaN;
+            Rsq_peak{spectrumNum} = NaN;
         end
         
         spectrumNum = spectrumNum+1;
     end
     
     % organize and save the data in a table format
-    T = table(Filename',Detector',numResonances',avgER',avgQ',FSR',FSR_err',Finesse',Resonance_WL',ERs',FWHMs',Qs',Rsq');
-    T.Properties.VariableNames = [{'Filename'},{'Detector'},{'Number of Resonances'},{'Average ER'},{'Average Q'},{'FSR'},{'FSR Error'},{'Finesse'},{'Resonance Wavelengths'},{'ERs'},{'FWHMs'},{'Qs'},{'R-squareds'}];
+    T = table(Filename',Detector',WL_Range',numResonances',avgER',avgQ',FSR',FSR_err',Finesse',Resonance_WL',ERs',FWHMs',Qs',Rsq',Rsq_peak');
+    T.Properties.VariableNames = [{'Filename'},{'Detector'},{'Wavelength Range'},{'Number of Resonances'},{'Average ER'},{'Average Q'},{'FSR'},{'FSR Error'},{'Finesse'},{'Resonance Wavelengths'},{'ERs'},{'FWHMs'},{'Qs'},{'R-squareds'},{'Peak region R-squareds'}];
     writetable(T, [outPath, '/quantifiedResonatorData.xlsx']);
     startFile = fileIdx+1;
     save([outPath, '/', dataFilename])
@@ -286,10 +289,10 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
     
     % plot the data 
     if linearizeFit
-        figure(2); clf; plot(wavelength, 10.^(power./10), '.k'); % plot on linearized scale
-        xlabel('Wavelength (nm)'); ylabel('Power (mW)')
+        figure(2); clf; subplot(5, 1, [1 2 3]); plot(wavelength, 10.^(power./10), '.k'); % plot on linearized scale
+        xlabel('Wavelength (nm)'); ylabel('Baseline-Subtracted Power (mW)')
     else
-        figure(2); clf; plot(wavelength, power, '.k'); % plot on dB scale
+        figure(2); clf; subplot(5, 1, [1 2 3]); plot(wavelength, power, '.k'); % plot on dB scale
         xlabel('Wavelength (nm)'); ylabel('Power (dBm)')
     end
     
@@ -327,11 +330,11 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
             % set up the linearized starting values and bounds and run the
             % fit
             p0 = [1, locs(pkIdx), w(pkIdx), mean(y)]; % starting values for the fit
-            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), 10*mean(y)]; % bounds for the fit parameters
+            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), max([5*max(y), 10])]; % bounds for the fit parameters
             [~, fitpar, resnorm, res, jacobian] = lorentzfit(x,y,p0,bounds);
         else
             p0 = [-ERs(pkIdx), locs(pkIdx), w(pkIdx), mean(y)]; % starting values for the fit
-            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), 10*mean(y)]; % bounds for the fit parameters
+            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), max([5*max(y), 10])]; % bounds for the fit parameters
             [~, fitpar, resnorm, res, jacobian] = lorentzfit(x,y,p0,bounds);
         end
         
@@ -339,6 +342,7 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
         % get higher-res yfit data and plot overlay
         xfit = min(x):xdiff/resampleFactor:max(x);
         yfit = -(fitpar(1)./((xfit - fitpar(2)).^2 + fitpar(3)) + fitpar(4));
+        subplot(5, 1, [1 2 3]); 
         if linearizeFit
             yfit = (1+yfit); % convert back to a negative peak in linear normalized scale and plot
             plot(xfit, yfit*ymax, 'm'); 
@@ -351,6 +355,14 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
         gofs(pkIdx).jac = jacobian;
         gofs(pkIdx).resnorm = resnorm;
         gofs(pkIdx).rsq = 1-sum(res.^2)/sum((y-mean(y)).^2);
+        
+        % plot the residuals
+        subplot(5, 1, 5); hold on; plot(x, res, '.k'); 
+        if linearizeFit
+            xlabel('Wavelength (nm)'); ylabel([{'Lorentzian fit residuals'}; {'(baseline-subtracted mW)'}]);
+        else
+            xlabel('Wavelength (nm)'); ylabel([{'Lorentzian fit residuals'}; {'(baseline-subtracted dBm)'}]);
+        end
         
         %*** compute the resonator properties ***%
         % resonance wavelength
@@ -369,23 +381,33 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
                 if linearizeFit
                     temp = find(yfit < mean([max(yfit),min(yfit)])); % find array indices where yfit (to the normalized data) is < 0.5
                     FWHMs(pkIdx) = abs(xfit(temp(1))-xfit(temp(end))); % FWHM is the wavelength difference between the first and last element
-                    line([xfit(temp(1)),xfit(temp(end))],[(mean([max(yfit),min(yfit)])*ymax),(mean([max(yfit),min(yfit)])*ymax)], 'Color', 'm', 'LineStyle', ':', 'LineWidth', 3); % draw the FWHM on the axis
+                    subplot(5, 1, [1 2 3]); line([xfit(temp(1)),xfit(temp(end))],[(mean([max(yfit),min(yfit)])*ymax),(mean([max(yfit),min(yfit)])*ymax)], 'Color', 'm', 'LineStyle', ':', 'LineWidth', 3); % draw the FWHM on the axis
+                    yplot = (1-y)*ymax;
                 else
                     temp = find(yfit < -(fitpar(4)+3)); % find array indices where yfit is < 3 dB below baseline
                     FWHMs(pkIdx) = abs(xfit(temp(1))-xfit(temp(end))); % FWHM is the wavelength difference between the first and last element
-                    line([xfit(temp(1)),xfit(temp(end))],[(-fitpar(4)-3),(-fitpar(4)-3)], 'Color', 'm', 'LineStyle', ':', 'LineWidth', 3); % draw the FWHM on the axis
+                    subplot(5, 1, [1 2 3]); line([xfit(temp(1)),xfit(temp(end))],[(-fitpar(4)-3),(-fitpar(4)-3)], 'Color', 'm', 'LineStyle', ':', 'LineWidth', 3); % draw the FWHM on the axis
+                    yplot = -y;
                 end
                 
                 Qs(pkIdx) = resLocs(pkIdx)/FWHMs(pkIdx); % Q is approx. by res wavelength divided by FWHM wavelength diff
+                %temp2 = find(yfit < (min(yfit)+0.75*(max(yfit)-min(yfit)))); % find array indices where yfit (to the normalized data) is < 75% of the way to the baseline
+                %FWHM_indices = find((x > xfit(temp2(1))) & (x < xfit(temp2(end)))); % turn the fit indices into data indices
+                FWHM_indices = find((x > resLocs(pkIdx)-FWHMs(pkIdx)) & (x < resLocs(pkIdx)+FWHMs(pkIdx))); % calculate peak R^2 over the region one linewidth on either sideof the FWHM
+                gofs(pkIdx).rsq_peak = 1-sum(res(FWHM_indices).^2)/sum((y(FWHM_indices)-mean(y(FWHM_indices))).^2); % compute the "peak region R-squared" as the R-squared of the fit in the peak region (one FWHM on either side of the centre)
+                subplot(5, 1, 5); hold on; plot(x(FWHM_indices), res(FWHM_indices), '.b') % plot the residuals used in the peak region R^2 generation as blue
+                subplot(5, 1, [1 2 3]); hold on; plot(x(FWHM_indices), yplot(FWHM_indices), '.b') % plot the datapoints used in the peak region R^2 generation as blue
             else
                 disp(['***Peak ', num2str(pkIdx), ' warning: could not calculate FWHM and Q due to low ER.']);
                 FWHMs(pkIdx) = NaN;
                 Qs(pkIdx) = NaN;
+                gofs(pkIdx).rsq_peak = NaN;
             end
         else
             disp(['***Peak ', num2str(pkIdx), ' warning: could not calculate FWHM and Q due to low R^2 of fit.']);
             FWHMs(pkIdx) = NaN;
             Qs(pkIdx) = NaN;
+            gofs(pkIdx).rsq_peak = NaN;
         end  
        
         % fit parameters
@@ -410,4 +432,7 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
     else
         finesse = NaN;
     end
+    % set the xlims to be the same for plots and residuals.
+    subplot(5, 1, [1 2 3]); xlim([min(wavelength), max(wavelength)]);
+    subplot(5, 1, 5); xlim([min(wavelength), max(wavelength)]);
 end
