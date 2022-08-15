@@ -228,7 +228,7 @@ function [numPeaks, avg_ER, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, FWHMs, Q
     fitWidthMult = 6; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
     resampleFactor = 50; % factor by which to increase the wavelength sampling frequency in the fit
     RsqThresh = 0.8; % threshold for Rsq goodness of fit to decide if it is "good enough" to use for subsequent calculations
-    linearizeFit = 1; % set to 0 to run the Lorentzian fit on the decibel (dBm) data; set to 0 to linearize before fitting
+    linearizeFit = 1; % set to 0 to run the Lorentzian fit on the decibel (dBm) data; set to 1 to linearize before fitting
     dBThresh = [5,2]; % Extinction Ratio threshold for calculating FWHM and Q from fit.  
                       % First element is the dB-scale ER threshold if we are fitting linearized power; 
                       %second element is the dB-scale ER threshold if we are fitting dB scale power. 
