@@ -164,19 +164,29 @@ for fileIdx = startFile:length(fileList)
         fitParams{spectrumNum} = resfitParams;
         GOFs{spectrumNum} = resGofs;
         if isstruct(resGofs)
-            Rsq{spectrumNum} = [resGofs.rsq];
-            Rsq_peak{spectrumNum} = [resGofs.rsq_peak];
+            temp_rsq = [resGofs.rsq];
+            temp_rsq_peak = [resGofs.rsq_peak];
+            Rsq{spectrumNum} = temp_rsq;
+            Rsq_peak{spectrumNum} = temp_rsq_peak;
+            Rsq_avg{spectrumNum} = mean(nonzeros(temp_rsq(~isnan(temp_rsq))));
+            Rsq_std{spectrumNum} = std(nonzeros(temp_rsq(~isnan(temp_rsq))));
+            Rsq_peak_avg{spectrumNum} = mean(nonzeros(temp_rsq_peak(~isnan(temp_rsq_peak))));
+            Rsq_peak_std{spectrumNum} = std(nonzeros(temp_rsq_peak(~isnan(temp_rsq_peak))));
         else
             Rsq{spectrumNum} = NaN;
             Rsq_peak{spectrumNum} = NaN;
+            Rsq_avg{spectrumNum} = NaN;
+            Rsq_std{spectrumNum} = NaN;
+            Rsq_peak_avg{spectrumNum} = NaN;
+            Rsq_peak_std{spectrumNum} = NaN;
         end
         
         spectrumNum = spectrumNum+1;
     end
     
     % organize and save the data in a table format
-    T = table(Filename',Detector',WL_Range',numResonances',avgER',avgQ',FSR',FSR_err',Finesse',Resonance_WL',ERs',FWHMs',Qs',Rsq',Rsq_peak');
-    T.Properties.VariableNames = [{'Filename'},{'Detector'},{'Wavelength Range'},{'Number of Resonances'},{'Average ER'},{'Average Q'},{'FSR'},{'FSR Error'},{'Finesse'},{'Resonance Wavelengths'},{'ERs'},{'FWHMs'},{'Qs'},{'R-squareds'},{'Peak region R-squareds'}];
+    T = table(Filename',Detector',WL_Range',numResonances',avgER',avgQ',FSR',FSR_err',Finesse',Rsq_avg',Rsq_std',Rsq_peak_avg',Rsq_peak_std',Resonance_WL',ERs',FWHMs',Qs',Rsq',Rsq_peak');
+    T.Properties.VariableNames = [{'Filename'},{'Detector'},{'Wavelength Range'},{'Number of Resonances'},{'Average ER'},{'Average Q'},{'FSR'},{'FSR Error'},{'Finesse'},{'Average Rsq'},{'Rsq Stdev'},{'Average Peak Rsq'},{'Peak Rsq Stdev'},{'Resonance Wavelengths'},{'ERs'},{'FWHMs'},{'Qs'},{'R-squareds'},{'Peak region R-squareds'}];
     writetable(T, [outPath, '/quantifiedResonatorData.xlsx']);
     startFile = fileIdx+1;
     save([outPath, '/', dataFilename])
