@@ -41,11 +41,12 @@ def get_lorentzian_peaks(
         raise RuntimeError("Number of wavelengths and powers do not match")
 
     prominence *= max(powers) - min(powers)
+    width = int(len(powers) / 500)
 
     indices, properties = find_peaks(
         (-1) * powers,
         prominence=prominence,
-        width=int(len(powers) / 300),
+        width=width,
         height=0,
     )
 
@@ -54,10 +55,11 @@ def get_lorentzian_peaks(
         if len(indices) >= 2:
             break
         prominence /= 2
+        width = int(width / 2)
         indices, properties = find_peaks(
             (-1) * powers,
             prominence=prominence,
-            width=int(len(powers) / 1000),
+            width=width,
             height=0,
         )
 
