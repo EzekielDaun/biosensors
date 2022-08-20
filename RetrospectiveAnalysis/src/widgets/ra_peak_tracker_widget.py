@@ -114,9 +114,13 @@ class RaPeakTrackerTab(QWidget):
     @Slot()
     def __slot_switch_traces(self):
         index = self.ui.comboBox.currentIndex()
+        self.ui.spinBox.blockSignals(True)
+        self.ui.doubleSpinBox.blockSignals(True)
         self.ui.spinBox.setValue(self.__fsr_multipliers[index])
         self.ui.spinBox.setSuffix(f"×{self.__fsr:.6g}")
         self.ui.doubleSpinBox.setValue(self.__offsets[index])
+        self.ui.spinBox.blockSignals(False)
+        self.ui.doubleSpinBox.blockSignals(False)
 
     @Slot()
     def __slot_plot_peak_offset(self):
