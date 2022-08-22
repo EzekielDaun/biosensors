@@ -4,7 +4,7 @@
 !.gitignore
 
 # Virtual environment and build
-*[Vv]env/
+*[Vv]env*/
 [Bb]uild/
 
 # Python compiled files
@@ -15,5 +15,12 @@ __pycache__/
 *test*/
 !test/
 !tests/
+
+# Nuitka Build
+*.app/
+*.build/
+*.dist/
+*.onefile-build/
+*/Info.plist
 
 .DS_Store
