@@ -27,9 +27,12 @@ import hp816x_instr
 import math
 
 
+class InstrumentError(Exception):
+    pass
+
+
 class hp816x_N77Det(hp816x_instr.hp816x):
     name = "hp816x N77 Detector"
-    numPWMSlots = 7
     maxPWMPoints = 100000
 
     def connect(self, visaAddr, n77DetAddr, reset=0, forceTrans=1, autoErrorCheck=1):
@@ -55,16 +58,25 @@ class hp816x_N77Det(hp816x_instr.hp816x):
         print("[activeSlotIndex: %s]" % ", ".join(map(str, self.N77activeSlotIndex)))
 
         self.plotcolors = ["b", "r", "g", "k", "c", "m"]
-        self.plotnames = [
-            "HP8164 Slot 1 Det 1",
-            "HP8164 Slot 1 Det 2",
-            "HP8164 Slot 2 Det 1",
-            "HP8164 Slot 2 Det 2",
-            "N7744C Slot 1 Det 1",
-            "N7744C Slot 2 Det 1",
-            "N7744C Slot 3 Det 1",
-            "N7744C Slot 4 Det 1",
-        ]
+
+        mainframe_detectors = [x for x in self.getSlotInfo()[1:]]
+        n77_detectors = [x for x in self.getN77SlotInfo()[1:]]
+
+        self.plotnames = []
+        mainframe_slot_num = 0
+        for d in mainframe_detectors:
+            mainframe_slot_num += 1
+            if d == self.hp816x_SINGLE_SENSOR:
+                self.plotnames.append(f"HP8164 Slot {mainframe_slot_num} Det 1")
+            elif d == self.hp816x_DUAL_SENSOR:
+                self.plotnames.append(f"HP8164 Slot {mainframe_slot_num} Det 1")
+                self.plotnames.append(f"HP8164 Slot {mainframe_slot_num} Det 2")
+            elif d == 0:
+                pass
+            else:
+                raise InstrumentError(f"Module {d} not supported")
+        for i, d in enumerate(n77_detectors):
+            self.plotnames.append(f"N7744C Slot {i+1}")
 
         self.modN77pwmSlotIndex = self.pwmSlotIndex + self.N77pwmSlotIndex
         self.modactiveSlotIndex = self.pwmSlotIndex + self.N77activeSlotIndex
@@ -80,18 +92,13 @@ class hp816x_N77Det(hp816x_instr.hp816x):
         self.checkErrorN77(res)
 
     def getN77SlotInfo(self):
-        slotInfoArr = (c_int32 * self.numPWMSlots)()
+        slotInfoArr = (c_int32 * 5)()
         slotInfoArrPtr = cast(slotInfoArr, POINTER(c_int32))
         res_N77 = self.hp816x_getSlotInformation_Q(
-            self.hN77Det, self.numPWMSlots, slotInfoArrPtr
-        )  ## This is hardcoded in the driver :'(
+            self.hN77Det, 5, slotInfoArrPtr
+        )  # N77 has 4 detectors but the driver will return 5, where index 0 is the laser slot (not applicable for N77)
         self.checkErrorN77(res_N77)
-        # slotInfoArrPtr[self.numPWMSlots - 5] = 0 # Manually added
-        # slotInfoArrPtr[self.numPWMSlots - 1] = 1 # Manually added
-        # print (slotInfoArrPtr[:self.numPWMSlots])
-        return slotInfoArrPtr[
-            : self.numPWMSlots
-        ]  # I guess this returns the pointer array
+        return [x for x in slotInfoArr]
 
     def enumerateN77PWMSlots(self):
         pwmSlotIndex = list()
@@ -341,7 +348,3 @@ class hp816x_N77Det(hp816x_instr.hp816x):
             pointsAccum += points
 
         return (wavelengthArrPWM, powerArrPWM)
-
-
-class InstrumentError(Exception):
-    pass
