@@ -40,6 +40,7 @@ def get_lorentzian_peaks(
     if len(powers) != len(wavelengths):
         raise RuntimeError("Number of wavelengths and powers do not match")
 
+    # https://www.mathworks.com/help/signal/ug/prominence.html
     prominence *= max(powers) - min(powers)
     width = int(len(powers) / 500)
 
@@ -84,7 +85,7 @@ def get_lorentzian_peaks(
                 )
             ]
         )
-        right_base_avg = np.mean(
+        right_base_avg: float = np.mean(
             powers[
                 max(0, right_base_index - 50) : min(
                     len(powers) - 1, right_base_index + 50
@@ -238,6 +239,21 @@ class RetrospectiveAnalyzer(object):
     ) -> tuple[
         dict[int, tuple[list[list[float]], float]], dict[int, list[NDArray[np.float64]]]
     ]:
+        """analyze
+
+        Args:
+
+            - channels (list[int]): the channel indexes e.g. [0,2,4] for channel 1,3,5
+            - prominence (float): prominence for the peak detection
+            - enable_multi_processing (bool, optional): Defaults to True. Set to false for debugging.
+
+        Returns:
+
+            - tuple[dict[int, tuple[list[list[float]], float]], dict[int, list[NDArray[np.float64]]] ]: traces dictionary and peaks dictionary, where keys are channel indexes and values are:
+
+                - traces: (list of list of floats, FSR), the traces start at an actual peak wavelength in spectrogram.
+                - peaks: list of sweep matrix, indexes are sweep number and values are rows of sweep vectors.
+        """
         if enable_multi_processing:
             process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
             with mp.Pool(
@@ -278,12 +294,22 @@ class RetrospectiveAnalyzer(object):
                 {},
             )
 
-        return {k: peaks_to_shifts_py(v) for k, v in peaks.items()}, peaks
+        return {k: _peaks_to_traces(v) for k, v in peaks.items()}, peaks
 
 
-def peaks_to_shifts_py(
+def _peaks_to_traces(
     peaks: list[NDArray[np.float64]],
 ) -> tuple[list[list[float]], float]:
+    """__peaks_to_traces
+
+    Convert sweeps (in matrix form) into a few traces with FSR
+
+    Args:
+        peaks (list[NDArray[np.float64]]): list of sweeps in matrix form where each row is a peak vector
+
+    Returns:
+        tuple[list[list[float]], float]: ([traces], FSR)
+    """
     FSR: float = np.mean([d for sweep in peaks[::10] for d in np.diff(sweep[:, 0])])
     population: NDArray[np.float64] = np.array(
         [p for sweep in peaks[::10] for p in sweep]
@@ -404,40 +430,36 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FuncFormatter
 
-    channels = [4]
-    # channels = [0, 1, 2, 3, 4, 5]
+    channels = [0, 1, 2, 3, 4, 5]
     analyzer = RetrospectiveAnalyzer(
-        # r"D:\17110\下载\2022-06-15_Gemina-Phase-3b_Trial-2\Bulk_RI",
-        # r"D:\17110\下载\2022-06-15_Gemina-Phase-3b_Trial-2\Bioassay",
-        # r"D:\17110\下载\decending modified",
-        r"D:\17110\下载\BulkRI",
+        os.path.expanduser("~/path/to/data/folder"),
         0.25,
         wavelength_multiplier=1e9,
     )
 
     # Plot spectrogram
 
-    # step = 1
-    # data = analyzer.get_spectrograms(channels, step)
-    # x_labels = np.vectorize(lambda x: "{:.2f}".format(x))(analyzer.timestamps[::step])
-    # y_labels = np.vectorize(lambda x: "{:.2f}".format(x))(analyzer.wavelengths[::-1])
-    # x_formatter = FuncFormatter(lambda x, _: x_labels[int(x)])
-    # y_formatter = FuncFormatter(lambda y, _: y_labels[int(y)])
-    # for c in channels:
-    #     fig = plt.figure()
-    #     ax = fig.add_subplot(111)
-    #     ax.imshow(data[c], cmap="inferno")
-    #     tick_step = 50
-    #     ax.set_xticks(list(range(len(x_labels)))[::tick_step], x_labels[::tick_step])
-    #     ax.set_yticks(list(range(len(y_labels)))[::tick_step], y_labels[::tick_step])
-    #     ax.xaxis.set_major_formatter(x_formatter)
-    #     ax.yaxis.set_major_formatter(y_formatter)
-    #     fig.tight_layout()
-    # plt.show()
+    step = 1
+    data = analyzer.get_spectrograms(channels, step)
+    x_labels = np.vectorize(lambda x: "{:.2f}".format(x))(analyzer.timestamps[::step])
+    y_labels = np.vectorize(lambda x: "{:.2f}".format(x))(analyzer.wavelengths[::-1])
+    x_formatter = FuncFormatter(lambda x, _: x_labels[int(x)])
+    y_formatter = FuncFormatter(lambda y, _: y_labels[int(y)])
+    for c in channels:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.imshow(data[c], cmap="inferno")
+        tick_step = 50
+        ax.set_xticks(list(range(len(x_labels)))[::tick_step], x_labels[::tick_step])
+        ax.set_yticks(list(range(len(y_labels)))[::tick_step], y_labels[::tick_step])
+        ax.xaxis.set_major_formatter(x_formatter)
+        ax.yaxis.set_major_formatter(y_formatter)
+        fig.tight_layout()
+    plt.show()
 
     # Plot traces
 
-    all_traces = analyzer.analyze(channels, 0.05)
+    all_traces, all_peaks = analyzer.analyze(channels, 0.05)
     for c in channels:
         fig = plt.figure()
         ax = fig.add_subplot(111)

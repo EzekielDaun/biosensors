@@ -1,4 +1,4 @@
-# Retrospective Analysis GUI Alpha-1
+# Retrospective Analysis GUI Alpha
 
 ## Setup
 
@@ -7,7 +7,7 @@ Python version >= 3.10
 ### Windows 10/11
 
 ```shell
-scoop install python310
+scoop/chocolatey/winget install python310
 ```
 
 ### macOS 12 
@@ -41,6 +41,12 @@ If using a virtual environment, activate it. Double check that the commands are 
 pip install -r requirements.txt
 ```
 
+### Deployment
+
+[Qt for Python Deployment](https://doc.qt.io/qtforpython-6/deployment.html#deployment-guides)
+
+(Nuitka 1.0.4) The GitHub Action in RA-release-channel uses Nuitka. The compiled executable will sometimes crash when running. For the sake of stability, running from source code is recommended.
+
 ## Usage
 
 ```shell
@@ -52,17 +58,22 @@ pythonw retrospective_analysis_gui.pyw
 3. Specify analyzer parameters and click `Load`
 4. (Optional) In `(Optional) Plot Spectrograms`, select power channels and proper parameters, then click `Spectrogram`
 5. Select power channels and click `Start Track`
-6. Once the results show up, use the tab to navigate between power channels.
+6. Once the results show up, use the tab to navigate through power channels.
 7. If necessary, manually adjust the traces:
-   1. Select the trace (Trace1 Time x-xx) in the combo box
+   1. Select the trace (Trace1 Time xx-xx) in the combo box
    2. Adjust the offset by multiples of FSR or any arbitrary number in the spinboxes
-8. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the folder that was selected before.
-9. Assign an assay name to this channel in the `Assay` block.
-10. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (**This figure will not be saved automatically**).
+8. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the selected folder when clicking those buttons
+9. Assign an assay name to this channel in the `Assay` block
+10. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (**This figure will not be saved automatically**)
 
 ## FAQ
 
-TODO:
+* Peak tracking raises an error / never stops
+  * Please first check the spectrograms in each channel. And only track the channels with resonance peaks.
+* There are invisible trace sections
+  * This is usually due to the trace containing only a single data point. Try shifting a few FSRs and check the overlay result.
+* Curve fitting exceeds iteration limits
+  * (202208) This issue happens a few times on Intel processors only. Try using AMD/ARM processors instead.
 
 ## Contribute
 
@@ -74,13 +85,11 @@ If you are not sure about how to use a feature or have any suggestions or ideas 
 
 - [Type Hints](https://peps.python.org/pep-0585/)
 
-  Although Python is a dynamically typed language, it is still possible to use type hints for better clarity. With type hint, IDE/Editor will also have better support for auto-completion and linting.
+  Although Python is a dynamically typed language, it is still possible to use type hints for better clarity. With type hint, IDE/editor will also have better support for auto-completion and linting.
 
-- Use code formatter
+- Code formatter
 
-  A formatter is cool, right? I can't see any reason to refuse using a formatter.
-
-  Although using a formatter is not a must, if your cooperator is using a formatter, when they are modifying your unformatted code, they would either have a huge git `diff` or have to make a separate formatting commit. Either will corrupt the git `blame` history.
+  Although it's not a must to use a formatter, if your cooperator is using a formatter, when they are modifying your unformatted code, they would either produce a huge git `diff` or have to make a separate formatting commit. Either will corrupt the git `blame` history.
 
   This project is using [black](https://black.readthedocs.io/en/stable/integrations/editors.html) with the default setting.
 
@@ -90,9 +99,9 @@ If you are not sure about how to use a feature or have any suggestions or ideas 
 
   [Get Started with PySide](https://doc.qt.io/qtforpython-6/index.html)
 
-  Most widgets are designed by `pyside6-designer` and converted to Python files by `pyside6-uic`. See [official tutorials](https://doc.qt.io/qtforpython-6/tutorials/basictutorial/uifiles.html) for guidance on how to use them. For creating signals and slots, currently, this project is using a mixed way of either creating them in designer or directly in code. Either way is fine, but it's preferred to be consistent inside one module/widget/window unless the function to be implemented can only be done in one specific way.
+  Most widgets are designed by `pyside6-designer` and converted to Python files by `pyside6-uic`. See [official tutorials](https://doc.qt.io/qtforpython-6/tutorials/basictutorial/uifiles.html) for guidance on how to use them. For creating signals and slots, currently, this project is using a mixed way of either creating them in designer or directly in code. Either way is fine, but it's preferred to be consistent within one module/widget/window unless the function has to be implemented in one specific way.
 
-- Pythonic, iterator, Functional Programming (FP) and parallelism
+- Pythonic, iterator, functional programming (FP) and parallelism
 
   I like one concept in FP rather than `Pythonic`, that FP tries to avoid using temporary variables and instead uses `lambda` and `map` to describe the operation on the data.
 
@@ -115,11 +124,11 @@ If you are not sure about how to use a feature or have any suggestions or ideas 
   results = map(lambda x: calc(x), items)
   ```
 
-  But say, if each element is a list of data, and you want to first filter out some lists, then flatten the nested list, and want the calculation to be applied on every 2 adjacent elements.
+  But say, if each element is a list of data, and you want to first filter out some lists, then flatten the nested list, and want the calculation to be applied on every 2 adjacent elements ([sliding window](https://www.geeksforgeeks.org/window-sliding-technique/)).
 
   ```Python
   # Pythonic
-  results = [x for xs in items if is_good(xs) for x in xs] # this only do the filtering and flatten
+  results = [x for xs in items if is_good(xs) for x in xs] # this can only do the filtering and flatten
                                                            # how to make a sliding window in a Pythonic way?
 
   # FP
