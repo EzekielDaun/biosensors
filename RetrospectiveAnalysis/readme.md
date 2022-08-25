@@ -35,7 +35,7 @@ Official tutorial for the [virtual environment](https://docs.python.org/3/tutori
 
 ### Dependencies
 
-If using a virtual environment, activate it. Double check that the commands are calling the right binaries.
+If using a virtual environment, activate it. Double-check that the commands are calling the right binaries.
 
 ```shell
 pip install -r requirements.txt
@@ -50,7 +50,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```shell
-pythonw retrospective_analysis_gui.pyw
+python retrospective_analysis_gui.pyw
 ```
 
 1. In the menubar, click `File`->`Open Folder` or `ctrl/⌘+O`
