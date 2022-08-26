@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>RaMainWindow</class>
+ <widget class="QMainWindow" name="RaMainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>720</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1280</width>
+    <height>720</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Retrospective Analysis</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_4">
+    <item>
+     <widget class="QSplitter" name="splitter_3">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QSplitter" name="splitter">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <widget class="QTreeView" name="treeView">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::DoubleClicked|QAbstractItemView::SelectedClicked</set>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QGroupBox" name="analyzerSettingsGroupBox">
+           <property name="title">
+            <string>1. Analyzer Settings</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <layout class="QGridLayout" name="gridLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>Timestamp File/Number</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="timeStampComboBox">
+                <property name="editable">
+                 <bool>true</bool>
+                </property>
+                <property name="currentText">
+                 <string>0.25</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>Time Multiplier (to minutes):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="timeMultiplierLineEdit">
+                <property name="text">
+                 <string>1/60</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_4">
+                <property name="text">
+                 <string>Wavelength Multiplier (to nm):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="wavelengthMultiplierLineEdit">
+                <property name="text">
+                 <string>1e9</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label_6">
+                <property name="text">
+                 <string>Data File Pattern (RegEx):</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="patternLineEdit">
+                <property name="text">
+                 <string>r&quot;.*sweep_(\d+)\.mat&quot;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_5">
+              <item>
+               <spacer name="verticalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="loadAnalyzerButton">
+                <property name="text">
+                 <string>Load</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="plotSpectrogramsGroupBox">
+           <property name="title">
+            <string>Optional. Plot Spectrograms</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QListWidget" name="powerListWidget"/>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout">
+              <item>
+               <layout class="QGridLayout" name="gridLayout_2">
+                <item row="0" column="0">
+                 <widget class="QLabel" name="label">
+                  <property name="text">
+                   <string>Sample Step:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1">
+                 <widget class="QSpinBox" name="sampleStepSpinBox">
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>X Ticks:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QSpinBox" name="xTicksSpinBox">
+                  <property name="value">
+                   <number>20</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_7">
+                  <property name="text">
+                   <string>Y Ticks:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QSpinBox" name="yTicksSpinBox">
+                  <property name="minimum">
+                   <number>1</number>
+                  </property>
+                  <property name="value">
+                   <number>20</number>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_8">
+                  <property name="text">
+                   <string>Power Unit:</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="powerUnitLineEdit">
+                  <property name="text">
+                   <string>dBm</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="spectrogramButton">
+                <property name="text">
+                 <string>Spectrogram</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+      <widget class="QGroupBox" name="peakTracingGroupBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>4</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="title">
+        <string>2. Peak Tracing</string>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QSplitter" name="splitter_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <widget class="QWidget" name="layoutWidget">
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0" rowspan="3">
+             <widget class="QListWidget" name="peakTrackerPowerListWidget">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>150</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="trackPeakButton">
+              <property name="text">
+               <string>Start Track</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>118</width>
+                <height>88</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="saveResultsButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Save Results</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionOpen"/>
+   </widget>
+   <addaction name="menuFile"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QDockWidget" name="logDockWidget">
+   <property name="windowTitle">
+    <string>Log</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QTextBrowser" name="textBrowser">
+       <property name="font">
+        <font>
+         <family>Cascadia Mono</family>
+        </font>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open Folder</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionSave_as">
+   <property name="text">
+    <string>Save as</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionOp1">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Op1</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>actionOpen</sender>
+   <signal>triggered()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_open_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>709</x>
+     <y>443</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>treeView</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_file_changed(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>170</x>
+     <y>325</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>709</x>
+     <y>443</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>treeView</sender>
+   <signal>activated(QModelIndex)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_file_changed(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>61</x>
+     <y>325</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>709</x>
+     <y>443</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>loadAnalyzerButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_load_analyzer()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>747</x>
+     <y>358</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spectrogramButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_plot_spectrogram()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>468</x>
+     <y>676</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>trackPeakButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_track_peak()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>954</x>
+     <y>360</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>saveResultsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_save_results()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>917</x>
+     <y>667</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>slot_open_clicked()</slot>
+  <slot>slot_file_changed(QModelIndex)</slot>
+  <slot>slot_load_analyzer()</slot>
+  <slot>slot_plot_spectrogram()</slot>
+  <slot>slot_track_peak()</slot>
+  <slot>slot_save_results()</slot>
+ </slots>
+</ui>

@@ -1,3 +1,26 @@
+# Any hidden file or directory
+.*
+.*/
+!.gitignore
+
+# Virtual environment and build
+*[Vv]env*/
+[Bb]uild/
+
+# Python compiled files
 *.pyc
+__pycache__/
+
+# Testing
+*test*/
+!test/
+!tests/
+
+# Nuitka Build
+*.app/
+*.build/
+*.dist/
+*.onefile-build/
+*/Info.plist
+
 .DS_Store
-venv
