@@ -2,33 +2,44 @@
 
 ## Requirements
 
-* Windows
-* [816x VXI Plug&Play Driver](https://www.keysight.com/ca/en/lib/software-detail/driver/816x-vxi-plugplay-driver-112417.html)
-* Python3.7~3.9 (3.9 preferred)
+- Windows
+- [816x VXI Plug&Play Driver](https://www.keysight.com/ca/en/lib/software-detail/driver/816x-vxi-plugplay-driver-112417.html)
+- Python3.7~3.9 (3.9 preferred)
 
 ## Installation
 
 1. Clone this folder to your local drive
-2. ```python -m venv .venv```
-3. ```pip install -r requirements.txt```
+2. `python -m venv .venv`
+3. `pip install -r requirements.txt`
+
+---
 
 ## Usage
+
 ### pyOptomip
+
 ```
 pythonw pyOptomip.pyw
 ```
+
 #### Connect to Instruments
-TODO:
-#### Laser Control
-TODO:
-#### Run Sweep
-TODO:
-#### Stage Control
-TODO:
+
+![connect to stage](assets/pyOptomip-readme/stage.png)
+![connect to c band with n77](assets/pyOptomip-readme/c-band-with-n77.png)
+![connect to o band with n77](assets/pyOptomip-readme/o-band-with-n77.png)
+
+#### Instrument Control
+
+![Interface Description](assets/pyOptomip-readme/interface.png)
+
 #### Fine-Align
-TODO:
+
+![Fine Align](assets/pyOptomip-readme/fine-align.png)
+
+---
 
 ### Multi-Sweep
+
 ```toml
 # multi-sweep.toml
 # Sample multi-sweep configuration file, make sure this exists in the same folder with multi-sweep.py
