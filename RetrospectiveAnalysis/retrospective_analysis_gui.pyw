@@ -13,7 +13,7 @@ if __name__ == "__main__":
     window.show()
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="{levelname:^7s}::{asctime}::{name}::{message}",
         style="{",
         datefmt="%H:%M:%S",
