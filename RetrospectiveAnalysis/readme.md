@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 [Qt for Python Deployment](https://doc.qt.io/qtforpython-6/deployment.html#deployment-guides)
 
-(Nuitka 1.0.4) The GitHub Action in RA-release-channel uses Nuitka. The compiled executable will sometimes crash when running. For the sake of stability, running from source code is recommended.
+We tried Nuitka in 2022 summer. The compiled executable is somewhat unstable.
 
 ## Usage
 
@@ -68,12 +68,12 @@ python retrospective_analysis_gui.pyw
 
 ## FAQ
 
-* Peak tracking raises an error / never stops
-  * Please first check the spectrograms in each channel. And only track the channels with resonance peaks.
-* There are invisible trace sections
-  * This is usually due to the trace containing only a single data point. Try shifting a few FSRs and check the overlay result.
-* Curve fitting exceeds iteration limits
-  * (202208) This issue happens a few times on Intel processors only. Try using AMD/ARM processors instead.
+- Peak tracking raises an error / never stops
+  - Please first check the spectrograms in each channel. And only track the channels with resonance peaks.
+- There are invisible trace sections
+  - This is usually due to the trace containing only a single data point. Try shifting a few FSRs and check the overlay result.
+- Curve fitting exceeds iteration limits
+  - Try to re-run another time. If the error still exists, try running it on another PC.
 
 ## Contribute
 
