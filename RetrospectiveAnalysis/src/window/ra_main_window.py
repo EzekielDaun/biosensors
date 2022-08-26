@@ -30,56 +30,56 @@ logger = logging.getLogger(__name__)
 
 
 class RaMainWindow(QMainWindow):
-    _signal_write = Signal(str)
+    __signal_write = Signal(str)
 
     def __init__(self):
         super().__init__()
-        self.ui = Ui_RaMainWindow()
-        self.ui.setupUi(self)
+        self.__ui = Ui_RaMainWindow()
+        self.__ui.setupUi(self)
 
-        self.ui.statusbar.showMessage("Retrospective Analysis")
+        self.__ui.statusbar.showMessage("Retrospective Analysis")
 
         # initialize file treeview
         model = QFileSystemModel()
         model.setRootPath(QDir.rootPath())
-        self.ui.treeView.setModel(model)
-        self.ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
+        self.__ui.treeView.setModel(model)
+        self.__ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
 
         # file plotter
-        self.file_plotter = RaFilePlotter()
-        self.ui.splitter.insertWidget(0, self.file_plotter)
-        self.ui.splitter.setStretchFactor(0, 2)
+        self.__file_plotter = RaFilePlotter()
+        self.__ui.splitter.insertWidget(0, self.__file_plotter)
+        self.__ui.splitter.setStretchFactor(0, 2)
 
         # spectrum plotter
         # intended to be popped up so not in any layout
-        self.folder_plotter = RaFolderPlotter()
-        self.folder_plotter.signal_spectrograms_work_done.connect(
-            self.ui.spectrogramButton.setEnabled
+        self.__folder_plotter = RaFolderPlotter()
+        self.__folder_plotter.signal_spectrograms_work_done.connect(
+            self.__ui.spectrogramButton.setEnabled
         )
 
         # peak tracker
-        self.peak_tracker_widget = RaPeakTrackerWidget()
-        self.ui.splitter_2.addWidget(self.peak_tracker_widget)
-        self.ui.splitter_2.setStretchFactor(1, 2)
-        self.peak_tracker_widget.signal_work_done.connect(
-            self.ui.trackPeakButton.setEnabled
+        self.__peak_tracker_widget = RaPeakTrackerWidget()
+        self.__ui.splitter_2.addWidget(self.__peak_tracker_widget)
+        self.__ui.splitter_2.setStretchFactor(1, 2)
+        self.__peak_tracker_widget.signal_work_done.connect(
+            self.__ui.trackPeakButton.setEnabled
         )
-        self.peak_tracker_widget.signal_work_done.connect(
-            self.ui.saveResultsButton.setEnabled
+        self.__peak_tracker_widget.signal_work_done.connect(
+            self.__ui.saveResultsButton.setEnabled
         )
 
         # Redirect stdout and stderr to log panel
-        self._signal_write.connect(self.slot_log_write)
+        self.__signal_write.connect(self.slot_log_write)
         sys.stdout = self
         sys.stderr = self
 
-        self.ui.analyzerSettingsGroupBox.setEnabled(False)
-        self.ui.plotSpectrogramsGroupBox.setEnabled(False)
-        self.ui.peakTracingGroupBox.setEnabled(False)
+        self.__ui.analyzerSettingsGroupBox.setEnabled(False)
+        self.__ui.plotSpectrogramsGroupBox.setEnabled(False)
+        self.__ui.peakTracingGroupBox.setEnabled(False)
 
     # stdout redirection requirement
     def write(self, m):
-        self._signal_write.emit(m)
+        self.__signal_write.emit(m)
 
     # stdout redirection requirement
     def flush(self):
@@ -87,9 +87,9 @@ class RaMainWindow(QMainWindow):
 
     @Slot()
     def slot_log_write(self, text):
-        self.ui.textBrowser.moveCursor(QTextCursor.End)
-        self.ui.textBrowser.insertPlainText(text)
-        self.ui.textBrowser.ensureCursorVisible()
+        self.__ui.textBrowser.moveCursor(QTextCursor.End)
+        self.__ui.textBrowser.insertPlainText(text)
+        self.__ui.textBrowser.ensureCursorVisible()
 
     # Slots
     def slot_open_clicked(self):
@@ -97,33 +97,33 @@ class RaMainWindow(QMainWindow):
             dir=os.path.expanduser("~"),
         )
         if folder_path == "":
-            self.ui.statusbar.showMessage(f"Retrospective Analysis - Open cancelled")
+            self.__ui.statusbar.showMessage(f"Retrospective Analysis - Open cancelled")
         else:
-            tree_view = self.ui.treeView
+            tree_view = self.__ui.treeView
             model: QFileSystemModel = tree_view.model()  # type: ignore
             tree_view.setRootIndex(model.index(folder_path))
-            self.ui.statusbar.showMessage(f"Retrospective Analysis - {folder_path}")
+            self.__ui.statusbar.showMessage(f"Retrospective Analysis - {folder_path}")
             os.chdir(folder_path)
 
             # clear
-            self.ui.powerListWidget.clear()
-            self.ui.peakTrackerPowerListWidget.clear()
-            self.ui.timeStampComboBox.clear()
-            self.peak_tracker_widget.clear()
-            self.file_plotter.clear()
+            self.__ui.powerListWidget.clear()
+            self.__ui.peakTrackerPowerListWidget.clear()
+            self.__ui.timeStampComboBox.clear()
+            self.__peak_tracker_widget.clear()
+            self.__file_plotter.clear()
 
             # setup timestamp selector combo box
             pat = re.compile(r".*time.*\.csv")
             for f in filter(lambda x: pat.match(x), iter(os.listdir(folder_path))):
-                self.ui.timeStampComboBox.addItem(str(f))
+                self.__ui.timeStampComboBox.addItem(str(f))
 
-            self.ui.analyzerSettingsGroupBox.setEnabled(True)
-            self.ui.plotSpectrogramsGroupBox.setEnabled(False)
-            self.ui.peakTracingGroupBox.setEnabled(False)
-            self.ui.saveResultsButton.setEnabled(False)
+            self.__ui.analyzerSettingsGroupBox.setEnabled(True)
+            self.__ui.plotSpectrogramsGroupBox.setEnabled(False)
+            self.__ui.peakTracingGroupBox.setEnabled(False)
+            self.__ui.saveResultsButton.setEnabled(False)
 
     def slot_file_changed(self, model_index):
-        tree_view = self.ui.treeView
+        tree_view = self.__ui.treeView
         model: QFileSystemModel = tree_view.model()  # type: ignore
         file_path = model.filePath(model_index)
         file_name = os.path.basename(file_path)
@@ -133,30 +133,30 @@ class RaMainWindow(QMainWindow):
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            self.file_plotter.plot_file(file_path)
+            self.__file_plotter.plot_file(file_path)
 
     def slot_load_analyzer(self):
         # clear power list widget
-        self.ui.powerListWidget.clear()
-        self.ui.peakTrackerPowerListWidget.clear()
+        self.__ui.powerListWidget.clear()
+        self.__ui.peakTrackerPowerListWidget.clear()
         # clear peak tracker
-        self.peak_tracker_widget.clear()
+        self.__peak_tracker_widget.clear()
 
         # load analyzer parameters
         try:
-            pattern = eval(self.ui.patternLineEdit.text())
+            pattern = eval(self.__ui.patternLineEdit.text())
             wavelength_multiplier = float(
-                eval(self.ui.wavelengthMultiplierLineEdit.text())
+                eval(self.__ui.wavelengthMultiplierLineEdit.text())
             )
-            time_multiplier = float(eval(self.ui.timeMultiplierLineEdit.text()))
+            time_multiplier = float(eval(self.__ui.timeMultiplierLineEdit.text()))
         except Exception as e:
             logger.error(f"{e}")
             raise e
 
-        path = self.ui.treeView.model().filePath(  # type: ignore
-            self.ui.treeView.rootIndex()
+        path = self.__ui.treeView.model().filePath(  # type: ignore
+            self.__ui.treeView.rootIndex()
         )
-        timestamp = self.ui.timeStampComboBox.currentText()
+        timestamp = self.__ui.timeStampComboBox.currentText()
         try:
             timestamp = float(timestamp)
         except ValueError as e:  # if parse float failed
@@ -175,37 +175,37 @@ class RaMainWindow(QMainWindow):
         for i in range(power_num):
             item = QListWidgetItem()
             checkbox = QCheckBox(f"Power {i+1}")
-            self.ui.powerListWidget.addItem(item)
-            self.ui.powerListWidget.setItemWidget(item, checkbox)
+            self.__ui.powerListWidget.addItem(item)
+            self.__ui.powerListWidget.setItemWidget(item, checkbox)
 
             item = QListWidgetItem()
             checkbox = QCheckBox(f"Power {i+1}")
             checkbox.setChecked(True)
-            self.ui.peakTrackerPowerListWidget.addItem(item)
-            self.ui.peakTrackerPowerListWidget.setItemWidget(item, checkbox)
+            self.__ui.peakTrackerPowerListWidget.addItem(item)
+            self.__ui.peakTrackerPowerListWidget.setItemWidget(item, checkbox)
 
-        self.ui.plotSpectrogramsGroupBox.setEnabled(True)
-        self.ui.peakTracingGroupBox.setEnabled(True)
+        self.__ui.plotSpectrogramsGroupBox.setEnabled(True)
+        self.__ui.peakTracingGroupBox.setEnabled(True)
 
     def slot_plot_spectrogram(self):
-        self.folder_plotter.analyzer = self.__analyzer
-        lw = self.ui.powerListWidget
+        self.__folder_plotter.analyzer = self.__analyzer
+        lw = self.__ui.powerListWidget
         powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
-        self.folder_plotter.plot_spectrograms(
+        self.__folder_plotter.plot_spectrograms(
             powers,
-            self.ui.sampleStepSpinBox.value(),
-            self.ui.xTicksSpinBox.value(),
-            self.ui.yTicksSpinBox.value(),
-            self.ui.powerUnitLineEdit.text(),
+            self.__ui.sampleStepSpinBox.value(),
+            self.__ui.xTicksSpinBox.value(),
+            self.__ui.yTicksSpinBox.value(),
+            self.__ui.powerUnitLineEdit.text(),
         )
-        self.folder_plotter.show()
+        self.__folder_plotter.show()
 
         logger.info("Spectrogram plotting started!")
 
     def slot_track_peak(self):
-        lw = self.ui.peakTrackerPowerListWidget
+        lw = self.__ui.peakTrackerPowerListWidget
         powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
-        self.peak_tracker_widget.plot_initial(self.__analyzer, powers, 0.2)
+        self.__peak_tracker_widget.plot_initial(self.__analyzer, powers, 0.2)
 
     def slot_save_results(self):
-        self.peak_tracker_widget.save_results()
+        self.__peak_tracker_widget.save_results()

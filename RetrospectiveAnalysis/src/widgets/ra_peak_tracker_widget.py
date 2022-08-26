@@ -31,8 +31,8 @@ class RaPeakTrackerTab(QWidget):
         parent=None,
     ):
         super().__init__(parent)
-        self.ui = Ui_PeakTrackerTabSettingWidget()
-        self.ui.setupUi(self)
+        self.__ui = Ui_PeakTrackerTabSettingWidget()
+        self.__ui.setupUi(self)
 
         self.__name = f"Power {power_index+1}"
         self.__power_index = power_index
@@ -44,22 +44,22 @@ class RaPeakTrackerTab(QWidget):
         self.__analyzer = analyzer
 
         self.__figure_widget = RaFigureWidget()
-        self.ui.splitter.addWidget(self.__figure_widget)
-        self.ui.splitter.setStretchFactor(self.ui.splitter.count() - 1, 1)
+        self.__ui.splitter.addWidget(self.__figure_widget)
+        self.__ui.splitter.setStretchFactor(self.__ui.splitter.count() - 1, 1)
 
-        self.ui.doubleSpinBox.valueChanged.connect(self.__slot_update_offsets)  # type: ignore
-        self.ui.spinBox.valueChanged.connect(self.__slot_update_offsets)  # type: ignore
-        self.ui.comboBox.currentIndexChanged.connect(self.__slot_switch_traces)  # type: ignore
+        self.__ui.doubleSpinBox.valueChanged.connect(self.__slot_update_offsets)  # type: ignore
+        self.__ui.spinBox.valueChanged.connect(self.__slot_update_offsets)  # type: ignore
+        self.__ui.comboBox.currentIndexChanged.connect(self.__slot_switch_traces)  # type: ignore
 
-        self.ui.plotPeakOffsetButton.clicked.connect(self.__slot_plot_peak_offset)  # type: ignore
-        self.ui.plotOverlayButton.clicked.connect(self.__slot_plot_overlay)  # type: ignore
-        self.ui.plotOffsetSpectrogramButton.clicked.connect(self.__slot_plot_offset_spectrogram)  # type: ignore
+        self.__ui.plotPeakOffsetButton.clicked.connect(self.__slot_plot_peak_offset)  # type: ignore
+        self.__ui.plotOverlayButton.clicked.connect(self.__slot_plot_overlay)  # type: ignore
+        self.__ui.plotOffsetSpectrogramButton.clicked.connect(self.__slot_plot_offset_spectrogram)  # type: ignore
 
-        self.ui.assayComboBox.currentIndexChanged.connect(parent.slot_update_assay_name)  # type: ignore
+        self.__ui.assayComboBox.currentIndexChanged.connect(parent.slot_update_assay_name)  # type: ignore
 
         x0 = 0
         for i, trace in enumerate(self.__traces):
-            self.ui.comboBox.addItem(
+            self.__ui.comboBox.addItem(
                 f"Trace{i+1} (Time {self.__timestamps[x0]:.6g}-{self.__timestamps[x0+len(trace)-1]:.6g})"
             )
             x0 += len(trace)
@@ -85,7 +85,7 @@ class RaPeakTrackerTab(QWidget):
 
     @property
     def assay(self):
-        return self.ui.assayComboBox.currentText()
+        return self.__ui.assayComboBox.currentText()
 
     @property
     def name(self):
@@ -106,21 +106,21 @@ class RaPeakTrackerTab(QWidget):
 
     @Slot()
     def __slot_update_offsets(self):
-        index = self.ui.comboBox.currentIndex()
-        self.__fsr_multipliers[index] = self.ui.spinBox.value()
-        self.__offsets[index] = self.ui.doubleSpinBox.value()
+        index = self.__ui.comboBox.currentIndex()
+        self.__fsr_multipliers[index] = self.__ui.spinBox.value()
+        self.__offsets[index] = self.__ui.doubleSpinBox.value()
         self.update()
 
     @Slot()
     def __slot_switch_traces(self):
-        index = self.ui.comboBox.currentIndex()
-        self.ui.spinBox.blockSignals(True)
-        self.ui.doubleSpinBox.blockSignals(True)
-        self.ui.spinBox.setValue(self.__fsr_multipliers[index])
-        self.ui.spinBox.setSuffix(f"×{self.__fsr:.6g}")
-        self.ui.doubleSpinBox.setValue(self.__offsets[index])
-        self.ui.spinBox.blockSignals(False)
-        self.ui.doubleSpinBox.blockSignals(False)
+        index = self.__ui.comboBox.currentIndex()
+        self.__ui.spinBox.blockSignals(True)
+        self.__ui.doubleSpinBox.blockSignals(True)
+        self.__ui.spinBox.setValue(self.__fsr_multipliers[index])
+        self.__ui.spinBox.setSuffix(f"×{self.__fsr:.6g}")
+        self.__ui.doubleSpinBox.setValue(self.__offsets[index])
+        self.__ui.spinBox.blockSignals(False)
+        self.__ui.doubleSpinBox.blockSignals(False)
 
     @Slot()
     def __slot_plot_peak_offset(self):
@@ -136,7 +136,7 @@ class RaPeakTrackerTab(QWidget):
         ax.axis("auto")
         title = f"{self.__name} Peak Offset"
         ax.set_title(title)
-        if self.ui.autoSaveCheckBox.isChecked():
+        if self.__ui.autoSaveCheckBox.isChecked():
             plt.savefig(title.replace(" ", "_").lower() + ".png")
         plt.show()
 
@@ -178,7 +178,7 @@ class RaPeakTrackerTab(QWidget):
         ax.set_title(title)
         fig.set_size_inches(8, 5)
         ax.axis("auto")
-        if self.ui.autoSaveCheckBox.isChecked():
+        if self.__ui.autoSaveCheckBox.isChecked():
             plt.savefig(title.replace(" ", "_").lower() + ".png")
         plt.show()
 
@@ -235,7 +235,7 @@ class RaPeakTrackerTab(QWidget):
         plt.gcf().set_size_inches(8, 10)
 
         title = f"{self.__name} Peak Shift with Overlay"
-        if self.ui.autoSaveCheckBox.isChecked():
+        if self.__ui.autoSaveCheckBox.isChecked():
             plt.savefig(title.replace(" ", "_").lower() + ".png")
         plt.show()
 
@@ -375,12 +375,12 @@ class RaPeakTrackerWidget(QWidget):
         for tab in all_tabs:
             self.__assay_name_hint.add(tab.assay)
         for tab in all_tabs:
-            tab.ui.assayComboBox.setCompleter(QCompleter(list(self.__assay_name_hint)))
+            tab.__ui.assayComboBox.setCompleter(QCompleter(list(self.__assay_name_hint)))
             item_texts = [
-                tab.ui.assayComboBox.itemText(i)
-                for i in range(tab.ui.assayComboBox.count())
+                tab.__ui.assayComboBox.itemText(i)
+                for i in range(tab.__ui.assayComboBox.count())
             ]
-            tab.ui.assayComboBox.addItems(
+            tab.__ui.assayComboBox.addItems(
                 [s for s in self.__assay_name_hint if s != "" and s not in item_texts]
             )
 

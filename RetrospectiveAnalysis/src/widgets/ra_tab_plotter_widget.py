@@ -164,6 +164,8 @@ class RaFolderPlotter(__RaTabPlotterBase):
         self.__signal_spectrograms_work_start.connect(
             self.__slot_spectrograms_work_start
         )
+
+        # an analyer should be initialized outside and passed into this class
         self.analyzer: Analyzer = None  # type: ignore
 
     def plot_spectrograms(
