@@ -4,7 +4,7 @@ TODO: Description of the project itself.
 
 ## How to use Git
 
-Before starting, be familiar with the command line and shell. (At least the `cd` command)
+Before starting, be familiar with the [command line and shell](https://missing.csail.mit.edu/2020/course-shell/). (At least the `cd` command)
 
 [Download and Installation Guide](https://git-scm.com/downloads)
 
@@ -90,10 +90,13 @@ For our project (a few developers with less frequent commits), a single main bra
 A proposed workflow is:
 
 1. check out a new branch from `main` with a proper name
-2. commit your changes
-3. create a Pull Request (PR) and request other members to review
-4. merge into the main branch
-5. delete feature/hotfix branch.
+2. commit your changes and push that branch to remote
+3. create a Pull Request (PR) to merge your changes into `main` and request other members to review
+4. update, commit and push your following modifications to that PR branch
+5. merge into the main branch
+6. delete feature/hotfix branch.
+
+[GitHub-Flow](https://docs.github.com/en/get-started/quickstart/github-flow)
 
 #### Merge Conflicts
 
@@ -101,8 +104,8 @@ When multiple members work on the same project, merge conflicts can be tricky. A
 
 A few tips just in case it happens:
 
-1. When resolving merge conflicts, make sure to select the correct changes. Test the functionality after merge.
-2. Force push (`git push --force`) if you believe an overwrite is easier.
-3. Pull from origin frequently with the rebase option (`git pull --rebase`) to avoid/reveal potential conflicts in advance.
+- When resolving merge conflicts, make sure to select the correct changes. Test the functionality after merge.
+- Force push (`git push --force`) if you believe an overwrite is easier. And **BE CAREFUL**.
+- Pull from origin frequently with the rebase option (`git pull --rebase`) to avoid/reveal potential conflicts in advance.
 
 [More about force push and rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html)
