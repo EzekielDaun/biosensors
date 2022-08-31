@@ -128,9 +128,9 @@ class RaFilePlotter(__RaTabPlotterBase):
 
             peaks = get_lorentzian_peaks(power, self.__worker.wavelengths, 0.2)
             for j, peak in enumerate(peaks):
-                x0, y0, _i, gamma = peak
+                x0, y0, _i, gamma, a = peak
                 xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
-                ys = lorentzian(xs, x0, y0, _i, gamma)
+                ys = lorentzian(xs, x0, y0, _i, gamma, a)
                 axes.plot(xs, ys, "-")
         self.__worker.deleteLater()
 

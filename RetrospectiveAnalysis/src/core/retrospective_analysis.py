@@ -16,8 +16,12 @@ from scipy.spatial.distance import cdist
 logger = logging.getLogger(__name__)
 
 
-def lorentzian(x, x0, y0, _i, gamma):
-    return y0 + ((_i * (gamma / 2) ** 2) / ((gamma / 2) ** 2 + (x - x0) ** 2))
+def lorentzian(x, x0, y0, _i, gamma, a):
+    return (
+        y0
+        + ((_i * (gamma / 2) ** 2) / ((gamma / 2) ** 2 + (x - x0) ** 2))
+        + a * (x - x0)
+    )
 
 
 def read_mat(
@@ -107,6 +111,7 @@ def get_lorentzian_peaks(
                     base,  # y0
                     -height,  # I
                     width,  # gamma
+                    0,  # a
                 ],
                 bounds=(
                     [
@@ -114,12 +119,14 @@ def get_lorentzian_peaks(
                         base - abs(base * 0.2),
                         -height * 1.5,
                         width * 0.5,
+                        -np.inf,
                     ],
                     [
                         peak_wavelength + fsr * 0.1,
                         base + abs(base * 0.2),
                         -height * 0.5,
                         width * 1.5,
+                        np.inf,
                     ],
                 ),
             )[0]
