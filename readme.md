@@ -79,11 +79,31 @@ If you only want to use this repo but not change it:
 
 It's highly recommended for developers to be familiar with all topics in [Git Branching](https://learngitbranching.js.org), especially the `remote` section.
 
-A typical git workflow is as follows:
-![Git Workflow](https://git-scm.com/images/about/branches@2x.png)
+A typical git workflow is like [this](https://git-scm.com/about/branching-and-merging) or as follows:
 
-A more advanced version for large projects:
+```mermaid
+    gitGraph
+       commit
+       branch develop
+       checkout develop
+       commit
+       checkout main
+       merge develop
+       checkout develop
+       branch topic
+       commit
+       checkout develop
+       commit
+       merge topic
+       commit
+       checkout main
+       merge develop
+```
+
+A more advanced version for large projects:[^1]
 ![Git Workflow](https://nvie.com/img/git-model@2x.png)
+
+[^1]: At the time of this figure, the default branch naming convention is "master". Now, "main" is preferred. [More](https://github.com/github/renaming)
 
 For our project (a few developers with less frequent commits), a single main branch with feature/hotfix branches is enough.
 
@@ -95,6 +115,22 @@ A proposed workflow is:
 4. update, commit and push your following modifications to that PR branch
 5. merge into the main branch
 6. delete feature/hotfix branch.
+
+```mermaid
+    gitGraph
+      checkout main
+      commit
+      branch feature1
+      checkout feature1
+      commit
+      checkout main
+      branch feature2
+      checkout feature2
+      commit
+      checkout main
+      merge feature1
+      merge feature2
+```
 
 [GitHub-Flow](https://docs.github.com/en/get-started/quickstart/github-flow)
 
