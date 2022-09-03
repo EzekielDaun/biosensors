@@ -10,6 +10,7 @@ import os
 import time
 import csv
 import toml
+from shutil import copyfile
 
 import pyvisa as visa
 import numpy as np
@@ -141,6 +142,8 @@ if __name__ == "__main__":
 
     if not os.path.exists(baseFolder):
         os.makedirs(baseFolder)
+
+    copyfile("multi-sweep.toml", os.path.join(baseFolder, "multi-sweep.toml"))
 
     laser: Optional[Union[hp816x, hp816x_N77Det]] = None
     if is_N77:
