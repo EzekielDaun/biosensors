@@ -74,6 +74,8 @@ python retrospective_analysis_gui.pyw
   - This is usually due to the trace containing only a single data point. Try shifting a few FSRs and check the overlay result.
 - Curve fitting exceeds iteration limits
   - Try to re-run another time. If the error still exists, try running it on another PC.
+  - This error was seen for data from detector 5 in the binding assay of Spike Protein Assay Trial 4 ran in October 2022. More details can be found in the experimental summary of this experiment on the Biosensor Microfluidic Subgroup Google Drive. 
+
 
 ## Contribute
 
