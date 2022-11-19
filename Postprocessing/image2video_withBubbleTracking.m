@@ -21,6 +21,7 @@ warning('off','all')
 clear
 clc
 save_vid            = 1; % 1: save
+outputVid_filename  = 'vid2';
 FrameRate           = 32; % images per second
 image_timelapse_sec = 10; % timelapse of original camera capture
 pause_time          = 0.0000001; % pause for visualization when the script is running
@@ -31,6 +32,7 @@ trackBubbles        = 1; % 0: Convert image to video without tracking bubbles
 numChannels         = 2; % Number of tracking windows
 showTrackBoundries  = 1;  % Show selected region boundries in the video
 Figure_number       = 10; % number of figure in matlab to avoid clearing other figures
+
 
 % File Selection
 if(file_selection==0)
@@ -53,7 +55,7 @@ end
 addpath(path);
 
 %path= '/Users/mohammedalqadasi/Downloads/';
-video_filename = [path 'vid'];file_number=1;
+video_filename = [path outputVid_filename];file_number=1;
 while(exist([video_filename '.avi'], 'file')) % Avoiding video overwrite
    video_filename = [video_filename '_' char(string(file_number)) '.avi']; 
    file_number=file_number+1;
@@ -77,11 +79,11 @@ subplot(2,2,[1,3])
 imshow(imread(filename_array(1)))
 pause(pause_time); axis off;
 subplot(2,2,2)
-xline(0); hold on; ylim([0 256]);xlim([1 2000]);%length(filename_array)]);
+xline(0); hold on; ylim([0 256]);xlim([1 length(filename_array)]);
 xlabel('Data points'); ylabel({'Window#1','Pixel Intensity'})
 set(gca,'fontsize', 14)
 subplot(2,2,4)
-xline(0); hold on; ylim([0 256]);xlim([1 2000]);%length(filename_array)]);
+xline(0); hold on; ylim([0 256]);xlim([1 length(filename_array)]);
 xlabel('Data points'); ylabel({'Window#2','Pixel Intensity'})
 set(gca,'fontsize', 14)
 subplot(2,2,[1,3])
@@ -95,7 +97,6 @@ if(useImageTimeStamps==1)
 %         fileList(i).name = [Image_Suffix, num2str(i), '.jpg'];
         fileList(i).name = char(fileListName(i));
     end
-
     % get the initial time (time of first image)
     info = imfinfo([path, fileList(1).name]);
     initTimeStr = info.FileModDate;
@@ -131,8 +132,7 @@ for i=1:length(filename_array)
         timeStr = char(videoTime{i});
     else
         timeStr = ['Time = ' char(string(round(image_timelapse_sec*i/60,0))) 'min'];
-    end
-    
+    end    
 
     annotationPos = [0, 120, 150, 0];  %[0, 120, 400, 0]  
     IAnnotated = insertObjectAnnotation(I,'rectangle',annotationPos,timeStr,...
@@ -150,13 +150,13 @@ for i=1:length(filename_array)
     end
     if(showTrackBoundries==1) 
         %uistack(box,'top'); 
-        box=plot([x1(1) x1(1)],[y1(1) y2(1)],'-c',[x2(1) x2(1)],[y1(1) y2(1)],'-c',[x1(1) x2(1)],[y1(1) y1(1)],'-c',[x1(1) x2(1)],[y2(1) y2(1)],'-c');
+        box=plot([x1(1) x1(1)],[y1(1) y2(1)],'-c',[x2(1) x2(1)],[y1(1) y2(1)],'-c',[x1(1) x2(1)],[y1(1) y1(1)],'-b',[x1(1) x2(1)],[y2(1) y2(1)],'-b');
         hold on
-        box=plot([x1(2) x1(2)],[y1(2) y2(2)],'-m',[x2(2) x2(2)],[y1(2) y2(2)],'-m',[x1(2) x2(2)],[y1(2) y1(2)],'-m',[x1(2) x2(2)],[y2(2) y2(2)],'-m');pause(0.1);
+        box=plot([x1(2) x1(2)],[y1(2) y2(2)],'-m',[x2(2) x2(2)],[y1(2) y2(2)],'-m',[x1(2) x2(2)],[y1(2) y1(2)],'-r',[x1(2) x2(2)],[y2(2) y2(2)],'-r');pause(0.1);
     end
 
     subplot(2,2,2)
-    plot([1:length(filename_array)],ImageMagnitude1, 'k','linewidth',0.5, 'MarkerFaceColor','k','MarkerSize',3)
+    plot([1:length(filename_array)],ImageMagnitude1, 'b','linewidth',0.5, 'MarkerFaceColor','k','MarkerSize',3)
     subplot(2,2,4)
     plot([1:length(filename_array)],ImageMagnitude2, 'r','linewidth',0.5, 'MarkerFaceColor','r','MarkerSize',3)
     subplot(2,2,[1,3])
