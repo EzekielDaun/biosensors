@@ -9,13 +9,12 @@
 %**                                                                     **%
 %*************************************************************************%
 %
-% This script prompts the user to select a folder that contains .jpg
-% images. Based on the settings listed in this script, the images will be
-% sorted, animated with the desired settings and saved as an .avi format. 
-%
-% The script will also prompt the user to select a region where intensity
-% can be tracked. This is helpful to inspect the changes due to bubble
-% formations.
+% This script prompts the user to :
+% 1- select a folder that contains .jpg images. Based on the settings
+% listed in this script, the images will be sorted, animated with the
+% desired settings and saved as an .avi format.  
+% 2- select a region where intensity can be tracked. This is helpful to
+% inspect the changes due to bubble formations.
 
 warning('off','all')
 clear
@@ -28,8 +27,8 @@ pause_time          = 0.0000001; % pause for visualization when the script is ru
 file_selection      = 1   ; % 0:file , 1: folder with files
 brightness_gain     = 1;  % increase/decrease the brightness of  the image
 useImageTimeStamps  = 1;  % 1:obtain timestamp of image file to get the absolute time
-trackBubbles        = 1; % 0: Convert image to video without tracking bubbles
-numChannels         = 2; % Number of tracking windows
+trackBubbles        = 1;  % 0: Convert image to video without tracking bubbles
+numChannels         = 2;  % Number of tracking windows
 showTrackBoundries  = 1;  % Show selected region boundries in the video
 Figure_number       = 10; % number of figure in matlab to avoid clearing other figures
 
