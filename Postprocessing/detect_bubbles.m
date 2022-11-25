@@ -25,7 +25,7 @@
 % for(i=1:100) ImageList(100,mod(i,64)+1,:, i) = 255; end 
 % figure; for(i=1:100) image(ImageList(:,:,:,i));pause(0.033); end
 % [time_axis, detectedBubblePulses] = detect_bubbles(ImageList,30,2);
-% figure; plot(time_axis,detectedBubblePulses);xlabel('Time(min));
+% figure; plot(time_axis,detectedBubblePulses);xlabel(Time(min));
 
 function [time_axis_mins, WindowIntensity]=detect_bubbles(ImageList, CaptureTimeLapse_seconds, Detection_algorithm)
 
