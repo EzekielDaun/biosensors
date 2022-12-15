@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP TN1215-600G
+D 12A standard SCRs
+K
+F https://www.st.com/resource/en/datasheet/tyn1012.pdf
+$ENDCMP
+#
+#End Doc Library

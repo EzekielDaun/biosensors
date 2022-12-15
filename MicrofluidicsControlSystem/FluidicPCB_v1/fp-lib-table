@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name Labsmith)(type KiCad)(uri ${KIPRJMOD}/Labsmith.pretty)(options "")(descr ""))
+)

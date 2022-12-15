@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP TLV76733DGNR
+D LDO Voltage Regulators 1-A, 16-V, high-PSRR, high-accuracy, low-dropout voltage regulator with enable
+K
+F https://www.ti.com/lit/ds/symlink/tlv767.pdf?ts=1601893180135&ref_url=https%253A%252F%252Fduckduckgo.com%252F
+$ENDCMP
+#
+#End Doc Library
