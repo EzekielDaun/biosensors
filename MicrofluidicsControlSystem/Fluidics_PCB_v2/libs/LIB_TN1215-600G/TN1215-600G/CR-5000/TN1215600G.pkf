@@ -1,0 +1,10 @@
+(unit MM)
+
+(package "TN1215600G"
+    (type UNDEF)
+    (uver 2)
+    (mountForm default
+        (footprintRef "TN1215600G")
+        (spec "default")
+    )
+)

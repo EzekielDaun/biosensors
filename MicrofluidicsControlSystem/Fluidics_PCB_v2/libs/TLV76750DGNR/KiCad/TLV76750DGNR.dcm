@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP TLV76750DGNR
+D LDO Voltage Regulators Adjustable- and fixed-output, 1-A, 16-V, positive-voltage low-dropout (LDO) linear regulator 8-HVSSOP -40 to 125
+K
+F https://www.ti.com/lit/gpn/tlv767
+$ENDCMP
+#
+#End Doc Library

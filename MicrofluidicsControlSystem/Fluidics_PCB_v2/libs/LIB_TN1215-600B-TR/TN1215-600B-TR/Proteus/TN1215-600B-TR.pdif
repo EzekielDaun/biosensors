@@ -1,0 +1,143 @@
+;Proteus Design Interchange Format
+(PDIF
+ (vendor "SamacSys Limited")
+ (version 1 0)
+ (library
+  (part "TN1215-600B-TR"
+   (description "SCR 600V 12A Standard Recovery Surface Mount DPAK")
+   (family "ANA")
+   (package "TN1215600BTR")
+   (attribute "Datasheet Link" "https://www.st.com/resource/en/datasheet/tyn1012.pdf")
+   (attribute "Geometry.Height" "2.63mm")
+   (attribute "Mouser Part Number" "511-TN1215-600B-TR")
+   (attribute "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TN1215-600B-TR?qs=JQs6Bl0TY0oFh73kuIh3ZA%3D%3D")
+   (attribute "Manufacturer_Name" "STMicroelectronics")
+   (attribute "Manufacturer_Part_Number" "TN1215-600B-TR")
+   (gate
+    (symbol "TN1215-600B-TR")
+    (pin "A" 2 PS)
+    (pin "K" 1 PS)
+    (pin "G" 3 PS)
+   )
+  )
+  (symbol "TN1215-600B-TR"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (circle (pt 120 0) (pt 480 0))
+   )
+   (graphic
+    (stroke 10)
+    (path (pt 350 0) (pt 500 0))
+   )
+   (graphic
+    (stroke 10)
+    (path (pt 350 -50) (pt 500 -150))
+   )
+   (graphic
+    (stroke 10)
+    (path (pt 350 -100) (pt 350 100))
+   )
+   (graphic
+    (stroke 10)
+    (path (pt 100 0) (pt 200 0))
+   )
+   (graphic
+    (stroke 10)
+    (path (closed true) (pt 350 0) (pt 200 100) (pt 200 -100) (pt 350 0))
+   )
+   (terminal
+    (body (symbol "PINSHORT") (pt 0 0) (rot 0) (mir 0) (visible true))
+    (name (pt 0 -20) (rot 0) (just TOP LEFT) (visible false))
+    (number (pt 110 10) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PINSHORT") (pt 600 0) (rot 0) (mir X) (visible true))
+    (name (pt 0 -20) (rot 0) (just TOP LEFT) (visible false))
+    (number (pt 100 10) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PINSHORT") (pt 500 -250) (rot 90) (mir 0) (visible true))
+    (name (pt 0 -20) (rot 90) (just TOP RIGHT) (visible false))
+    (number (pt 0 10) (rot 90) (just TOP LEFT) (visible true)))
+  )
+  (symbol "PIN"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 200 0))))
+  (symbol "PINSHORT"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 100 0))))
+  (package "TN1215600BTR"
+   (units MM)
+   (layer TASM
+    (graphic
+     (stroke 0.1)
+     (path
+      (closed true)
+      (pt -3.047 -3.27)
+      (pt 3.048 -3.27)
+      (pt 3.048 3.27)
+      (pt -3.047 3.27)
+      (pt -3.047 -3.27))))
+   (layer OCCA
+    (graphic
+     (stroke 0.1)
+     (path
+      (closed true)
+      (pt -8.143 4.35)
+      (pt 6.558 4.35)
+      (pt 6.558 -4.35)
+      (pt -8.143 -4.35)
+      (pt -8.143 4.35))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed false)
+      (pt 6.133 -2.1)
+      (arc (pt 6.133 -2.100) (pt 6.133 -2.150) (pt 6.232 -2.050) (start 180.0) (sweep 180.0))
+      (pt 6.232 -2.1)
+      (arc (pt 6.232 -2.100) (pt 6.133 -2.150) (pt 6.232 -2.050) (start 180.0) (sweep .0))
+      (pt 6.133 -2.1)
+      (arc (pt 6.133 -2.100) (pt 6.133 -2.150) (pt 6.232 -2.050) (start 180.0) (sweep 180.0))
+      (pt 6.232 -2.1))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed false)
+      (pt 0.167 3.27)
+      (pt 2.167 3.27))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed false)
+      (pt 0.167 -3.27)
+      (pt 2.167 -3.27))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed false)
+      (pt 3.048 -0.75)
+      (pt 3.048 0.75))))
+   (leg 1 (pt 4.168 -2.286) (padstack 0))
+   (leg 2 (pt -3.683 0.000) (padstack 2))
+   (leg 3 (pt 4.168 2.286) (padstack 0))
+   (padstack 0
+    (plated false)
+    (pad (layer TCOP) (rectf 1.600 3.000 0 0 0.000))
+   )
+   (padstack 2
+    (plated false)
+    (pad (layer TCOP) (square 6.700))
+   )
+  )
+ )
+)

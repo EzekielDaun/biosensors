@@ -1,0 +1,95 @@
+;Proteus Design Interchange Format
+(PDIF
+ (vendor "SamacSys Limited")
+ (version 1 0)
+ (library
+  (part "0494001.NR"
+   (description "Surface Mount Fuses 32V 1A Case 0603 Protector Slim")
+   (family "FUS")
+   (package "FUSC1608X30N")
+   (attribute "Datasheet Link" "https://datasheet.lcsc.com/szlcsc/Littelfuse-0494001-NR_C142652.pdf")
+   (attribute "Geometry.Height" "0.305mm")
+   (attribute "Mouser Part Number" "576-0494001.NR")
+   (attribute "Mouser Price/Stock" "https://www.mouser.co.uk/ProductDetail/Littelfuse/0494001.NR?qs=zMpzAB%2FftDevS%252BkFabf%252B6Q%3D%3D")
+   (attribute "Manufacturer_Name" "LITTELFUSE")
+   (attribute "Manufacturer_Part_Number" "0494001.NR")
+   (gate
+    (symbol "0494001.NR")
+    (pin "1" 1 PS)
+    (pin "2" 2 PS)
+   )
+  )
+  (symbol "0494001.NR"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 200 50) (pt 500 50) (pt 500 -50) (pt 200 -50) (pt 200 50) (closed))
+   )
+   (graphic
+    (stroke 10)
+    (path (pt 200 0) (pt 500 0))
+   )
+   (terminal
+    (body (symbol "PIN") (pt 0 0) (rot 0) (mir 0) (visible true))
+    (name (pt 0 -10) (rot 0) (just TOP LEFT) (visible false))
+    (number (pt 0 10) (rot 0) (just BOTTOM LEFT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 700 0) (rot 0) (mir X) (visible true))
+    (name (pt 0 -10) (rot 0) (just TOP LEFT) (visible false))
+    (number (pt 0 10) (rot 0) (just BOTTOM LEFT) (visible true)))
+  )
+  (symbol "PIN"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 200 0))))
+  (symbol "PINSHORT"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 100 0))))
+  (package "FUSC1608X30N"
+   (units MM)
+   (layer OCCA
+    (graphic
+     (stroke 0.05)
+     (path
+      (closed true)
+      (pt -1.455 0.71)
+      (pt 1.455 0.71)
+      (pt 1.455 -0.71)
+      (pt -1.455 -0.71)
+      (pt -1.455 0.71))))
+   (layer TASM
+    (graphic
+     (stroke 0.1)
+     (path
+      (closed true)
+      (pt -0.8 0.406)
+      (pt 0.8 0.406)
+      (pt 0.8 -0.406)
+      (pt -0.8 -0.406)
+      (pt -0.8 0.406))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed false)
+      (pt 0 0.306)
+      (pt 0 -0.306))))
+   (leg 1 (pt -0.835 0) (padstack 0))
+   (leg 2 (pt 0.835 0) (padstack 0))
+   (padstack 0
+    (plated false)
+    (pad (layer TCOP) (rectf 0.74 0.92 0 0 90))
+   )
+   (model "0494001.NR.stp"
+    (euler 0 0 0)
+    (offset 0 0 0)
+   )
+  )
+ )
+)

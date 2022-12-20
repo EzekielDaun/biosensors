@@ -1,0 +1,966 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Regulator_Linear:L7805 U2
+U 1 1 617870B8
+P 5350 1750
+F 0 "U2" H 5350 1992 50  0000 C CNN
+F 1 "L7805" H 5350 1901 50  0000 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 5375 1600 50  0001 L CIN
+F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 5350 1700 50  0001 C CNN
+	1    5350 1750
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_Small_US R2
+U 1 1 617889A4
+P 4550 3050
+F 0 "R2" V 4345 3050 50  0000 C CNN
+F 1 "4.7k" V 4436 3050 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" H 4550 3050 50  0001 C CNN
+F 3 "~" H 4550 3050 50  0001 C CNN
+	1    4550 3050
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R_Small_US R1
+U 1 1 617893B9
+P 4550 2750
+F 0 "R1" V 4345 2750 50  0000 C CNN
+F 1 "4.7k" V 4436 2750 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" H 4550 2750 50  0001 C CNN
+F 3 "~" H 4550 2750 50  0001 C CNN
+	1    4550 2750
+	0    1    1    0   
+$EndComp
+Text Label 4650 3050 0    50   ~ 0
+5V
+Text Label 4650 2750 0    50   ~ 0
+5V
+Text Label 4450 3050 2    50   ~ 0
+SCL
+Text Label 4450 2750 2    50   ~ 0
+SDA
+Wire Wire Line
+	2300 1950 2450 1950
+Wire Wire Line
+	2450 1950 2450 2050
+$Comp
+L power:GND #PWR0101
+U 1 1 6178AD5D
+P 2450 2050
+F 0 "#PWR0101" H 2450 1800 50  0001 C CNN
+F 1 "GND" H 2455 1877 50  0000 C CNN
+F 2 "" H 2450 2050 50  0001 C CNN
+F 3 "" H 2450 2050 50  0001 C CNN
+	1    2450 2050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2300 1750 2450 1750
+Text Label 2450 1750 0    50   ~ 0
+24V
+$Comp
+L power:GND #PWR0102
+U 1 1 61788DA4
+P 3850 2050
+F 0 "#PWR0102" H 3850 1800 50  0001 C CNN
+F 1 "GND" H 3855 1877 50  0000 C CNN
+F 2 "" H 3850 2050 50  0001 C CNN
+F 3 "" H 3850 2050 50  0001 C CNN
+	1    3850 2050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Regulator_Linear:L7812 U1
+U 1 1 61787B26
+P 3850 1750
+F 0 "U1" H 3850 1992 50  0000 C CNN
+F 1 "L7812" H 3850 1901 50  0000 C CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Vertical" H 3875 1600 50  0001 L CIN
+F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 3850 1700 50  0001 C CNN
+	1    3850 1750
+	1    0    0    -1  
+$EndComp
+Text Label 3350 1750 2    50   ~ 0
+24V
+Text Label 4250 1750 0    50   ~ 0
+12V
+Text Label 4850 1750 2    50   ~ 0
+12V
+Text Label 5750 1750 0    50   ~ 0
+5V
+$Comp
+L power:GND #PWR0103
+U 1 1 61789E7B
+P 5350 2050
+F 0 "#PWR0103" H 5350 1800 50  0001 C CNN
+F 1 "GND" H 5355 1877 50  0000 C CNN
+F 2 "" H 5350 2050 50  0001 C CNN
+F 3 "" H 5350 2050 50  0001 C CNN
+	1    5350 2050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C2
+U 1 1 6178AA07
+P 4250 1900
+F 0 "C2" H 4342 1946 50  0000 L CNN
+F 1 "0.33u" H 4342 1855 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 4250 1900 50  0001 C CNN
+F 3 "~" H 4250 1900 50  0001 C CNN
+	1    4250 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C1
+U 1 1 6178B42B
+P 3350 1900
+F 0 "C1" H 3442 1946 50  0000 L CNN
+F 1 "0.1u" H 3442 1855 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 3350 1900 50  0001 C CNN
+F 3 "~" H 3350 1900 50  0001 C CNN
+	1    3350 1900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3550 1750 3350 1750
+Wire Wire Line
+	3350 1750 3350 1800
+Wire Wire Line
+	3350 2050 3850 2050
+Wire Wire Line
+	3350 2000 3350 2050
+Connection ~ 3850 2050
+Wire Wire Line
+	3850 2050 4250 2050
+Wire Wire Line
+	4250 2050 4250 2000
+Wire Wire Line
+	4250 1750 4150 1750
+Wire Wire Line
+	4250 1750 4250 1800
+$Comp
+L Device:C_Small C4
+U 1 1 6178D360
+P 5750 1900
+F 0 "C4" H 5842 1946 50  0000 L CNN
+F 1 "0.33u" H 5842 1855 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 5750 1900 50  0001 C CNN
+F 3 "~" H 5750 1900 50  0001 C CNN
+	1    5750 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C3
+U 1 1 6178D366
+P 4850 1900
+F 0 "C3" H 4942 1946 50  0000 L CNN
+F 1 "0.1u" H 4942 1855 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 4850 1900 50  0001 C CNN
+F 3 "~" H 4850 1900 50  0001 C CNN
+	1    4850 1900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5050 1750 4850 1750
+Wire Wire Line
+	4850 1750 4850 1800
+Wire Wire Line
+	4850 2000 4850 2050
+Wire Wire Line
+	5750 2050 5750 2000
+Wire Wire Line
+	5750 1750 5650 1750
+Wire Wire Line
+	5750 1750 5750 1800
+Wire Wire Line
+	4850 2050 5350 2050
+Connection ~ 5350 2050
+Wire Wire Line
+	5350 2050 5750 2050
+$Comp
+L Connector:Conn_01x06_Male J1
+U 1 1 61790729
+P 1900 2950
+F 0 "J1" H 2008 3331 50  0000 C CNN
+F 1 "DAC1" H 2008 3240 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x06_P2.54mm_Vertical" H 1900 2950 50  0001 C CNN
+F 3 "~" H 1900 2950 50  0001 C CNN
+	1    1900 2950
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x06_Male J4
+U 1 1 61792872
+P 2800 2950
+F 0 "J4" H 2908 3331 50  0000 C CNN
+F 1 "DAC2" H 2908 3240 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x06_P2.54mm_Vertical" H 2800 2950 50  0001 C CNN
+F 3 "~" H 2800 2950 50  0001 C CNN
+	1    2800 2950
+	1    0    0    -1  
+$EndComp
+Text Label 3000 2750 0    50   ~ 0
+OUT1
+Text Label 2100 2950 0    50   ~ 0
+SCL
+Text Label 2100 3050 0    50   ~ 0
+SDA
+Text Label 2100 3150 0    50   ~ 0
+5V
+Text Label 2100 2750 0    50   ~ 0
+OUT2
+Text Label 3000 2950 0    50   ~ 0
+SCL
+Text Label 3000 3050 0    50   ~ 0
+SDA
+Text Label 3000 3150 0    50   ~ 0
+5V
+Wire Wire Line
+	2100 2850 2350 2850
+Wire Wire Line
+	2350 2850 2350 3250
+Wire Wire Line
+	2350 3250 2100 3250
+$Comp
+L power:GND #PWR0104
+U 1 1 617944E3
+P 2350 3250
+F 0 "#PWR0104" H 2350 3000 50  0001 C CNN
+F 1 "GND" H 2355 3077 50  0000 C CNN
+F 2 "" H 2350 3250 50  0001 C CNN
+F 3 "" H 2350 3250 50  0001 C CNN
+	1    2350 3250
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3000 2850 3250 2850
+Wire Wire Line
+	3250 2850 3250 3250
+Wire Wire Line
+	3250 3250 3000 3250
+$Comp
+L power:GND #PWR0105
+U 1 1 61794E79
+P 3250 3250
+F 0 "#PWR0105" H 3250 3000 50  0001 C CNN
+F 1 "GND" H 3255 3077 50  0000 C CNN
+F 2 "" H 3250 3250 50  0001 C CNN
+F 3 "" H 3250 3250 50  0001 C CNN
+	1    3250 3250
+	1    0    0    -1  
+$EndComp
+Connection ~ 3250 3250
+$Comp
+L Connector:Conn_01x04_Male J2
+U 1 1 61795F2B
+P 1900 4050
+F 0 "J2" H 2000 4400 50  0000 C CNN
+F 1 "Flow1" H 2000 4300 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical" H 1900 4050 50  0001 C CNN
+F 3 "~" H 1900 4050 50  0001 C CNN
+	1    1900 4050
+	1    0    0    -1  
+$EndComp
+Text Label 2100 3950 0    50   ~ 0
+5V
+Text Label 2100 4050 0    50   ~ 0
+SCL
+Text Label 2100 4150 0    50   ~ 0
+SDA
+Wire Wire Line
+	2100 4250 2300 4250
+Wire Wire Line
+	2300 4250 2300 4300
+$Comp
+L power:GND #PWR0106
+U 1 1 617978C2
+P 2300 4300
+F 0 "#PWR0106" H 2300 4050 50  0001 C CNN
+F 1 "GND" H 2305 4127 50  0000 C CNN
+F 2 "" H 2300 4300 50  0001 C CNN
+F 3 "" H 2300 4300 50  0001 C CNN
+	1    2300 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x04_Male J5
+U 1 1 61798AB7
+P 2850 4050
+F 0 "J5" H 2950 4400 50  0000 C CNN
+F 1 "Flow2" H 2950 4300 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical" H 2850 4050 50  0001 C CNN
+F 3 "~" H 2850 4050 50  0001 C CNN
+	1    2850 4050
+	1    0    0    -1  
+$EndComp
+Text Label 3050 3950 0    50   ~ 0
+5V
+Text Label 3050 4050 0    50   ~ 0
+SCL
+Text Label 3050 4150 0    50   ~ 0
+SDA
+Wire Wire Line
+	3050 4250 3250 4250
+Wire Wire Line
+	3250 4250 3250 4300
+$Comp
+L power:GND #PWR0107
+U 1 1 61798AC2
+P 3250 4300
+F 0 "#PWR0107" H 3250 4050 50  0001 C CNN
+F 1 "GND" H 3255 4127 50  0000 C CNN
+F 2 "" H 3250 4300 50  0001 C CNN
+F 3 "" H 3250 4300 50  0001 C CNN
+	1    3250 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L MCU_Module:Arduino_Nano_Every A1
+U 1 1 617A7117
+P 7450 2700
+F 0 "A1" H 8100 3800 50  0000 C CNN
+F 1 "Arduino_Nano_Every" H 8100 3700 50  0000 C CNN
+F 2 "Module:Arduino_Nano" H 7450 2700 50  0001 C CIN
+F 3 "https://content.arduino.cc/assets/NANOEveryV3.0_sch.pdf" H 7450 2700 50  0001 C CNN
+	1    7450 2700
+	1    0    0    -1  
+$EndComp
+Text Label 7950 3200 0    50   ~ 0
+SCL
+Text Label 7950 3100 0    50   ~ 0
+SDA
+NoConn ~ 7550 1700
+NoConn ~ 7350 1700
+NoConn ~ 6950 3200
+NoConn ~ 6950 3300
+NoConn ~ 6950 3400
+NoConn ~ 7950 2100
+NoConn ~ 7950 2200
+$Comp
+L Connector:Barrel_Jack_Switch J3
+U 1 1 617C53D4
+P 2000 1850
+F 0 "J3" H 2057 2167 50  0000 C CNN
+F 1 "Barrel_Jack_Switch" H 2057 2076 50  0000 C CNN
+F 2 "Connector_BarrelJack:BarrelJack_CUI_PJ-102AH_Horizontal" H 2050 1810 50  0001 C CNN
+F 3 "~" H 2050 1810 50  0001 C CNN
+	1    2000 1850
+	1    0    0    -1  
+$EndComp
+NoConn ~ 2300 1850
+$Comp
+L Connector:Conn_01x04_Male J7
+U 1 1 617E917D
+P 2000 5150
+F 0 "J7" H 2100 5500 50  0000 C CNN
+F 1 "Pressure1" H 2100 5400 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical" H 2000 5150 50  0001 C CNN
+F 3 "~" H 2000 5150 50  0001 C CNN
+	1    2000 5150
+	1    0    0    -1  
+$EndComp
+Text Label 2200 5050 0    50   ~ 0
+24V
+Text Label 2200 5150 0    50   ~ 0
+OUT1
+Text Label 2200 5250 0    50   ~ 0
+MONITOR1
+Wire Wire Line
+	2200 5350 2400 5350
+Wire Wire Line
+	2400 5350 2400 5400
+$Comp
+L power:GND #PWR0109
+U 1 1 617E9188
+P 2400 5400
+F 0 "#PWR0109" H 2400 5150 50  0001 C CNN
+F 1 "GND" H 2405 5227 50  0000 C CNN
+F 2 "" H 2400 5400 50  0001 C CNN
+F 3 "" H 2400 5400 50  0001 C CNN
+	1    2400 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x04_Male J8
+U 1 1 617EB5F6
+P 2950 5150
+F 0 "J8" H 3050 5500 50  0000 C CNN
+F 1 "Pressure2" H 3050 5400 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical" H 2950 5150 50  0001 C CNN
+F 3 "~" H 2950 5150 50  0001 C CNN
+	1    2950 5150
+	1    0    0    -1  
+$EndComp
+Text Label 3150 5050 0    50   ~ 0
+24V
+Text Label 3150 5150 0    50   ~ 0
+OUT2
+Text Label 3150 5250 0    50   ~ 0
+MONITOR2
+Wire Wire Line
+	3150 5350 3350 5350
+Wire Wire Line
+	3350 5350 3350 5400
+$Comp
+L power:GND #PWR0110
+U 1 1 617EB601
+P 3350 5400
+F 0 "#PWR0110" H 3350 5150 50  0001 C CNN
+F 1 "GND" H 3355 5227 50  0000 C CNN
+F 2 "" H 3350 5400 50  0001 C CNN
+F 3 "" H 3350 5400 50  0001 C CNN
+	1    3350 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_02x10_Odd_Even J6
+U 1 1 617A0285
+P 5500 4550
+F 0 "J6" H 5550 5167 50  0000 C CNN
+F 1 "4VM02" H 5550 5076 50  0000 C CNN
+F 2 "Labsmith:4VM02" H 5500 4550 50  0001 C CNN
+F 3 "~" H 5500 4550 50  0001 C CNN
+	1    5500 4550
+	-1   0    0    -1  
+$EndComp
+Text Label 5700 4150 0    50   ~ 0
+12V
+Text Label 5200 5050 2    50   ~ 0
+12V
+Text Label 5700 4250 0    50   ~ 0
+5V_LS1
+Text Label 5200 4550 2    50   ~ 0
+SCL_2
+NoConn ~ 5200 4450
+NoConn ~ 5200 4350
+NoConn ~ 5200 4250
+NoConn ~ 5200 4150
+NoConn ~ 5700 4750
+NoConn ~ 5700 4850
+NoConn ~ 5700 4950
+NoConn ~ 5700 5050
+NoConn ~ 5200 4650
+Text Label 5700 4650 0    50   ~ 0
+SDA_2
+Wire Wire Line
+	5000 4850 5200 4850
+Wire Wire Line
+	5200 4750 5000 4750
+Wire Wire Line
+	5000 4750 5000 4850
+NoConn ~ 5700 4550
+$Comp
+L power:GND #PWR0111
+U 1 1 617ABA5E
+P 5000 4850
+F 0 "#PWR0111" H 5000 4600 50  0001 C CNN
+F 1 "GND" H 4850 4850 50  0000 C CNN
+F 2 "" H 5000 4850 50  0001 C CNN
+F 3 "" H 5000 4850 50  0001 C CNN
+	1    5000 4850
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0112
+U 1 1 617AC3B4
+P 5900 4450
+F 0 "#PWR0112" H 5900 4200 50  0001 C CNN
+F 1 "GND" H 6050 4400 50  0000 C CNN
+F 2 "" H 5900 4450 50  0001 C CNN
+F 3 "" H 5900 4450 50  0001 C CNN
+	1    5900 4450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5700 4450 5900 4450
+Wire Wire Line
+	5900 4350 5700 4350
+Wire Wire Line
+	5900 4350 5900 4450
+Connection ~ 5900 4450
+$Comp
+L Device:C_Small C5
+U 1 1 617B0475
+P 2450 1850
+F 0 "C5" H 2542 1896 50  0000 L CNN
+F 1 "4.7u" H 2542 1805 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 2450 1850 50  0001 C CNN
+F 3 "~" H 2450 1850 50  0001 C CNN
+	1    2450 1850
+	1    0    0    -1  
+$EndComp
+Connection ~ 2450 1950
+$Comp
+L Device:C_Small C8
+U 1 1 617B40DA
+P 6650 1550
+F 0 "C8" H 6742 1596 50  0000 L CNN
+F 1 "0.1u" H 6742 1505 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 6650 1550 50  0001 C CNN
+F 3 "~" H 6650 1550 50  0001 C CNN
+	1    6650 1550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6650 1400 6650 1450
+$Comp
+L power:GND #PWR0108
+U 1 1 617AC124
+P 7450 3700
+F 0 "#PWR0108" H 7450 3450 50  0001 C CNN
+F 1 "GND" H 7600 3650 50  0000 C CNN
+F 2 "" H 7450 3700 50  0001 C CNN
+F 3 "" H 7450 3700 50  0001 C CNN
+	1    7450 3700
+	1    0    0    -1  
+$EndComp
+Text Label 7650 1600 0    50   ~ 0
+5V
+$Comp
+L power:GND #PWR0113
+U 1 1 617B68F3
+P 6650 1650
+F 0 "#PWR0113" H 6650 1400 50  0001 C CNN
+F 1 "GND" H 6800 1600 50  0000 C CNN
+F 2 "" H 6650 1650 50  0001 C CNN
+F 3 "" H 6650 1650 50  0001 C CNN
+	1    6650 1650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C_Small C6
+U 1 1 617B8E9E
+P 3750 4200
+F 0 "C6" H 3842 4246 50  0000 L CNN
+F 1 "0.1u" H 3842 4155 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 3750 4200 50  0001 C CNN
+F 3 "~" H 3750 4200 50  0001 C CNN
+	1    3750 4200
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0114
+U 1 1 617B8EA5
+P 3750 4300
+F 0 "#PWR0114" H 3750 4050 50  0001 C CNN
+F 1 "GND" H 3900 4250 50  0000 C CNN
+F 2 "" H 3750 4300 50  0001 C CNN
+F 3 "" H 3750 4300 50  0001 C CNN
+	1    3750 4300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3050 3950 3750 3950
+Wire Wire Line
+	3750 3950 3750 4100
+$Comp
+L Device:C_Small C7
+U 1 1 617BBC11
+P 3850 5300
+F 0 "C7" H 3942 5346 50  0000 L CNN
+F 1 "0.1u" H 3942 5255 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 3850 5300 50  0001 C CNN
+F 3 "~" H 3850 5300 50  0001 C CNN
+	1    3850 5300
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0115
+U 1 1 617BBC17
+P 3850 5400
+F 0 "#PWR0115" H 3850 5150 50  0001 C CNN
+F 1 "GND" H 4000 5350 50  0000 C CNN
+F 2 "" H 3850 5400 50  0001 C CNN
+F 3 "" H 3850 5400 50  0001 C CNN
+	1    3850 5400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3850 5050 3850 5200
+Wire Wire Line
+	3150 5050 3850 5050
+Wire Wire Line
+	6650 1400 7650 1400
+$Comp
+L Connector:Conn_01x11_Male J9
+U 1 1 617FE52B
+P 6550 2500
+F 0 "J9" H 6658 3181 50  0000 C CNN
+F 1 "breakout" H 6658 3090 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x11_P2.54mm_Vertical" H 6550 2500 50  0001 C CNN
+F 3 "~" H 6550 2500 50  0001 C CNN
+	1    6550 2500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7650 1400 7650 1700
+Wire Wire Line
+	6750 3000 6950 3000
+Wire Wire Line
+	6950 2900 6750 2900
+Wire Wire Line
+	6750 2800 6950 2800
+Wire Wire Line
+	6750 2200 6950 2200
+Wire Wire Line
+	6950 2300 6750 2300
+Wire Wire Line
+	6750 2400 6950 2400
+Wire Wire Line
+	6950 2500 6750 2500
+Wire Wire Line
+	6750 2600 6950 2600
+Wire Wire Line
+	6950 2700 6750 2700
+Wire Wire Line
+	6850 2100 6850 2000
+Wire Wire Line
+	6850 2000 6950 2000
+Wire Wire Line
+	6750 2100 6850 2100
+Wire Wire Line
+	6750 2000 6800 2000
+Wire Wire Line
+	6800 2000 6800 1900
+Wire Wire Line
+	6800 1900 6950 1900
+Text Label 8750 2650 3    50   ~ 0
+12V
+Text Label 9400 2650 3    50   ~ 0
+5V
+Text Label 8800 3500 3    50   ~ 0
+OUT1
+$Comp
+L Connector:TestPoint TP1
+U 1 1 6189BA77
+P 8800 3500
+F 0 "TP1" H 8858 3618 50  0000 L CNN
+F 1 "TestPoint" H 8858 3527 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 9000 3500 50  0001 C CNN
+F 3 "~" H 9000 3500 50  0001 C CNN
+	1    8800 3500
+	1    0    0    -1  
+$EndComp
+Text Label 9850 3500 3    50   ~ 0
+MONITOR1
+$Comp
+L Connector:TestPoint TP10
+U 1 1 618A2380
+P 9850 3500
+F 0 "TP10" H 9908 3618 50  0000 L CNN
+F 1 "TestPoint" H 9908 3527 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 10050 3500 50  0001 C CNN
+F 3 "~" H 10050 3500 50  0001 C CNN
+	1    9850 3500
+	1    0    0    -1  
+$EndComp
+Text Label 10400 3500 3    50   ~ 0
+MONITOR2
+$Comp
+L Connector:TestPoint TP12
+U 1 1 618A4148
+P 10400 3500
+F 0 "TP12" H 10458 3618 50  0000 L CNN
+F 1 "TestPoint" H 10458 3527 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 10600 3500 50  0001 C CNN
+F 3 "~" H 10600 3500 50  0001 C CNN
+	1    10400 3500
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP4
+U 1 1 618AA709
+P 8750 4100
+F 0 "TP4" H 8808 4218 50  0000 L CNN
+F 1 "TestPoint" H 8808 4127 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 8950 4100 50  0001 C CNN
+F 3 "~" H 8950 4100 50  0001 C CNN
+	1    8750 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0122
+U 1 1 618AD771
+P 8750 4100
+F 0 "#PWR0122" H 8750 3850 50  0001 C CNN
+F 1 "GND" H 8900 4050 50  0000 C CNN
+F 2 "" H 8750 4100 50  0001 C CNN
+F 3 "" H 8750 4100 50  0001 C CNN
+	1    8750 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP9
+U 1 1 618B0B39
+P 9800 4100
+F 0 "TP9" H 9858 4218 50  0000 L CNN
+F 1 "TestPoint" H 9858 4127 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 10000 4100 50  0001 C CNN
+F 3 "~" H 10000 4100 50  0001 C CNN
+	1    9800 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0124
+U 1 1 618B0B3F
+P 9800 4100
+F 0 "#PWR0124" H 9800 3850 50  0001 C CNN
+F 1 "GND" H 9950 4050 50  0000 C CNN
+F 2 "" H 9800 4100 50  0001 C CNN
+F 3 "" H 9800 4100 50  0001 C CNN
+	1    9800 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP11
+U 1 1 618B2372
+P 10350 4100
+F 0 "TP11" H 10408 4218 50  0000 L CNN
+F 1 "TestPoint" H 10408 4127 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 10550 4100 50  0001 C CNN
+F 3 "~" H 10550 4100 50  0001 C CNN
+	1    10350 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0125
+U 1 1 618B2378
+P 10350 4100
+F 0 "#PWR0125" H 10350 3850 50  0001 C CNN
+F 1 "GND" H 10500 4050 50  0000 C CNN
+F 2 "" H 10350 4100 50  0001 C CNN
+F 3 "" H 10350 4100 50  0001 C CNN
+	1    10350 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP2
+U 1 1 618BD656
+P 8750 2650
+F 0 "TP2" H 8808 2768 50  0000 L CNN
+F 1 "TestPoint" H 8808 2677 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 8950 2650 50  0001 C CNN
+F 3 "~" H 8950 2650 50  0001 C CNN
+	1    8750 2650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP3
+U 1 1 618C0239
+P 8750 3050
+F 0 "TP3" H 8808 3168 50  0000 L CNN
+F 1 "TestPoint" H 8808 3077 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 8950 3050 50  0001 C CNN
+F 3 "~" H 8950 3050 50  0001 C CNN
+	1    8750 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0118
+U 1 1 618C023F
+P 8750 3050
+F 0 "#PWR0118" H 8750 2800 50  0001 C CNN
+F 1 "GND" H 8900 3000 50  0000 C CNN
+F 2 "" H 8750 3050 50  0001 C CNN
+F 3 "" H 8750 3050 50  0001 C CNN
+	1    8750 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0123
+U 1 1 618AF122
+P 9300 4100
+F 0 "#PWR0123" H 9300 3850 50  0001 C CNN
+F 1 "GND" H 9450 4050 50  0000 C CNN
+F 2 "" H 9300 4100 50  0001 C CNN
+F 3 "" H 9300 4100 50  0001 C CNN
+	1    9300 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP5
+U 1 1 618AF11C
+P 9300 4100
+F 0 "TP5" H 9358 4218 50  0000 L CNN
+F 1 "TestPoint" H 9358 4127 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 9500 4100 50  0001 C CNN
+F 3 "~" H 9500 4100 50  0001 C CNN
+	1    9300 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP7
+U 1 1 618A0BB4
+P 9350 3500
+F 0 "TP7" H 9408 3618 50  0000 L CNN
+F 1 "TestPoint" H 9408 3527 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 9550 3500 50  0001 C CNN
+F 3 "~" H 9550 3500 50  0001 C CNN
+	1    9350 3500
+	1    0    0    -1  
+$EndComp
+Text Label 9350 3500 3    50   ~ 0
+OUT2
+$Comp
+L power:GND #PWR0119
+U 1 1 618C4180
+P 9350 3050
+F 0 "#PWR0119" H 9350 2800 50  0001 C CNN
+F 1 "GND" H 9500 3000 50  0000 C CNN
+F 2 "" H 9350 3050 50  0001 C CNN
+F 3 "" H 9350 3050 50  0001 C CNN
+	1    9350 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP6
+U 1 1 618C4186
+P 9350 3050
+F 0 "TP6" H 9408 3168 50  0000 L CNN
+F 1 "TestPoint" H 9408 3077 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 9550 3050 50  0001 C CNN
+F 3 "~" H 9550 3050 50  0001 C CNN
+	1    9350 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP8
+U 1 1 618C418C
+P 9400 2650
+F 0 "TP8" H 9458 2768 50  0000 L CNN
+F 1 "TestPoint" H 9458 2677 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Keystone_5000-5004_Miniature" H 9600 2650 50  0001 C CNN
+F 3 "~" H 9600 2650 50  0001 C CNN
+	1    9400 2650
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H1
+U 1 1 618F7949
+P 1000 1150
+F 0 "H1" H 1100 1196 50  0000 L CNN
+F 1 "MountingHole" H 1100 1105 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1000 1150 50  0001 C CNN
+F 3 "~" H 1000 1150 50  0001 C CNN
+	1    1000 1150
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H3
+U 1 1 618FB8FA
+P 1000 900
+F 0 "H3" H 1100 946 50  0000 L CNN
+F 1 "MountingHole" H 1100 855 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1000 900 50  0001 C CNN
+F 3 "~" H 1000 900 50  0001 C CNN
+	1    1000 900 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H2
+U 1 1 618FCDE9
+P 1000 650
+F 0 "H2" H 1100 696 50  0000 L CNN
+F 1 "MountingHole" H 1100 605 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1000 650 50  0001 C CNN
+F 3 "~" H 1000 650 50  0001 C CNN
+	1    1000 650 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H4
+U 1 1 618FDED1
+P 1000 1400
+F 0 "H4" H 1100 1446 50  0000 L CNN
+F 1 "MountingHole" H 1100 1355 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1000 1400 50  0001 C CNN
+F 3 "~" H 1000 1400 50  0001 C CNN
+	1    1000 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector_Generic:Conn_02x10_Odd_Even J10
+U 1 1 619C39EF
+P 5500 5825
+F 0 "J10" H 5550 6442 50  0000 C CNN
+F 1 "EIB200" H 5550 6351 50  0000 C CNN
+F 2 "Labsmith:EIB200" H 5500 5825 50  0001 C CNN
+F 3 "~" H 5500 5825 50  0001 C CNN
+	1    5500 5825
+	-1   0    0    -1  
+$EndComp
+Text Label 5700 5425 0    50   ~ 0
+12V
+Text Label 5200 6325 2    50   ~ 0
+12V
+Text Label 5200 5825 2    50   ~ 0
+SCL_2
+NoConn ~ 5200 5725
+NoConn ~ 5200 5625
+NoConn ~ 5200 5525
+NoConn ~ 5200 5425
+NoConn ~ 5700 6025
+NoConn ~ 5700 6125
+NoConn ~ 5700 6225
+NoConn ~ 5700 6325
+NoConn ~ 5200 5925
+Text Label 5700 5925 0    50   ~ 0
+SDA_2
+Wire Wire Line
+	5000 6125 5200 6125
+Wire Wire Line
+	5200 6025 5000 6025
+Wire Wire Line
+	5000 6025 5000 6125
+NoConn ~ 5700 5825
+$Comp
+L power:GND #PWR0120
+U 1 1 619C3A08
+P 5000 6125
+F 0 "#PWR0120" H 5000 5875 50  0001 C CNN
+F 1 "GND" H 4850 6125 50  0000 C CNN
+F 2 "" H 5000 6125 50  0001 C CNN
+F 3 "" H 5000 6125 50  0001 C CNN
+	1    5000 6125
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0121
+U 1 1 619C3A0E
+P 5900 5725
+F 0 "#PWR0121" H 5900 5475 50  0001 C CNN
+F 1 "GND" H 6050 5675 50  0000 C CNN
+F 2 "" H 5900 5725 50  0001 C CNN
+F 3 "" H 5900 5725 50  0001 C CNN
+	1    5900 5725
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5700 5725 5900 5725
+Wire Wire Line
+	5900 5625 5700 5625
+Wire Wire Line
+	5900 5625 5900 5725
+Connection ~ 5900 5725
+Text Label 5200 4950 2    50   ~ 0
+5V_LS2
+Text Label 5700 5525 0    50   ~ 0
+5V_LS1
+Text Label 5200 6225 2    50   ~ 0
+5V_LS2
+$EndSCHEMATC
