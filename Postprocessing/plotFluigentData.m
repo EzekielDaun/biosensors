@@ -1,8 +1,9 @@
 %*************************************************************************%
 %**                                                                     **%
-%**                   Plotting the Resonance Shifts                     **%
+%**                 Plotting the Fluligent Data                         **%
+%**      (Res. Concentration, Switch position, Flow rate, pressure)     **%
 %**                                                                     **%
-%**                             2021-10-30                              **%
+%**                             2022-10-30                              **%
 %**                         Mohammed Al-Qadasi                          **%
 %**                                                                     **%
 %*************************************************************************%
@@ -10,7 +11,7 @@
 % the flow rates, pressure and switch positions. The user will also be
 % prompt to select "Reservoir Solutions.csv" file if exists to map the
 % reservoir contents to some concentration values. The file needs to have
-% the following format: 
+% the following format:
 %Reservoir	Solution _ Switch1	Concentration _ Switch 1	Solution _ Switch2	Concentration _ Switch 2	Unit
 %1	NaCl	0	NaCl	0	mM
 %2	NaCl	0	NaCl	0	mM
@@ -31,35 +32,35 @@ set(0,'DefaultFigureWindowStyle','docked')
 warning('off','all');
 
 time_axis_format  = 1; %0: absolute, 1:mins
-plot_switch1_data = 1; 
+plot_switch1_data = 1;
 plot_switch2_data = 1;
 overlay_plots     = 1;
 save_plots        = 1;
 outputPath        = ""; % '.': Same as Fluigent log path
 
 % Reservoir Concentrations, {Concentration,Unit,Solvent}
-Switch1_Res1 = {'0', 'mM', 'NaCl'}; 
-Switch1_Res2 = {'0', 'mM', 'NaCl'}; 
-Switch1_Res3 = {'62.5', 'mM', 'NaCl'}; 
-Switch1_Res4 = {'125', 'mM', 'NaCl'}; 
-Switch1_Res5 = {'250', 'mM', 'NaCl'}; 
-Switch1_Res6 = {'375', 'mM', 'NaCl'}; 
-Switch1_Res7 = {'125', 'mM', 'NaCl'}; 
-Switch1_Res8 = {'0', 'mM', 'NaCl'}; 
-Switch1_Res9 = {'0', 'mM', 'NaCl'}; 
+Switch1_Res1 = {'0', 'mM', 'NaCl'};
+Switch1_Res2 = {'0', 'mM', 'NaCl'};
+Switch1_Res3 = {'62.5', 'mM', 'NaCl'};
+Switch1_Res4 = {'125', 'mM', 'NaCl'};
+Switch1_Res5 = {'250', 'mM', 'NaCl'};
+Switch1_Res6 = {'375', 'mM', 'NaCl'};
+Switch1_Res7 = {'125', 'mM', 'NaCl'};
+Switch1_Res8 = {'0', 'mM', 'NaCl'};
+Switch1_Res9 = {'0', 'mM', 'NaCl'};
 
-Switch2_Res1 = {'0', 'mM', 'NaCl'}; 
-Switch2_Res2 = {'0', 'mM', 'NaCl'}; 
-Switch2_Res3 = {'62.5', 'mM', 'NaCl'}; 
-Switch2_Res4 = {'125', 'mM', 'NaCl'}; 
-Switch2_Res5 = {'250', 'mM', 'NaCl'}; 
-Switch2_Res6 = {'375', 'mM', 'NaCl'}; 
-Switch2_Res7 = {'125', 'mM', 'NaCl'}; 
-Switch2_Res8 = {'0', 'mM', 'NaCl'}; 
-Switch2_Res9 = {'0', 'mM', 'NaCl'}; 
+Switch2_Res1 = {'0', 'mM', 'NaCl'};
+Switch2_Res2 = {'0', 'mM', 'NaCl'};
+Switch2_Res3 = {'62.5', 'mM', 'NaCl'};
+Switch2_Res4 = {'125', 'mM', 'NaCl'};
+Switch2_Res5 = {'250', 'mM', 'NaCl'};
+Switch2_Res6 = {'375', 'mM', 'NaCl'};
+Switch2_Res7 = {'125', 'mM', 'NaCl'};
+Switch2_Res8 = {'0', 'mM', 'NaCl'};
+Switch2_Res9 = {'0', 'mM', 'NaCl'};
 
 
-% Prompt the user to select Fluigent log files 
+% Prompt the user to select Fluigent log files
 disp('Select all the Fluigent log "*.csv" files!')
 [filename filepath] = uigetfile({'*.csv','Excel Files(*.csv)';'*.xlsx','Excel Files(*.xlsx)'; '*.txt','Txt Files(*.txt)'}, 'Pick a file','MultiSelect','on');
 filename = string(filepath) + string(filename); filename=natsortfiles(filename);
@@ -78,6 +79,14 @@ Flowrate1   = FluigentData.FlowEZ_1_13109_Q;
 Flowrate2   = FluigentData.FlowEZ_2_13110_Q;
 Pressure1   = FluigentData.FlowEZ_1_13109_;
 Pressure2   = FluigentData.FlowEZ_2_13110_;
+
+% absoluttime = table2array(FluigentData(:,1));
+% Switch1     = table2array(FluigentData(:,6));
+% Switch2     = table2array(FluigentData(:,7));
+% Pressure1   = table2array(FluigentData(:,4));
+% Pressure2   = table2array(FluigentData(:,5));
+% Flowrate1   = table2array(FluigentData(:,2));
+% Flowrate2   = table2array(FluigentData(:,3));
 
 if(time_axis_format==1)
 time_axis = month(absoluttime).*(30*24*60) + day(absoluttime).*(24*60) + hour(absoluttime).*60 + minute(absoluttime) + second(absoluttime)./60; 
