@@ -173,7 +173,9 @@ class RetrospectiveAnalyzer(object):
             key=lambda x: int(pat.match(x).group(1)),  # type: ignore
         )
 
-        if not all(map(lambda x: x[0] + 1 == int(pat.match(x[1]).group(1)), enumerate(self.__filenames))):  # type: ignore
+        start_number = int(pat.match(self.__filenames[0]).group(1))  # type: ignore
+
+        if not all(map(lambda x: x[0] + start_number == int(pat.match(x[1]).group(1)), enumerate(self.__filenames))):  # type: ignore
             raise RuntimeError("File numbers are not consecutive")
 
         self.__timestamps: NDArray[np.float64] = np.array([])
@@ -185,7 +187,7 @@ class RetrospectiveAnalyzer(object):
                         for row in csv.reader(csv_file, delimiter=",")
                         if len(row) >= 3 and row[2] != ""
                     ]
-                )
+                )[start_number - 1 : start_number - 1 + len(self.__filenames)]
         elif type(timestamp) is float:
             self.__timestamps = np.array(list(range(len(self.__filenames)))) * timestamp
         else:
