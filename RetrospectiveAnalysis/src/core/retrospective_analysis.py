@@ -101,36 +101,39 @@ def get_lorentzian_peaks(
         width: float = wavelengths[right_ips_index] - wavelengths[left_ips_index]
         height: float = abs(properties["peak_heights"][i] - abs(base))
 
-        ret.append(
-            curve_fit(
-                f=lorentzian,
-                xdata=wavelengths[left_base_index:right_base_index],
-                ydata=powers[left_base_index:right_base_index],
-                p0=[
-                    peak_wavelength,  # x0
-                    base,  # y0
-                    -height,  # I
-                    width,  # gamma
-                    0,  # a
-                ],
-                bounds=(
-                    [
-                        peak_wavelength - fsr * 0.1,
-                        base - abs(base * 0.2),
-                        -height * 1.5,
-                        width * 0.5,
-                        -np.inf,
+        try:
+            ret.append(
+                curve_fit(
+                    f=lorentzian,
+                    xdata=wavelengths[left_base_index:right_base_index],
+                    ydata=powers[left_base_index:right_base_index],
+                    p0=[
+                        peak_wavelength,  # x0
+                        base,  # y0
+                        -height,  # I
+                        width,  # gamma
+                        0,  # a
                     ],
-                    [
-                        peak_wavelength + fsr * 0.1,
-                        base + abs(base * 0.2),
-                        -height * 0.5,
-                        width * 1.5,
-                        np.inf,
-                    ],
-                ),
-            )[0]
-        )
+                    bounds=(
+                        [
+                            peak_wavelength - fsr * 0.1,
+                            base - abs(base * 0.2),
+                            -height * 1.5,
+                            width * 0.5,
+                            -np.inf,
+                        ],
+                        [
+                            peak_wavelength + fsr * 0.1,
+                            base + abs(base * 0.2),
+                            -height * 0.5,
+                            width * 1.5,
+                            np.inf,
+                        ],
+                    ),
+                )[0]
+            )
+        except RuntimeError as e:
+            raise RuntimeError(f"Curve fit failed at wavelength {peak_wavelength}")
 
     return np.array(ret)
 
@@ -146,11 +149,14 @@ def _mat_to_peak_dict(
     wavelengths *= wavelength_multiplier
     for c in channels:
         powers = power_matrix[c]
-        temp_peaks = get_lorentzian_peaks(
-            powers,
-            wavelengths,
-            prominence,
-        )
+        try:
+            temp_peaks = get_lorentzian_peaks(
+                powers,
+                wavelengths,
+                prominence,
+            )
+        except RuntimeError as e:
+            raise RuntimeError(f"Failed to find peaks in {path} channel {c}\n{e}")
         ret[c] = ret.get(c, []) + [temp_peaks]
 
     return ret
