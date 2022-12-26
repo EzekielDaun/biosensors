@@ -179,21 +179,22 @@ class RetrospectiveAnalyzer(object):
             key=lambda x: int(pat.match(x).group(1)),  # type: ignore
         )
 
-        start_number = int(pat.match(self.__filenames[0]).group(1))  # type: ignore
-
-        if not all(map(lambda x: x[0] + start_number == int(pat.match(x[1]).group(1)), enumerate(self.__filenames))):  # type: ignore
-            raise RuntimeError("File numbers are not consecutive")
-
         self.__timestamps: NDArray[np.float64] = np.array([])
         if type(timestamp) is str:
             with open(os.path.join(self.__folder_path, timestamp), "r") as csv_file:
-                self.__timestamps = np.array(
-                    [
-                        float(row[2]) * timestamp_multiplier
-                        for row in csv.reader(csv_file, delimiter=",")
-                        if len(row) >= 3 and row[2] != ""
-                    ]
-                )[start_number - 1 : start_number - 1 + len(self.__filenames)]
+                time_dict: dict[int, float] = {
+                    int(row[0]): float(row[2])
+                    for row in csv.reader(csv_file, delimiter=",")
+                    if len(row) >= 3 and row[2] != ""
+                }
+                self.__timestamps = (
+                    np.array(
+                        [
+                            time_dict[int(pat.match(s).group(1))] for s in self.__filenames  # type: ignore
+                        ]
+                    )
+                    * timestamp_multiplier
+                )
         elif type(timestamp) is float:
             self.__timestamps = np.array(list(range(len(self.__filenames)))) * timestamp
         else:
