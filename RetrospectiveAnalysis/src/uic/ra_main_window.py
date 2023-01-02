@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.0
+## Created by: Qt User Interface Compiler version 6.4.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -139,12 +139,32 @@ class Ui_RaMainWindow(object):
 
         self.plotSpectrogramsGroupBox = QGroupBox(self.layoutWidget)
         self.plotSpectrogramsGroupBox.setObjectName(u"plotSpectrogramsGroupBox")
-        self.horizontalLayout_3 = QHBoxLayout(self.plotSpectrogramsGroupBox)
+        self.horizontalLayout_6 = QHBoxLayout(self.plotSpectrogramsGroupBox)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.verticalLayout_4 = QVBoxLayout()
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.spectrogramSelectAllButton = QPushButton(self.plotSpectrogramsGroupBox)
+        self.spectrogramSelectAllButton.setObjectName(u"spectrogramSelectAllButton")
+
+        self.horizontalLayout_3.addWidget(self.spectrogramSelectAllButton)
+
+        self.spectrogramUnselectAllButton = QPushButton(self.plotSpectrogramsGroupBox)
+        self.spectrogramUnselectAllButton.setObjectName(u"spectrogramUnselectAllButton")
+
+        self.horizontalLayout_3.addWidget(self.spectrogramUnselectAllButton)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_3)
+
         self.powerListWidget = QListWidget(self.plotSpectrogramsGroupBox)
         self.powerListWidget.setObjectName(u"powerListWidget")
 
-        self.horizontalLayout_3.addWidget(self.powerListWidget)
+        self.verticalLayout_4.addWidget(self.powerListWidget)
+
+
+        self.horizontalLayout_6.addLayout(self.verticalLayout_4)
 
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -211,7 +231,7 @@ class Ui_RaMainWindow(object):
         self.verticalLayout.addWidget(self.spectrogramButton)
 
 
-        self.horizontalLayout_3.addLayout(self.verticalLayout)
+        self.horizontalLayout_6.addLayout(self.verticalLayout)
 
 
         self.verticalLayout_2.addWidget(self.plotSpectrogramsGroupBox)
@@ -225,45 +245,50 @@ class Ui_RaMainWindow(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.peakTracingGroupBox.sizePolicy().hasHeightForWidth())
         self.peakTracingGroupBox.setSizePolicy(sizePolicy2)
-        self.horizontalLayout_5 = QHBoxLayout(self.peakTracingGroupBox)
+        self.verticalLayout_3 = QVBoxLayout(self.peakTracingGroupBox)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.peakTrackingSelectAllButton = QPushButton(self.peakTracingGroupBox)
+        self.peakTrackingSelectAllButton.setObjectName(u"peakTrackingSelectAllButton")
+
+        self.horizontalLayout_5.addWidget(self.peakTrackingSelectAllButton)
+
+        self.peakTrackingUnselectAllButton = QPushButton(self.peakTracingGroupBox)
+        self.peakTrackingUnselectAllButton.setObjectName(u"peakTrackingUnselectAllButton")
+
+        self.horizontalLayout_5.addWidget(self.peakTrackingUnselectAllButton)
+
+        self.trackPeakButton = QPushButton(self.peakTracingGroupBox)
+        self.trackPeakButton.setObjectName(u"trackPeakButton")
+
+        self.horizontalLayout_5.addWidget(self.trackPeakButton)
+
+        self.saveResultsButton = QPushButton(self.peakTracingGroupBox)
+        self.saveResultsButton.setObjectName(u"saveResultsButton")
+        self.saveResultsButton.setEnabled(False)
+
+        self.horizontalLayout_5.addWidget(self.saveResultsButton)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
+
         self.splitter_2 = QSplitter(self.peakTracingGroupBox)
         self.splitter_2.setObjectName(u"splitter_2")
         self.splitter_2.setOrientation(Qt.Vertical)
-        self.layoutWidget1 = QWidget(self.splitter_2)
-        self.layoutWidget1.setObjectName(u"layoutWidget1")
-        self.gridLayout_3 = QGridLayout(self.layoutWidget1)
-        self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.peakTrackerPowerListWidget = QListWidget(self.layoutWidget1)
+        self.peakTrackerPowerListWidget = QListWidget(self.splitter_2)
         self.peakTrackerPowerListWidget.setObjectName(u"peakTrackerPowerListWidget")
         sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.peakTrackerPowerListWidget.sizePolicy().hasHeightForWidth())
         self.peakTrackerPowerListWidget.setSizePolicy(sizePolicy3)
-        self.peakTrackerPowerListWidget.setMaximumSize(QSize(16777215, 150))
+        self.splitter_2.addWidget(self.peakTrackerPowerListWidget)
+        self.peakTrackerWidget = QWidget(self.splitter_2)
+        self.peakTrackerWidget.setObjectName(u"peakTrackerWidget")
+        self.splitter_2.addWidget(self.peakTrackerWidget)
 
-        self.gridLayout_3.addWidget(self.peakTrackerPowerListWidget, 0, 0, 3, 1)
-
-        self.trackPeakButton = QPushButton(self.layoutWidget1)
-        self.trackPeakButton.setObjectName(u"trackPeakButton")
-
-        self.gridLayout_3.addWidget(self.trackPeakButton, 0, 1, 1, 1)
-
-        self.verticalSpacer_2 = QSpacerItem(118, 88, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-        self.gridLayout_3.addItem(self.verticalSpacer_2, 1, 1, 1, 1)
-
-        self.saveResultsButton = QPushButton(self.layoutWidget1)
-        self.saveResultsButton.setObjectName(u"saveResultsButton")
-        self.saveResultsButton.setEnabled(False)
-
-        self.gridLayout_3.addWidget(self.saveResultsButton, 2, 1, 1, 1)
-
-        self.splitter_2.addWidget(self.layoutWidget1)
-
-        self.horizontalLayout_5.addWidget(self.splitter_2)
+        self.verticalLayout_3.addWidget(self.splitter_2)
 
         self.splitter_3.addWidget(self.peakTracingGroupBox)
 
@@ -272,7 +297,7 @@ class Ui_RaMainWindow(object):
         RaMainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(RaMainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1280, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1280, 26))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         RaMainWindow.setMenuBar(self.menubar)
@@ -307,6 +332,10 @@ class Ui_RaMainWindow(object):
         self.spectrogramButton.clicked.connect(RaMainWindow.slot_plot_spectrogram)
         self.trackPeakButton.clicked.connect(RaMainWindow.slot_track_peak)
         self.saveResultsButton.clicked.connect(RaMainWindow.slot_save_results)
+        self.peakTrackingSelectAllButton.clicked.connect(RaMainWindow.slot_peak_tracking_select_all)
+        self.peakTrackingUnselectAllButton.clicked.connect(RaMainWindow.slot_peak_tracking_unselect_all)
+        self.spectrogramSelectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_select_all)
+        self.spectrogramUnselectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_unselect_all)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -337,6 +366,8 @@ class Ui_RaMainWindow(object):
         self.patternLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"r\".*sweep_(\\d+)\\.mat\"", None))
         self.loadAnalyzerButton.setText(QCoreApplication.translate("RaMainWindow", u"Load", None))
         self.plotSpectrogramsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Optional. Plot Spectrograms", None))
+        self.spectrogramSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
+        self.spectrogramUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
         self.label.setText(QCoreApplication.translate("RaMainWindow", u"Sample Step:", None))
         self.label_5.setText(QCoreApplication.translate("RaMainWindow", u"X Ticks:", None))
         self.label_7.setText(QCoreApplication.translate("RaMainWindow", u"Y Ticks:", None))
@@ -344,6 +375,8 @@ class Ui_RaMainWindow(object):
         self.powerUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"dBm", None))
         self.spectrogramButton.setText(QCoreApplication.translate("RaMainWindow", u"Spectrogram", None))
         self.peakTracingGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"2. Peak Tracing", None))
+        self.peakTrackingSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
+        self.peakTrackingUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
         self.trackPeakButton.setText(QCoreApplication.translate("RaMainWindow", u"Start Track", None))
         self.saveResultsButton.setText(QCoreApplication.translate("RaMainWindow", u"Save Results", None))
         self.menuFile.setTitle(QCoreApplication.translate("RaMainWindow", u"File", None))

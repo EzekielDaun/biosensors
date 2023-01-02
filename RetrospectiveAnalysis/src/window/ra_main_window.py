@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QListWidgetItem,
     QCheckBox,
+    QVBoxLayout,
 )
 from PySide6.QtCore import (
     QDir,
@@ -59,8 +60,8 @@ class RaMainWindow(QMainWindow):
 
         # peak tracker
         self.__peak_tracker_widget = RaPeakTrackerWidget()
-        self.__ui.splitter_2.addWidget(self.__peak_tracker_widget)
-        self.__ui.splitter_2.setStretchFactor(1, 2)
+        self.__ui.peakTrackerWidget.setLayout(QVBoxLayout())
+        self.__ui.peakTrackerWidget.layout().addWidget(self.__peak_tracker_widget)
         self.__peak_tracker_widget.signal_work_done.connect(
             self.__ui.trackPeakButton.setEnabled
         )
@@ -87,7 +88,7 @@ class RaMainWindow(QMainWindow):
 
     @Slot()
     def slot_log_write(self, text):
-        self.__ui.textBrowser.moveCursor(QTextCursor.End)
+        self.__ui.textBrowser.moveCursor(QTextCursor.End)  # type: ignore
         self.__ui.textBrowser.insertPlainText(text)
         self.__ui.textBrowser.ensureCursorVisible()
 
@@ -209,3 +210,23 @@ class RaMainWindow(QMainWindow):
 
     def slot_save_results(self):
         self.__peak_tracker_widget.save_results()
+
+    def slot_spectrogram_select_all(self):
+        lw = self.__ui.powerListWidget
+        for i in range(lw.count()):
+            lw.itemWidget(lw.item(i)).setChecked(True)  # type: ignore
+
+    def slot_spectrogram_unselect_all(self):
+        lw = self.__ui.powerListWidget
+        for i in range(lw.count()):
+            lw.itemWidget(lw.item(i)).setChecked(False)  # type: ignore
+
+    def slot_peak_tracking_select_all(self):
+        lw = self.__ui.peakTrackerPowerListWidget
+        for i in range(lw.count()):
+            lw.itemWidget(lw.item(i)).setChecked(True)  # type: ignore
+
+    def slot_peak_tracking_unselect_all(self):
+        lw = self.__ui.peakTrackerPowerListWidget
+        for i in range(lw.count()):
+            lw.itemWidget(lw.item(i)).setChecked(False)  # type: ignore
