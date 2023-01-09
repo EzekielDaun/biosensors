@@ -116,7 +116,7 @@ class RaFilePlotter(__RaTabPlotterBase):
         # make new plots
         for i, power in enumerate(self.__worker.powers):
             figure_widget = RaFigureWidget()
-            axes = figure_widget.figure.subplots()
+            axes = figure_widget.figure.subplots(1, 1)
             axes.plot(self.__worker.wavelengths, power)
 
             axes.set_title(f"{self.__current_file_basename}")
@@ -219,7 +219,7 @@ class RaFolderPlotter(__RaTabPlotterBase):
         )
         for k, v in self.__worker.spectrogram_dict.items():
             figure_widget = RaFigureWidget()
-            ax = figure_widget.figure.subplots()
+            ax = figure_widget.figure.subplots(1, 1)
             image = ax.imshow(v, cmap="inferno")
 
             ax.set_xticks(
