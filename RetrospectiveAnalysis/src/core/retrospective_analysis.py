@@ -163,7 +163,7 @@ def _mat_to_peak_dict(
                 prominence,
             )
         except RuntimeError as e:
-            raise RuntimeError(f"Failed to find peaks in {path} channel {c}\n{e}")
+            raise RuntimeError(f"Failed to find peaks in {path} channel {c+1}\n{e}")
         ret[c] = ret.get(c, []) + [temp_peaks]
 
     return ret
