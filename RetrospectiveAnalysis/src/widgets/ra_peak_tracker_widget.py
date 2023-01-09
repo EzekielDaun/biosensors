@@ -253,10 +253,13 @@ class RaPeakTrackerWidgetWorker(QThread):
         self.__prominence = prominence
 
     def run(self):
-        self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
-            self.__channels,
-            self.__prominence,
-        )
+        try:
+            self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
+                self.__channels,
+                self.__prominence,
+            )
+        except Exception as e:
+            logger.error(e)
 
     @property
     def all_traces(self):
@@ -399,9 +402,13 @@ class RaPeakTrackerWidget(QWidget):
     @Slot()
     def __slot_work_done(self):
         self.__worker.finished.disconnect(self.__slot_work_done)  # type: ignore
-        self.__all_traces = self.__worker.all_traces
-        self.__all_peaks = self.__worker.all_peaks
-        self.__worker.deleteLater()
-        self.__plot_traces()
-        self.signal_work_done.emit(True)
-        logger.info("Peak Tracking finished!")
+        try:
+            self.__all_traces = self.__worker.all_traces
+            self.__all_peaks = self.__worker.all_peaks
+            self.__plot_traces()
+        except Exception as e:
+            logger.error(e)
+        finally:
+            self.__worker.deleteLater()
+            self.signal_work_done.emit(True)
+            logger.info("Peak Tracking finished!")
