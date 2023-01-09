@@ -156,9 +156,31 @@
            <property name="title">
             <string>Optional. Plot Spectrograms</string>
            </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
             <item>
-             <widget class="QListWidget" name="powerListWidget"/>
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_3">
+                <item>
+                 <widget class="QPushButton" name="spectrogramSelectAllButton">
+                  <property name="text">
+                   <string>Select All</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="spectrogramUnselectAllButton">
+                  <property name="text">
+                   <string>Unselect All</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item>
+               <widget class="QListWidget" name="powerListWidget"/>
+              </item>
+             </layout>
             </item>
             <item>
              <layout class="QVBoxLayout" name="verticalLayout">
@@ -275,62 +297,56 @@
        <property name="title">
         <string>2. Peak Tracing</string>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QPushButton" name="peakTrackingSelectAllButton">
+            <property name="text">
+             <string>Select All</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="peakTrackingUnselectAllButton">
+            <property name="text">
+             <string>Unselect All</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="trackPeakButton">
+            <property name="text">
+             <string>Start Track</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="saveResultsButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Save Results</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item>
          <widget class="QSplitter" name="splitter_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QWidget" name="layoutWidget">
-           <layout class="QGridLayout" name="gridLayout_3">
-            <item row="0" column="0" rowspan="3">
-             <widget class="QListWidget" name="peakTrackerPowerListWidget">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>150</height>
-               </size>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="trackPeakButton">
-              <property name="text">
-               <string>Start Track</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <spacer name="verticalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>118</width>
-                <height>88</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="2" column="1">
-             <widget class="QPushButton" name="saveResultsButton">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Save Results</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+          <widget class="QListWidget" name="peakTrackerPowerListWidget">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
           </widget>
+          <widget class="QWidget" name="peakTrackerWidget" native="true"/>
          </widget>
         </item>
        </layout>
@@ -345,7 +361,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -525,6 +541,70 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>peakTrackingSelectAllButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_peak_tracking_select_all()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>454</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>peakTrackingUnselectAllButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_peak_tracking_unselect_all()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>606</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spectrogramSelectAllButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_select_all()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>65</x>
+     <y>463</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spectrogramUnselectAllButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_unselect_all()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>159</x>
+     <y>463</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>slot_open_clicked()</slot>
@@ -533,5 +613,9 @@
   <slot>slot_plot_spectrogram()</slot>
   <slot>slot_track_peak()</slot>
   <slot>slot_save_results()</slot>
+  <slot>slot_peak_tracking_select_all()</slot>
+  <slot>slot_peak_tracking_unselect_all()</slot>
+  <slot>slot_spectrogram_select_all()</slot>
+  <slot>slot_spectrogram_unselect_all()</slot>
  </slots>
 </ui>
