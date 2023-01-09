@@ -101,36 +101,39 @@ def get_lorentzian_peaks(
         width: float = wavelengths[right_ips_index] - wavelengths[left_ips_index]
         height: float = abs(properties["peak_heights"][i] - abs(base))
 
-        ret.append(
-            curve_fit(
-                f=lorentzian,
-                xdata=wavelengths[left_base_index:right_base_index],
-                ydata=powers[left_base_index:right_base_index],
-                p0=[
-                    peak_wavelength,  # x0
-                    base,  # y0
-                    -height,  # I
-                    width,  # gamma
-                    0,  # a
-                ],
-                bounds=(
-                    [
-                        peak_wavelength - fsr * 0.1,
-                        base - abs(base * 0.2),
-                        -height * 1.5,
-                        width * 0.5,
-                        -np.inf,
+        try:
+            ret.append(
+                curve_fit(
+                    f=lorentzian,
+                    xdata=wavelengths[left_base_index:right_base_index],
+                    ydata=powers[left_base_index:right_base_index],
+                    p0=[
+                        peak_wavelength,  # x0
+                        base,  # y0
+                        -height,  # I
+                        width,  # gamma
+                        0,  # a
                     ],
-                    [
-                        peak_wavelength + fsr * 0.1,
-                        base + abs(base * 0.2),
-                        -height * 0.5,
-                        width * 1.5,
-                        np.inf,
-                    ],
-                ),
-            )[0]
-        )
+                    bounds=(
+                        [
+                            peak_wavelength - fsr * 0.1,
+                            base - abs(base * 0.2),
+                            -height * 1.5,
+                            width * 0.5,
+                            -np.inf,
+                        ],
+                        [
+                            peak_wavelength + fsr * 0.1,
+                            base + abs(base * 0.2),
+                            -height * 0.5,
+                            width * 1.5,
+                            np.inf,
+                        ],
+                    ),
+                )[0]
+            )
+        except RuntimeError as e:
+            raise RuntimeError(f"Curve fit failed at wavelength {peak_wavelength}")
 
     return np.array(ret)
 
@@ -146,11 +149,14 @@ def _mat_to_peak_dict(
     wavelengths *= wavelength_multiplier
     for c in channels:
         powers = power_matrix[c]
-        temp_peaks = get_lorentzian_peaks(
-            powers,
-            wavelengths,
-            prominence,
-        )
+        try:
+            temp_peaks = get_lorentzian_peaks(
+                powers,
+                wavelengths,
+                prominence,
+            )
+        except RuntimeError as e:
+            raise RuntimeError(f"Failed to find peaks in {path} channel {c}\n{e}")
         ret[c] = ret.get(c, []) + [temp_peaks]
 
     return ret
@@ -173,18 +179,21 @@ class RetrospectiveAnalyzer(object):
             key=lambda x: int(pat.match(x).group(1)),  # type: ignore
         )
 
-        if not all(map(lambda x: x[0] + 1 == int(pat.match(x[1]).group(1)), enumerate(self.__filenames))):  # type: ignore
-            raise RuntimeError("File numbers are not consecutive")
-
         self.__timestamps: NDArray[np.float64] = np.array([])
         if type(timestamp) is str:
             with open(os.path.join(self.__folder_path, timestamp), "r") as csv_file:
-                self.__timestamps = np.array(
-                    [
-                        float(row[2]) * timestamp_multiplier
-                        for row in csv.reader(csv_file, delimiter=",")
-                        if len(row) >= 3 and row[2] != ""
-                    ]
+                time_dict: dict[int, float] = {
+                    int(row[0]): float(row[2])
+                    for row in csv.reader(csv_file, delimiter=",")
+                    if len(row) >= 3 and row[2] != ""
+                }
+                self.__timestamps = (
+                    np.array(
+                        [
+                            time_dict[int(pat.match(s).group(1))] for s in self.__filenames  # type: ignore
+                        ]
+                    )
+                    * timestamp_multiplier
                 )
         elif type(timestamp) is float:
             self.__timestamps = np.array(list(range(len(self.__filenames)))) * timestamp
