@@ -66,7 +66,7 @@ class RaPeakTrackerTab(QWidget):
 
     def update(self):
         self.__figure_widget.figure.clear()
-        ax = self.__figure_widget.figure.subplots()
+        ax = self.__figure_widget.figure.subplots(1, 1)
         ax.set_title(f"{self.__name} Peak Shift")
         ax.set_xlabel("Time (minutes)")
         ax.set_ylabel("Wavelength (nm)")
@@ -253,10 +253,13 @@ class RaPeakTrackerWidgetWorker(QThread):
         self.__prominence = prominence
 
     def run(self):
-        self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
-            self.__channels,
-            self.__prominence,
-        )
+        try:
+            self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
+                self.__channels,
+                self.__prominence,
+            )
+        except Exception as e:
+            logger.error(e)
 
     @property
     def all_traces(self):
@@ -345,9 +348,7 @@ class RaPeakTrackerWidget(QWidget):
                 color=next(mpl_default_colors),  # type: ignore
                 label=k,  # type: ignore
             )
-            axes.add_collection(
-                line_collection,
-            )
+            axes.add_collection(line_collection)  # type: ignore
         axes.set_title("Collated Overlaid Peak Shifts")
         axes.set_xlabel("Time (minutes)")
         axes.set_ylabel("Resonance Peak Shift (nm)")
@@ -375,7 +376,9 @@ class RaPeakTrackerWidget(QWidget):
         for tab in all_tabs:
             self.__assay_name_hint.add(tab.assay)
         for tab in all_tabs:
-            tab.__ui.assayComboBox.setCompleter(QCompleter(list(self.__assay_name_hint)))
+            tab.__ui.assayComboBox.setCompleter(
+                QCompleter(list(self.__assay_name_hint))
+            )
             item_texts = [
                 tab.__ui.assayComboBox.itemText(i)
                 for i in range(tab.__ui.assayComboBox.count())
@@ -399,9 +402,13 @@ class RaPeakTrackerWidget(QWidget):
     @Slot()
     def __slot_work_done(self):
         self.__worker.finished.disconnect(self.__slot_work_done)  # type: ignore
-        self.__all_traces = self.__worker.all_traces
-        self.__all_peaks = self.__worker.all_peaks
-        self.__worker.deleteLater()
-        self.__plot_traces()
-        self.signal_work_done.emit(True)
-        logger.info("Peak Tracking finished!")
+        try:
+            self.__all_traces = self.__worker.all_traces
+            self.__all_peaks = self.__worker.all_peaks
+            self.__plot_traces()
+        except Exception as e:
+            logger.error(e)
+        finally:
+            self.__worker.deleteLater()
+            self.signal_work_done.emit(True)
+            logger.info("Peak Tracking finished!")

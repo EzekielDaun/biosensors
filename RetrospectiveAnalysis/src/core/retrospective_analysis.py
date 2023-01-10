@@ -68,13 +68,16 @@ def get_lorentzian_peaks(
             height=0,
         )
 
-    fsr: float = abs(np.mean(np.diff(wavelengths[indices])))
+    # ignore peaks at 10% wavelength on both sides
+    indices = [i for i in indices if i > 0.1 * len(powers) and i < 0.9 * len(powers)]
+
+    fsr = float(abs(np.mean(np.diff(wavelengths[indices]))))
     # if only one peak, there will be a numpy runtime warning and fsr will be nan
-    fsr = 0.5 * abs(wavelengths[0] - wavelengths[-1]) if np.isnan(fsr) else fsr
+    fsr = float(0.5 * abs(wavelengths[0] - wavelengths[-1])) if np.isnan(fsr) else fsr
 
     ret: list[tuple[float, float, float, float]] = []
     for i, peak_index in enumerate(indices):
-        peak_wavelength: float = wavelengths[peak_index]
+        peak_wavelength = float(wavelengths[peak_index])
 
         left_base_index = int(properties["left_bases"][i])
         right_base_index = int(properties["right_bases"][i])
@@ -82,22 +85,26 @@ def get_lorentzian_peaks(
         left_ips_index = int(properties["left_ips"][i])
         right_ips_index = int(properties["right_ips"][i])
 
-        left_base_avg: float = np.mean(
-            powers[
-                max(0, left_base_index - 50) : min(
-                    len(powers) - 1, left_base_index + 50
-                )
-            ]
+        left_base_avg = float(
+            np.mean(
+                powers[
+                    max(0, left_base_index - 50) : min(
+                        len(powers) - 1, left_base_index + 50
+                    )
+                ]
+            )
         )
-        right_base_avg: float = np.mean(
-            powers[
-                max(0, right_base_index - 50) : min(
-                    len(powers) - 1, right_base_index + 50
-                )
-            ]
+        right_base_avg = float(
+            np.mean(
+                powers[
+                    max(0, right_base_index - 50) : min(
+                        len(powers) - 1, right_base_index + 50
+                    )
+                ]
+            )
         )
 
-        base: float = np.mean([left_base_avg, right_base_avg])
+        base = float(np.mean([left_base_avg, right_base_avg]))
         width: float = wavelengths[right_ips_index] - wavelengths[left_ips_index]
         height: float = abs(properties["peak_heights"][i] - abs(base))
 
@@ -156,7 +163,7 @@ def _mat_to_peak_dict(
                 prominence,
             )
         except RuntimeError as e:
-            raise RuntimeError(f"Failed to find peaks in {path} channel {c}\n{e}")
+            raise RuntimeError(f"Failed to find peaks in {path} channel {c+1}\n{e}")
         ret[c] = ret.get(c, []) + [temp_peaks]
 
     return ret
@@ -326,7 +333,7 @@ def _peaks_to_traces(
     Returns:
         tuple[list[list[float]], float]: ([traces], FSR)
     """
-    FSR: float = np.mean([d for sweep in peaks[::10] for d in np.diff(sweep[:, 0])])
+    FSR = float(np.mean([d for sweep in peaks[::10] for d in np.diff(sweep[:, 0])]))
     population: NDArray[np.float64] = np.array(
         [p for sweep in peaks[::10] for p in sweep]
     )
@@ -413,9 +420,9 @@ def _peaks_to_traces(
 
                 (p1s, p2s) = (p2s, p1s) if is_swapped else (p1s, p2s)
                 if not is_swapped:
-                    wl_shift = np.mean(p2s.T[0]) - np.mean(temp[0].T[0])
+                    wl_shift = float(np.mean(p2s.T[0]) - np.mean(temp[0].T[0]))
                 else:
-                    wl_shift = np.mean(temp[0].T[0]) - np.mean(p1s.T[0])
+                    wl_shift = float(np.mean(temp[0].T[0]) - np.mean(p1s.T[0]))
 
                 if abs(wl_shift) < pairs[0][1][0] - pairs[0][0][0]:
                     logger.debug(f"Shift fixed by {wl_shift}")
