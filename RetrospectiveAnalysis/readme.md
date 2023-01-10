@@ -6,25 +6,27 @@ Python version >= 3.10
 
 ### Windows 10/11
 
-```shell
-scoop/chocolatey/winget install python310
-```
+#### Install Python
 
+```shell
+winget install --id Python.Python.3.11
+```
+#### Install Dependencies
+- Use PowerShell to run `install-dependencies.ps1`
+- Run `retrospective-analysis.ps1` to start the GUI.
 ### macOS 12 
 
 ```shell
-brew install python@3.10
+brew install python@3.11
 ```
 
-And follow the brew output to set Python 3.10 into your path.
+And follow the brew output (if there is one) to set Python 3.11 into your path.
 
----
-
-### Virtual Environment (Recommended, Optional)
+#### Virtual Environment (Recommended, Optional)
 
 1. Clone this repo and navigate to this folder.
-1. Find out the correct command to call Python 3.10. On \*nix platforms, use `which python`, on Windows Powershell, use `get-command python`.
-1. Create a virtual environment by:
+2. Find out the correct command to call Python 3.11. On \*nix platforms, use `which python`.
+3. Create a virtual environment by:
    ```shell
    python -m venv .venv
    ```
@@ -33,7 +35,7 @@ Then activate the virtual environment.
 
 Official tutorial for the [virtual environment](https://docs.python.org/3/tutorial/venv.html).
 
-### Dependencies
+#### Dependencies
 
 If using a virtual environment, activate it. Double-check that the commands are calling the right binaries.
 
@@ -41,7 +43,7 @@ If using a virtual environment, activate it. Double-check that the commands are 
 pip install -r requirements.txt
 ```
 
-### Deployment
+## Deployment
 
 [Qt for Python Deployment](https://doc.qt.io/qtforpython-6/deployment.html#deployment-guides)
 
@@ -74,8 +76,7 @@ python retrospective_analysis_gui.pyw
   - This is usually due to the trace containing only a single data point. Try shifting a few FSRs and check the overlay result.
 - Curve fitting exceeds iteration limits
   - Try to re-run another time. If the error still exists, try running it on another PC.
-  - This error was seen for data from detector 5 in the binding assay of Spike Protein Assay Trial 4 ran in October 2022. More details can be found in the experimental summary of this experiment on the Biosensor Microfluidic Subgroup Google Drive. 
-
+  - This error was seen for data from detector 5 in the binding assay of Spike Protein Assay Trial 4 ran in October 2022. More details can be found in the experimental summary of this experiment on the Biosensor Microfluidic Subgroup Google Drive.
 
 ## Contribute
 
