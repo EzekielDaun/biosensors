@@ -316,7 +316,10 @@ class RaPeakTrackerWidget(QWidget):
         # save all fitted peaks
         savemat(
             f"peaks.mat",
-            {"power" + str(k + 1): v for k, v in self.__all_peaks.items()}
+            {
+                "power" + str(k + 1): np.array(v, dtype="object")
+                for k, v in self.__all_peaks.items()
+            }
             | {"t_array": self.__analyzer.timestamps},
         )
 
