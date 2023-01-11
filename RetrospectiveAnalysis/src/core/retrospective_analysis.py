@@ -69,7 +69,17 @@ def get_lorentzian_peaks(
         )
 
     # ignore peaks at 10% wavelength on both sides
-    indices = [i for i in indices if i > 0.1 * len(powers) and i < 0.9 * len(powers)]
+    for i in reversed(
+        [
+            i
+            for i, index in enumerate(indices)
+            if wavelengths[index] > 0.1 * len(powers)
+            and wavelengths[index] < 0.9 * len(powers)
+        ]
+    ):
+        np.delete(indices, i)
+        for v in properties.values():
+            np.delete(v, i)
 
     fsr = float(abs(np.mean(np.diff(wavelengths[indices]))))
     # if only one peak, there will be a numpy runtime warning and fsr will be nan
