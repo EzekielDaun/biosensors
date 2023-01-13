@@ -68,6 +68,15 @@ def get_lorentzian_peaks(
             height=0,
         )
 
+    # apply distance bound to avoid close peaks (peaks that are splitted into a few sharp and close peaks)
+    indices, properties = find_peaks(
+        (-1) * powers,
+        prominence=prominence,
+        width=width,
+        height=0,
+        distance=int(len(powers) / (len(indices) + 2)),
+    )
+
     # ignore peaks at 10% wavelength on both sides
     for i in reversed(
         [
@@ -133,17 +142,17 @@ def get_lorentzian_peaks(
                     ],
                     bounds=(
                         [
-                            peak_wavelength - fsr * 0.1,
+                            peak_wavelength - fsr * 0.3,
                             base - abs(base * 0.2),
                             -height * 1.5,
                             width * 0.5,
                             -np.inf,
                         ],
                         [
-                            peak_wavelength + fsr * 0.1,
+                            peak_wavelength + fsr * 0.3,
                             base + abs(base * 0.2),
                             -height * 0.5,
-                            width * 1.5,
+                            width * 3.5,
                             np.inf,
                         ],
                     ),
