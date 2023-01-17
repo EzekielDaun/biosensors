@@ -156,8 +156,8 @@
            <property name="title">
             <string>Optional. Plot Spectrograms</string>
            </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_6">
-            <item>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0" rowspan="4">
              <layout class="QVBoxLayout" name="verticalLayout_4">
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -182,104 +182,142 @@
               </item>
              </layout>
             </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout">
-              <item>
-               <layout class="QGridLayout" name="gridLayout_2">
-                <item row="0" column="0">
-                 <widget class="QLabel" name="label">
-                  <property name="text">
-                   <string>Sample Step:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="1">
-                 <widget class="QSpinBox" name="sampleStepSpinBox">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="0">
-                 <widget class="QLabel" name="label_5">
-                  <property name="text">
-                   <string>X Ticks:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QSpinBox" name="xTicksSpinBox">
-                  <property name="value">
-                   <number>20</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="0">
-                 <widget class="QLabel" name="label_7">
-                  <property name="text">
-                   <string>Y Ticks:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="2" column="1">
-                 <widget class="QSpinBox" name="yTicksSpinBox">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="value">
-                   <number>20</number>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="0">
-                 <widget class="QLabel" name="label_8">
-                  <property name="text">
-                   <string>Power Unit:</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                  </property>
-                 </widget>
-                </item>
-                <item row="3" column="1">
-                 <widget class="QLineEdit" name="powerUnitLineEdit">
-                  <property name="text">
-                   <string>dBm</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <spacer name="verticalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QPushButton" name="spectrogramButton">
-                <property name="text">
-                 <string>Spectrogram</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+            <item row="0" column="1">
+             <widget class="QGroupBox" name="spectrogramStyleGroupBox">
+              <property name="title">
+               <string>Style</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_2">
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>X Ticks:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QSpinBox" name="xTicksSpinBox">
+                 <property name="value">
+                  <number>20</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>Y Ticks:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QSpinBox" name="yTicksSpinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="value">
+                  <number>20</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="label_8">
+                 <property name="text">
+                  <string>Power Unit:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLineEdit" name="powerUnitLineEdit">
+                 <property name="text">
+                  <string>dBm</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QGroupBox" name="spectrogramSettingsGroupBox">
+              <property name="title">
+               <string>Settings</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_3">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>Sample Step:</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QSpinBox" name="sampleStepSpinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_9">
+                 <property name="text">
+                  <string>Start:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QSpinBox" name="sampleStartSpinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_10">
+                 <property name="text">
+                  <string>Stop:</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QSpinBox" name="sampleStopSpinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>12</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="3" column="1">
+             <widget class="QPushButton" name="spectrogramButton">
+              <property name="text">
+               <string>Spectrogram</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -298,6 +336,36 @@
         <string>2. Peak Tracing</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QGroupBox" name="peakTracingSettingGroupBox">
+          <property name="title">
+           <string>Settings</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Output Path:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="peakTracingOutputPathComboBox">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="peakTracingOutputPathPushButton">
+             <property name="text">
+              <string>Select...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
@@ -361,7 +429,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>26</height>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -452,8 +520,8 @@
    <slot>slot_file_changed(QModelIndex)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>170</x>
-     <y>325</y>
+     <x>179</x>
+     <y>243</y>
     </hint>
     <hint type="destinationlabel">
      <x>709</x>
@@ -468,8 +536,8 @@
    <slot>slot_file_changed(QModelIndex)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>61</x>
-     <y>325</y>
+     <x>70</x>
+     <y>243</y>
     </hint>
     <hint type="destinationlabel">
      <x>709</x>
@@ -484,8 +552,8 @@
    <slot>slot_load_analyzer()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>747</x>
-     <y>358</y>
+     <x>353</x>
+     <y>374</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -500,8 +568,8 @@
    <slot>slot_plot_spectrogram()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>468</x>
-     <y>676</y>
+     <x>354</x>
+     <y>671</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -516,8 +584,8 @@
    <slot>slot_track_peak()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>954</x>
-     <y>360</y>
+     <x>830</x>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -532,8 +600,8 @@
    <slot>slot_save_results()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>917</x>
-     <y>667</y>
+     <x>981</x>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -548,8 +616,8 @@
    <slot>slot_peak_tracking_select_all()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>454</x>
-     <y>72</y>
+     <x>527</x>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -564,8 +632,8 @@
    <slot>slot_peak_tracking_unselect_all()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>606</x>
-     <y>72</y>
+     <x>678</x>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -580,8 +648,8 @@
    <slot>slot_spectrogram_select_all()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>65</x>
-     <y>463</y>
+     <x>87</x>
+     <y>442</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -596,8 +664,56 @@
    <slot>slot_spectrogram_unselect_all()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>159</x>
-     <y>463</y>
+     <x>206</x>
+     <y>442</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sampleStopSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_on_stop_spinbox_change(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>325</x>
+     <y>600</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sampleStartSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_on_start_spinbox_change(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>325</x>
+     <y>574</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>peakTracingOutputPathPushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_peak_tracking_select_output_path()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>877</x>
+     <y>99</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
@@ -617,5 +733,8 @@
   <slot>slot_peak_tracking_unselect_all()</slot>
   <slot>slot_spectrogram_select_all()</slot>
   <slot>slot_spectrogram_unselect_all()</slot>
+  <slot>slot_spectrogram_on_stop_spinbox_change(int)</slot>
+  <slot>slot_spectrogram_on_start_spinbox_change(int)</slot>
+  <slot>slot_peak_tracking_select_output_path()</slot>
  </slots>
 </ui>

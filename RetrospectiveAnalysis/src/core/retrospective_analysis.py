@@ -254,7 +254,11 @@ class RetrospectiveAnalyzer(object):
         )
 
     def get_spectrograms(
-        self, channels: list[int], step: int = 1
+        self,
+        channels: list[int],
+        step: int = 1,
+        start_index: int = 0,
+        stop_index: int | None = None,
     ) -> dict[int, NDArray[np.float64]]:
         """Get spectrums at a given sample rate for the given channels.
 
@@ -266,7 +270,7 @@ class RetrospectiveAnalyzer(object):
             `data`: Dict[K:`index`, V:`spectrogram`], where `spectrogram` is ready to be plotted with matplotlib.imshow()
         """
         data: dict[int, NDArray[np.float64]] = {}
-        for f in self.__filenames[::step]:
+        for f in self.__filenames[start_index:stop_index:step]:
             matrix, _ = read_mat(os.path.join(self.__folder_path, f))
             for key in channels:
                 vector = np.flip(np.array([matrix[key]])).transpose()

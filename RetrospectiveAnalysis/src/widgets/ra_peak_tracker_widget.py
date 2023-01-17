@@ -1,7 +1,7 @@
 import logging
 
 from itertools import starmap, cycle
-
+import os
 
 import numpy as np
 
@@ -299,9 +299,11 @@ class RaPeakTrackerWidget(QWidget):
     def clear(self):
         self.__tab_widget.clear()
 
-    def save_results(self):
+    def save_results(self, path: str):
         all_tabs: list[RaPeakTrackerTab] = [self.__tab_widget.widget(i) for i in range(self.__tab_widget.count())]  # type: ignore
 
+        temp_dir = os.curdir
+        os.chdir(path)
         # save peak shifts
         savemat(
             f"peak_shifts.mat",
@@ -322,6 +324,7 @@ class RaPeakTrackerWidget(QWidget):
             }
             | {"t_array": self.__analyzer.timestamps},
         )
+        os.chdir(temp_dir)
 
         mpl_default_colors: cycle[tuple[float]] = cycle(
             map(

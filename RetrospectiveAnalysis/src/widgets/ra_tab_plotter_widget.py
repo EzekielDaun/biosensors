@@ -139,11 +139,20 @@ class RaFilePlotter(__RaTabPlotterBase):
 
 
 class RaFolderPlotterSpectrogramWorker(__RaTabPlotterWorkerBase):
-    def __init__(self, analyzer: Analyzer, channels: list[int], step: int):
+    def __init__(
+        self,
+        analyzer: Analyzer,
+        channels: list[int],
+        step: int,
+        start_index: int,
+        stop_index: int | None,
+    ):
         super().__init__()
         self.__analyzer = analyzer
         self.__channels = channels
         self.__step = step
+        self.__start_index = start_index
+        self.__stop_index = stop_index
 
     @property
     def spectrogram_dict(self):
@@ -151,7 +160,7 @@ class RaFolderPlotterSpectrogramWorker(__RaTabPlotterWorkerBase):
 
     def run(self):
         self.__spectrogram_dict = self.__analyzer.get_spectrograms(
-            self.__channels, self.__step
+            self.__channels, self.__step, self.__start_index, self.__stop_index
         )
 
 
@@ -165,13 +174,15 @@ class RaFolderPlotter(__RaTabPlotterBase):
             self.__slot_spectrograms_work_start
         )
 
-        # an analyer should be initialized outside and passed into this class
+        # an analyzer should be initialized outside and passed into this class
         self.analyzer: Analyzer = None  # type: ignore
 
     def plot_spectrograms(
         self,
         channels: list[int],
         step: int,
+        start_index: int,
+        stop_index: int | None,
         x_tick_number: int,
         y_tick_number: int,
         power_unit: str,
@@ -186,6 +197,8 @@ class RaFolderPlotter(__RaTabPlotterBase):
 
             self.__channels = channels
             self.__step = step
+            self.__start_index = start_index
+            self.__stop_index = stop_index
             self.__x_tick_step = int(len(self.analyzer.timestamps) / x_tick_number)
             self.__y_tick_step = int(len(self.analyzer.wavelengths) / y_tick_number)
             self.__power_unit = power_unit
@@ -194,7 +207,11 @@ class RaFolderPlotter(__RaTabPlotterBase):
     @Slot()
     def __slot_spectrograms_work_start(self):
         self.__worker = RaFolderPlotterSpectrogramWorker(
-            self.analyzer, self.__channels, self.__step
+            self.analyzer,
+            self.__channels,
+            self.__step,
+            self.__start_index,
+            self.__stop_index,
         )
         self.__worker.finished.connect(self.__slot_spectrograms_work_done)  # type: ignore
         self.__worker.start()
@@ -206,7 +223,9 @@ class RaFolderPlotter(__RaTabPlotterBase):
 
         # make new plots
         x_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
-            self.analyzer.timestamps[:: self.__step]
+            self.analyzer.timestamps[
+                self.__start_index : self.__stop_index : self.__step
+            ]
         )
         y_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
             self.analyzer.wavelengths[::-1]
@@ -247,4 +266,5 @@ class RaFolderPlotter(__RaTabPlotterBase):
             self.addTab(figure_widget, f"Power {k+1}")
 
         del self.__worker
+        logger.info("Spectrogram plotting done!")
         self.signal_spectrograms_work_done.emit(True)
