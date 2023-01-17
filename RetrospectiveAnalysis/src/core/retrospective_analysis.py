@@ -391,8 +391,11 @@ def _peaks_to_traces(
                     "cosine",
                 )[0][0],
             )
-
-            if (  # if the minimum difference in shape is still too large
+            if (
+                # if no other peaks in p1s
+                len(pairs) <= 0
+                or
+                # if the minimum difference in shape is still too large
                 cdist(
                     [(pairs[0][0][1:] - mean_population[1:]) / std_population[1:]],
                     [(pairs[0][1][1:] - mean_population[1:]) / std_population[1:]],
@@ -402,7 +405,7 @@ def _peaks_to_traces(
             ):
                 shifts.append(np.nan)
                 logger.warning(
-                    f"Peak shift from sweep index {i} to {i+1} cannot be determined. Cannot find matching peaks."
+                    f"Peak shift from sweep index {i} to {i+1} cannot be determined. Cannot find matching peaks at wavelength {last_peak[0]:.2f}."
                 )
                 _, (_, temp) = next(pair_iter, (None, (None, None)))
                 if temp is not None:
