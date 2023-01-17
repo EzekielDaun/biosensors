@@ -68,6 +68,15 @@ def get_lorentzian_peaks(
             height=0,
         )
 
+    # apply distance bound to avoid close peaks (peaks that are splitted into a few sharp and close peaks)
+    indices, properties = find_peaks(
+        (-1) * powers,
+        prominence=prominence,
+        width=width,
+        height=0,
+        distance=int(len(powers) / (len(indices) + 2)),
+    )
+
     # ignore peaks at 10% wavelength on both sides
     for i in reversed(
         [
@@ -133,17 +142,17 @@ def get_lorentzian_peaks(
                     ],
                     bounds=(
                         [
-                            peak_wavelength - fsr * 0.1,
+                            peak_wavelength - fsr * 0.3,
                             base - abs(base * 0.2),
                             -height * 1.5,
                             width * 0.5,
                             -np.inf,
                         ],
                         [
-                            peak_wavelength + fsr * 0.1,
+                            peak_wavelength + fsr * 0.3,
                             base + abs(base * 0.2),
                             -height * 0.5,
-                            width * 1.5,
+                            width * 3.5,
                             np.inf,
                         ],
                     ),
@@ -382,8 +391,11 @@ def _peaks_to_traces(
                     "cosine",
                 )[0][0],
             )
-
-            if (  # if the minimum difference in shape is still too large
+            if (
+                # if no other peaks in p1s
+                len(pairs) <= 0
+                or
+                # if the minimum difference in shape is still too large
                 cdist(
                     [(pairs[0][0][1:] - mean_population[1:]) / std_population[1:]],
                     [(pairs[0][1][1:] - mean_population[1:]) / std_population[1:]],
@@ -393,7 +405,7 @@ def _peaks_to_traces(
             ):
                 shifts.append(np.nan)
                 logger.warning(
-                    f"Peak shift from sweep index {i} to {i+1} cannot be determined. Cannot find matching peaks."
+                    f"Peak shift from sweep index {i} to {i+1} cannot be determined. Cannot find matching peaks at wavelength {last_peak[0]:.2f}."
                 )
                 _, (_, temp) = next(pair_iter, (None, (None, None)))
                 if temp is not None:
