@@ -72,9 +72,7 @@ class Ui_RaMainWindow(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.analyzerSettingsGroupBox = QGroupBox(self.layoutWidget)
         self.analyzerSettingsGroupBox.setObjectName(u"analyzerSettingsGroupBox")
-        self.horizontalLayout_2 = QHBoxLayout(self.analyzerSettingsGroupBox)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.gridLayout = QGridLayout()
+        self.gridLayout = QGridLayout(self.analyzerSettingsGroupBox)
         self.gridLayout.setObjectName(u"gridLayout")
         self.label_2 = QLabel(self.analyzerSettingsGroupBox)
         self.label_2.setObjectName(u"label_2")
@@ -85,7 +83,7 @@ class Ui_RaMainWindow(object):
         self.timeStampComboBox.setObjectName(u"timeStampComboBox")
         self.timeStampComboBox.setEditable(True)
 
-        self.gridLayout.addWidget(self.timeStampComboBox, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.timeStampComboBox, 0, 1, 1, 2)
 
         self.label_3 = QLabel(self.analyzerSettingsGroupBox)
         self.label_3.setObjectName(u"label_3")
@@ -97,6 +95,11 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.timeMultiplierLineEdit, 1, 1, 1, 1)
 
+        self.lineEdit_2 = QLineEdit(self.analyzerSettingsGroupBox)
+        self.lineEdit_2.setObjectName(u"lineEdit_2")
+
+        self.gridLayout.addWidget(self.lineEdit_2, 1, 2, 1, 1)
+
         self.label_4 = QLabel(self.analyzerSettingsGroupBox)
         self.label_4.setObjectName(u"label_4")
 
@@ -107,6 +110,11 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.wavelengthMultiplierLineEdit, 2, 1, 1, 1)
 
+        self.lineEdit = QLineEdit(self.analyzerSettingsGroupBox)
+        self.lineEdit.setObjectName(u"lineEdit")
+
+        self.gridLayout.addWidget(self.lineEdit, 2, 2, 1, 1)
+
         self.label_6 = QLabel(self.analyzerSettingsGroupBox)
         self.label_6.setObjectName(u"label_6")
 
@@ -115,24 +123,12 @@ class Ui_RaMainWindow(object):
         self.patternLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
         self.patternLineEdit.setObjectName(u"patternLineEdit")
 
-        self.gridLayout.addWidget(self.patternLineEdit, 3, 1, 1, 1)
-
-
-        self.horizontalLayout_2.addLayout(self.gridLayout)
-
-        self.verticalLayout_5 = QVBoxLayout()
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-        self.verticalLayout_5.addItem(self.verticalSpacer_3)
+        self.gridLayout.addWidget(self.patternLineEdit, 3, 1, 1, 2)
 
         self.loadAnalyzerButton = QPushButton(self.analyzerSettingsGroupBox)
         self.loadAnalyzerButton.setObjectName(u"loadAnalyzerButton")
 
-        self.verticalLayout_5.addWidget(self.loadAnalyzerButton)
-
-
-        self.horizontalLayout_2.addLayout(self.verticalLayout_5)
+        self.gridLayout.addWidget(self.loadAnalyzerButton, 4, 0, 1, 3)
 
 
         self.verticalLayout_2.addWidget(self.analyzerSettingsGroupBox)
@@ -227,6 +223,7 @@ class Ui_RaMainWindow(object):
 
         self.label_9 = QLabel(self.spectrogramSettingsGroupBox)
         self.label_9.setObjectName(u"label_9")
+        self.label_9.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_3.addWidget(self.label_9, 1, 0, 1, 1)
 
@@ -238,6 +235,7 @@ class Ui_RaMainWindow(object):
 
         self.label_10 = QLabel(self.spectrogramSettingsGroupBox)
         self.label_10.setObjectName(u"label_10")
+        self.label_10.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_3.addWidget(self.label_10, 2, 0, 1, 1)
 
@@ -250,7 +248,7 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout_4.addWidget(self.spectrogramSettingsGroupBox, 1, 1, 1, 1)
 
-        self.verticalSpacer = QSpacerItem(20, 12, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.verticalSpacer = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
         self.gridLayout_4.addItem(self.verticalSpacer, 2, 1, 1, 1)
 
@@ -409,12 +407,32 @@ class Ui_RaMainWindow(object):
         self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
         self.analyzerSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"1. Analyzer Settings", None))
         self.label_2.setText(QCoreApplication.translate("RaMainWindow", u"Timestamp File/Number", None))
+#if QT_CONFIG(tooltip)
+        self.timeStampComboBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"csv timestamp file or a fix interval number", None))
+#endif // QT_CONFIG(tooltip)
         self.timeStampComboBox.setCurrentText(QCoreApplication.translate("RaMainWindow", u"0.25", None))
-        self.label_3.setText(QCoreApplication.translate("RaMainWindow", u"Time Multiplier (to minutes):", None))
+        self.label_3.setText(QCoreApplication.translate("RaMainWindow", u"Time Multiplier:", None))
+#if QT_CONFIG(tooltip)
+        self.timeMultiplierLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"1/60 if convert from second to minute", None))
+#endif // QT_CONFIG(tooltip)
         self.timeMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1/60", None))
-        self.label_4.setText(QCoreApplication.translate("RaMainWindow", u"Wavelength Multiplier (to nm):", None))
+#if QT_CONFIG(tooltip)
+        self.lineEdit_2.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
+#endif // QT_CONFIG(tooltip)
+        self.lineEdit_2.setText(QCoreApplication.translate("RaMainWindow", u"min", None))
+        self.label_4.setText(QCoreApplication.translate("RaMainWindow", u"Wavelength Multiplier:", None))
+#if QT_CONFIG(tooltip)
+        self.wavelengthMultiplierLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"1e9 if convert from meter to nanometer", None))
+#endif // QT_CONFIG(tooltip)
         self.wavelengthMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1e9", None))
+#if QT_CONFIG(tooltip)
+        self.lineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
+#endif // QT_CONFIG(tooltip)
+        self.lineEdit.setText(QCoreApplication.translate("RaMainWindow", u"nm", None))
         self.label_6.setText(QCoreApplication.translate("RaMainWindow", u"Data File Pattern (RegEx):", None))
+#if QT_CONFIG(tooltip)
+        self.patternLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"regular expression for sweep number matching. (match the number in \"()\")", None))
+#endif // QT_CONFIG(tooltip)
         self.patternLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"r\".*sweep_(\\d+)\\.mat\"", None))
         self.loadAnalyzerButton.setText(QCoreApplication.translate("RaMainWindow", u"Load", None))
         self.plotSpectrogramsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Optional. Plot Spectrograms", None))
@@ -422,17 +440,38 @@ class Ui_RaMainWindow(object):
         self.spectrogramUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
         self.spectrogramStyleGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Style", None))
         self.label_5.setText(QCoreApplication.translate("RaMainWindow", u"X Ticks:", None))
+#if QT_CONFIG(tooltip)
+        self.xTicksSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"number of ticks in x axis, cannot be smaller than file numbers", None))
+#endif // QT_CONFIG(tooltip)
         self.label_7.setText(QCoreApplication.translate("RaMainWindow", u"Y Ticks:", None))
+#if QT_CONFIG(tooltip)
+        self.yTicksSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"number of tick in y axis", None))
+#endif // QT_CONFIG(tooltip)
         self.label_8.setText(QCoreApplication.translate("RaMainWindow", u"Power Unit:", None))
+#if QT_CONFIG(tooltip)
+        self.powerUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"the unit to display", None))
+#endif // QT_CONFIG(tooltip)
         self.powerUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"dBm", None))
         self.spectrogramSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Settings", None))
-        self.label.setText(QCoreApplication.translate("RaMainWindow", u"Sample Step:", None))
+        self.label.setText(QCoreApplication.translate("RaMainWindow", u"Step:", None))
+#if QT_CONFIG(tooltip)
+        self.sampleStepSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"sample once per [step] files", None))
+#endif // QT_CONFIG(tooltip)
         self.label_9.setText(QCoreApplication.translate("RaMainWindow", u"Start:", None))
+#if QT_CONFIG(tooltip)
+        self.sampleStartSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"the start number (regardless of actual sweep number)", None))
+#endif // QT_CONFIG(tooltip)
         self.label_10.setText(QCoreApplication.translate("RaMainWindow", u"Stop:", None))
+#if QT_CONFIG(tooltip)
+        self.sampleStopSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"the stop number (regardless of actual sweep number)", None))
+#endif // QT_CONFIG(tooltip)
         self.spectrogramButton.setText(QCoreApplication.translate("RaMainWindow", u"Spectrogram", None))
         self.peakTracingGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"2. Peak Tracing", None))
         self.peakTracingSettingGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Settings", None))
         self.label_11.setText(QCoreApplication.translate("RaMainWindow", u"Output Path:", None))
+#if QT_CONFIG(tooltip)
+        self.peakTracingOutputPathComboBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"where the output .mat files should be saved", None))
+#endif // QT_CONFIG(tooltip)
         self.peakTracingOutputPathPushButton.setText(QCoreApplication.translate("RaMainWindow", u"Select...", None))
         self.peakTrackingSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
         self.peakTrackingUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
