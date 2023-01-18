@@ -21,7 +21,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QTextCursor
 
 from ..uic.ra_main_window import Ui_RaMainWindow
-from ..widgets.ra_tab_plotter_widget import RaFilePlotter, RaFolderPlotter
+from ..widgets.ra_tab_plotter_widget import RaFilePlotterWidget, RaSpectrogramPlotterWidget
 from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
 
 from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
@@ -47,13 +47,13 @@ class RaMainWindow(QMainWindow):
         self.__ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
 
         # file plotter
-        self.__file_plotter = RaFilePlotter()
-        self.__ui.splitter.insertWidget(0, self.__file_plotter)
+        self.__file_plotter_widget = RaFilePlotterWidget()
+        self.__ui.splitter.insertWidget(0, self.__file_plotter_widget)
         self.__ui.splitter.setStretchFactor(0, 2)
 
         # spectrum plotter
         # intended to be popped up so not in any layout
-        self.__folder_plotter = RaFolderPlotter()
+        self.__folder_plotter = RaSpectrogramPlotterWidget()
         self.__folder_plotter.signal_spectrograms_work_done.connect(
             self.__ui.spectrogramButton.setEnabled
         )
@@ -111,7 +111,7 @@ class RaMainWindow(QMainWindow):
             self.__ui.peakTrackerPowerListWidget.clear()
             self.__ui.timeStampComboBox.clear()
             self.__peak_tracker_widget.clear()
-            self.__file_plotter.clear()
+            self.__file_plotter_widget.clear()
 
             # setup timestamp selector combo box
             pat = re.compile(r".*time.*\.csv")
@@ -134,7 +134,7 @@ class RaMainWindow(QMainWindow):
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            self.__file_plotter.plot_file(file_path)
+            self.__file_plotter_widget.plot_file(file_path)
 
     def slot_load_analyzer(self):
         # clear power list widget
