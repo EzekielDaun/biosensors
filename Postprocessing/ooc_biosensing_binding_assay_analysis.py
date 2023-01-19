@@ -43,43 +43,6 @@ def extract_peak_position_profiles_ra_original(path_to_sweep_output_folder):
     return sensor_data
 
 
-# def extract_peak_position_profiles_ra_gui(path_to_sweep_output_folder):
-#     '''This function extracts peak position profiles when the updated retrospective analysis script (with a GUI) is used for analysis.  It assumes that results are provided in meters, the power arrays of eight sensors are unlabelled, and that the timesteps array units are in hours; the output is placed into a dataframe'''
-
-#     sensor_1 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_1_unknown'][0]
-#     sensor_2 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_2_unknown'][0]
-#     sensor_3 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_3_unknown'][0]
-#     sensor_4 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_4_unknown'][0]
-#     sensor_5 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_5_unknown'][0]
-#     sensor_6 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_6_unknown'][0]
-#     sensor_7 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_7_unknown'][0]
-#     sensor_8 = scipy.io.loadmat(path_to_sweep_output_folder + '/peak_shifts.mat')['power_8_unknown'][0]
-
-#     sensor_1 -= sensor_1[0]
-#     sensor_2 -= sensor_2[0]
-#     sensor_3 -= sensor_3[0]
-#     sensor_4 -= sensor_4[0]
-#     sensor_5 -= sensor_5[0]
-#     sensor_6 -= sensor_6[0]
-#     sensor_7 -= sensor_7[0]
-#     sensor_8 -= sensor_8[0]
-
-#     time = pd.read_csv(path_to_sweep_output_folder+'/Bioassay/timeSteps.csv', header=None).iloc[:-1, 2].to_numpy()/60
-
-#     sensor_data = pd.DataFrame(columns=['Time', 'Sensor 1', 'Sensor 2', 'Sensor 3', 'Sensor 4', 'Sensor 5', 'Sensor 6', 'Sensor 7', 'Sensor 8'])
-#     sensor_data['Time'] = time
-#     sensor_data['Sensor 1'] = sensor_1 * 1e9
-#     sensor_data['Sensor 2'] = sensor_2 * 1e9
-#     sensor_data['Sensor 3'] = sensor_3 * 1e9
-#     sensor_data['Sensor 4'] = sensor_4 * 1e9
-#     sensor_data['Sensor 5'] = sensor_5 * 1e9
-#     sensor_data['Sensor 6'] = sensor_6 * 1e9
-#     sensor_data['Sensor 7'] = sensor_7 * 1e9
-#     sensor_data['Sensor 8'] = sensor_8 * 1e9
-
-#     return sensor_data
-
-
 def extract_peak_positions_ra_gui(path_to_sweep_output_folder):
     '''This function extracts peak position profiles when the updated retrospective analysis script (with a GUI) is used for analysis.  It assumes that results are provided in nanometers, the power arrays of each sensor contains the word power (case sensitive) and are arranged in ascending order (i.e. power_1_array, power_2_array, etc.), and that the timesteps array units are in minutes; the output is placed into a dataframe'''
 
