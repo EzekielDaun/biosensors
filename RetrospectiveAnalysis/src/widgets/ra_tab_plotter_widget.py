@@ -198,7 +198,7 @@ class RaFilePlotterWidget(QGroupBox):
                         pass
                     case RaFilePlotterWidget.PeakFindOption.LORENTZIAN_FIT:
                         peaks = get_lorentzian_peaks(
-                            power, self.__worker.wavelengths, 0.2
+                            power, self.__worker.wavelengths, {"prominence": 0.2}
                         )
                         for _j, peak in enumerate(peaks):
                             x0, y0, _i, gamma, a = peak

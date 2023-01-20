@@ -21,7 +21,10 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QTextCursor
 
 from ..uic.ra_main_window import Ui_RaMainWindow
-from ..widgets.ra_tab_plotter_widget import RaFilePlotterWidget, RaSpectrogramPlotterWidget
+from ..widgets.ra_tab_plotter_widget import (
+    RaFilePlotterWidget,
+    RaSpectrogramPlotterWidget,
+)
 from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
 
 from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
@@ -240,7 +243,9 @@ class RaMainWindow(QMainWindow):
     def slot_track_peak(self):
         lw = self.__ui.peakTrackerPowerListWidget
         powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
-        self.__peak_tracker_widget.plot_initial(self.__analyzer, powers, 0.2)
+        self.__peak_tracker_widget.plot_initial(
+            self.__analyzer, powers, {"prominence": 0.2}
+        )
 
     def slot_save_results(self):
         output_path = self.__ui.peakTracingOutputPathComboBox.currentText()

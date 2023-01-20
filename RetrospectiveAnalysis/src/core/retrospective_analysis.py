@@ -38,43 +38,46 @@ def read_mat(
 def get_lorentzian_peaks(
     powers: NDArray[np.float64],
     wavelengths: NDArray[np.float64],
-    prominence: float,
+    # prominence: float,
+    find_peaks_kwargs: dict[str, float],
 ) -> NDArray[np.float64]:
 
     if len(powers) != len(wavelengths):
         raise RuntimeError("Number of wavelengths and powers do not match")
 
+    # avoid modifying the original dict
+    find_peaks_kwargs = find_peaks_kwargs.copy()
+
+    if "width" not in find_peaks_kwargs:
+        find_peaks_kwargs["width"] = int(len(powers) / 500)
+    if "height" not in find_peaks_kwargs:
+        find_peaks_kwargs["height"] = 0
+    find_peaks_kwargs["prominence"] *= max(powers) - min(powers)
     # https://www.mathworks.com/help/signal/ug/prominence.html
-    prominence *= max(powers) - min(powers)
-    width = int(len(powers) / 500)
+    # prominence *= max(powers) - min(powers)
+    # width = int(len(powers) / 500)
 
     indices, properties = find_peaks(
         (-1) * powers,
-        prominence=prominence,
-        width=width,
-        height=0,
+        **find_peaks_kwargs,
     )
 
     for _ in range(20):
         # set a iteration limit to prevent infinite loops in case the sweep only have one peak
         if len(indices) >= 2:
             break
-        prominence /= 2
-        width = int(width / 2)
+        find_peaks_kwargs["prominence"] /= 2
+        find_peaks_kwargs["width"] = int(find_peaks_kwargs["width"] / 2)
         indices, properties = find_peaks(
             (-1) * powers,
-            prominence=prominence,
-            width=width,
-            height=0,
+            **find_peaks_kwargs,
         )
 
     # apply distance bound to avoid close peaks (peaks that are splitted into a few sharp and close peaks)
+    find_peaks_kwargs["distance"] = int(len(powers) / (len(indices) + 2))
     indices, properties = find_peaks(
         (-1) * powers,
-        prominence=prominence,
-        width=width,
-        height=0,
-        distance=int(len(powers) / (len(indices) + 2)),
+        **find_peaks_kwargs,
     )
 
     # ignore peaks at 10% wavelength on both sides
@@ -167,7 +170,8 @@ def get_lorentzian_peaks(
 def _mat_to_peak_dict(
     path: str,
     channels: list[int],
-    prominence: float,
+    # prominence: float,
+    find_peaks_kwargs: dict[str, float],
     wavelength_multiplier: float,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
     ret = {}
@@ -179,7 +183,7 @@ def _mat_to_peak_dict(
             temp_peaks = get_lorentzian_peaks(
                 powers,
                 wavelengths,
-                prominence,
+                find_peaks_kwargs,
             )
         except RuntimeError as e:
             raise RuntimeError(f"Failed to find peaks in {path} channel {c+1}\n{e}")
@@ -280,7 +284,8 @@ class RetrospectiveAnalyzer(object):
     def analyze(
         self,
         channels: list[int],
-        prominence: float,
+        # prominence: float,
+        find_peaks_kwargs: dict[str, float],
         weights: list[float] = [],
         enable_multi_processing: bool = True,
     ) -> tuple[
@@ -318,7 +323,7 @@ class RetrospectiveAnalyzer(object):
                                 for f in self.__filenames
                             ],
                             repeat(channels),
-                            repeat(prominence),
+                            repeat(find_peaks_kwargs),
                             repeat(self.__wavelength_multiplier),
                         ),
                     ),
@@ -334,7 +339,7 @@ class RetrospectiveAnalyzer(object):
                     zip(
                         [os.path.join(self.__folder_path, f) for f in self.__filenames],
                         repeat(channels),
-                        repeat(prominence),
+                        repeat(find_peaks_kwargs),
                         repeat(self.__wavelength_multiplier),
                     ),
                 ),
@@ -514,7 +519,7 @@ if __name__ == "__main__":
 
     # Plot traces
 
-    all_traces, all_peaks = analyzer.analyze(channels, 0.05)
+    all_traces, all_peaks = analyzer.analyze(channels, {"prominence": 0.05})
     for c in channels:
         fig = plt.figure()
         ax = fig.add_subplot(111)

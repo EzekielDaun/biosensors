@@ -27,17 +27,18 @@ class RaPeakTrackerWidget(QWidget):
             self,
             analyzer: Analyzer,
             channels: list[int],
-            prominence: float,
+            # prominence: float,
+            find_peak_kwargs: dict[str, float],
         ):
             super().__init__()
             self.__analyzer = analyzer
             self.__channels = channels
-            self.__prominence = prominence
+            self.__find_peak_kwargs = find_peak_kwargs
 
         def run(self):
             try:
                 self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
-                    self.__channels, self.__prominence, [1, 1, 1, 1, 1]
+                    self.__channels, self.__find_peak_kwargs, [1, 1, 1, 1, 1]
                 )
             except Exception as e:
                 logger.error(e)
@@ -287,11 +288,12 @@ class RaPeakTrackerWidget(QWidget):
         self,
         analyzer: Analyzer,
         channels: list[int],
-        prominence: float,
+        # prominence: float,
+        find_peak_kwargs: dict[str, float],
     ):
         self.__analyzer = analyzer
         self.__channels = channels
-        self.__prominence = prominence
+        self.__find_peak_kwargs = find_peak_kwargs
         self.__signal_work_start.emit()
         self.__tab_widget.clear()
 
@@ -397,7 +399,7 @@ class RaPeakTrackerWidget(QWidget):
         self.__worker = self.__Worker(
             self.__analyzer,
             self.__channels,
-            self.__prominence,
+            self.__find_peak_kwargs,
         )
         self.__worker.finished.connect(self.__slot_work_done)  # type: ignore
         self.__worker.start()
