@@ -8,8 +8,9 @@ import os
 
 
 import numpy as np
+from numpy.typing import NDArray
 
-from scipy.signal import medfilt
+from scipy.signal import medfilt, find_peaks
 from scipy.ndimage import gaussian_filter1d
 
 from matplotlib.ticker import FuncFormatter
@@ -133,11 +134,13 @@ class RaFilePlotterWidget(QGroupBox):
             peak_find_option: RaFilePlotterWidget.PeakFindOption,
             median_size: int = 0,
             gaussian_sigma: float = 0.0,
+            prominence: float = 0.0,
         ):
             self.__filter_option = filter_option
             self.__peak_find_option = peak_find_option
             self.__median_size = median_size
             self.__gaussian_sigma = gaussian_sigma
+            self.__prominence = prominence
 
             self.__current_file_basename = os.path.basename(file_path)
             self.__on_work = True
@@ -164,25 +167,48 @@ class RaFilePlotterWidget(QGroupBox):
                 figure_widget = RaFigureWidget()
                 axes = figure_widget.figure.subplots(1, 1)
 
+                power_smoothed: NDArray[np.float64] = power
                 match self.__filter_option:
                     case RaFilePlotterWidget.FilterOption.NONE:
                         axes.plot(self.__worker.wavelengths, power)
                     case RaFilePlotterWidget.FilterOption.MEDIAN:
+                        power_smoothed = medfilt(power, self.__median_size)
                         axes.plot(self.__worker.wavelengths, power, alpha=0.35)
-                        axes.plot(
-                            self.__worker.wavelengths,
-                            medfilt(power, self.__median_size),
-                            alpha=0.75,
-                        )
+                        axes.plot(self.__worker.wavelengths, power_smoothed, alpha=0.75)
                         axes.legend(["Raw", "Median Filtered"])
                     case RaFilePlotterWidget.FilterOption.GAUSSIAN:
+                        power_smoothed = gaussian_filter1d(power, self.__gaussian_sigma)  # type: ignore
                         axes.plot(self.__worker.wavelengths, power, alpha=0.35)
-                        axes.plot(
-                            self.__worker.wavelengths,
-                            gaussian_filter1d(power, self.__gaussian_sigma),
-                            alpha=0.75,
-                        )
+                        axes.plot(self.__worker.wavelengths, power_smoothed, alpha=0.75)
                         axes.legend(["Raw", "Gaussian Filtered"])
+
+                match self.__peak_find_option:
+                    case RaFilePlotterWidget.PeakFindOption.NONE:
+                        pass
+                    case RaFilePlotterWidget.PeakFindOption.NAIVE:
+                        indices, properties = find_peaks(
+                            -1 * power_smoothed,
+                            prominence=self.__prominence
+                            * (max(power_smoothed) - min(power_smoothed)),
+                        )
+                        for i in indices:
+                            axes.plot(
+                                self.__worker.wavelengths[i],
+                                power_smoothed[i],
+                                "x",
+                            )
+                            # TODO: plot peak width
+                    case RaFilePlotterWidget.PeakFindOption.LORENTZIAN_FIT:
+                        peaks = get_lorentzian_peaks(
+                            power,
+                            self.__worker.wavelengths,
+                            {"prominence": self.__prominence},
+                        )
+                        for _j, peak in enumerate(peaks):
+                            x0, y0, _i, gamma, a = peak
+                            xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
+                            ys = lorentzian(xs, x0, y0, _i, gamma, a)
+                            axes.plot(xs, ys, "-")
 
                 axes.set_title(f"{self.__current_file_basename}")
                 axes.set_xlabel("Wavelength")
@@ -191,20 +217,6 @@ class RaFilePlotterWidget(QGroupBox):
                 figure_widget.figure_canvas.show()
                 self.addTab(figure_widget, f"Power {str(i + 1)}")
 
-                match self.__peak_find_option:
-                    case RaFilePlotterWidget.PeakFindOption.NONE:
-                        pass
-                    case RaFilePlotterWidget.PeakFindOption.NAIVE:
-                        pass
-                    case RaFilePlotterWidget.PeakFindOption.LORENTZIAN_FIT:
-                        peaks = get_lorentzian_peaks(
-                            power, self.__worker.wavelengths, {"prominence": 0.2}
-                        )
-                        for _j, peak in enumerate(peaks):
-                            x0, y0, _i, gamma, a = peak
-                            xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
-                            ys = lorentzian(xs, x0, y0, _i, gamma, a)
-                            axes.plot(xs, ys, "-")
             self.__worker.deleteLater()
 
             if self.__current_tab_index < self.count():
@@ -268,6 +280,41 @@ class RaFilePlotterWidget(QGroupBox):
             [e.name.replace("_", " ").title() for e in self.PeakFindOption]
         )
         self.__curve_fitting_option_combo_box.currentIndexChanged.connect(self.__slot_update)  # type: ignore
+
+        self.__curve_fitting_naive_settings_group_box = QGroupBox("Naive Peak Find")
+        self.__curve_fitting_naive_settings_group_box.setLayout(QHBoxLayout())
+        self.__curve_fitting_naive_prominence_label = QLabel("Prominence:")
+        self.__curve_fitting_naive_prominence_spin_box = QDoubleSpinBox()
+        self.__curve_fitting_naive_prominence_spin_box.setValue(0.2)
+        self.__curve_fitting_naive_prominence_spin_box.setMinimum(0.1)
+        self.__curve_fitting_naive_prominence_spin_box.setMaximum(1.0)
+        self.__curve_fitting_naive_prominence_spin_box.setSingleStep(0.05)
+        self.__curve_fitting_naive_prominence_spin_box.valueChanged.connect(self.__slot_update)  # type: ignore
+        self.__curve_fitting_naive_settings_group_box.layout().addWidget(
+            self.__curve_fitting_naive_prominence_label
+        )
+        self.__curve_fitting_naive_settings_group_box.layout().addWidget(
+            self.__curve_fitting_naive_prominence_spin_box
+        )
+
+        self.__curve_fitting_lorentzian_settings_group_box = QGroupBox(
+            "Lorentzian Peak"
+        )
+        self.__curve_fitting_lorentzian_settings_group_box.setLayout(QHBoxLayout())
+        self.__curve_fitting_lorentzian_prominence_label = QLabel("Prominence:")
+        self.__curve_fitting_lorentzian_prominence_spin_box = QDoubleSpinBox()
+        self.__curve_fitting_lorentzian_prominence_spin_box.setValue(0.2)
+        self.__curve_fitting_lorentzian_prominence_spin_box.setMinimum(0.1)
+        self.__curve_fitting_lorentzian_prominence_spin_box.setMaximum(1.0)
+        self.__curve_fitting_lorentzian_prominence_spin_box.setSingleStep(0.05)
+        self.__curve_fitting_lorentzian_prominence_spin_box.valueChanged.connect(self.__slot_update)  # type: ignore
+        self.__curve_fitting_lorentzian_settings_group_box.layout().addWidget(
+            self.__curve_fitting_lorentzian_prominence_label
+        )
+        self.__curve_fitting_lorentzian_settings_group_box.layout().addWidget(
+            self.__curve_fitting_lorentzian_prominence_spin_box
+        )
+
         self.__curve_fitting_group_box.layout().addWidget(
             self.__curve_fitting_option_combo_box
         )
@@ -314,16 +361,33 @@ class RaFilePlotterWidget(QGroupBox):
                     self.__filter_gaussian_settings_group_box
                 )
                 self.__filter_gaussian_settings_group_box.show()
+
         # update UI by curve fitting option
+        self.__curve_fitting_group_box.layout().removeWidget(
+            self.__curve_fitting_naive_settings_group_box
+        )
+        self.__curve_fitting_group_box.layout().removeWidget(
+            self.__curve_fitting_lorentzian_settings_group_box
+        )
+        self.__curve_fitting_naive_settings_group_box.hide()
+        self.__curve_fitting_lorentzian_settings_group_box.hide()
         match peak_find_option := self.PeakFindOption(
             self.__curve_fitting_option_combo_box.currentIndex()
         ):
             case self.PeakFindOption.NONE:
-                pass
+                prominence = 0.0
             case self.PeakFindOption.NAIVE:
-                pass
+                prominence = self.__curve_fitting_naive_prominence_spin_box.value()
+                self.__curve_fitting_group_box.layout().addWidget(
+                    self.__curve_fitting_naive_settings_group_box
+                )
+                self.__curve_fitting_naive_settings_group_box.show()
             case self.PeakFindOption.LORENTZIAN_FIT:
-                pass
+                prominence = self.__curve_fitting_lorentzian_prominence_spin_box.value()
+                self.__curve_fitting_group_box.layout().addWidget(
+                    self.__curve_fitting_lorentzian_settings_group_box
+                )
+                self.__curve_fitting_lorentzian_settings_group_box.show()
 
         # update plot
         self.__last_file_path = file_path
@@ -333,6 +397,7 @@ class RaFilePlotterWidget(QGroupBox):
             peak_find_option,
             median_size=self.__filter_median_size_spin_box.value(),
             gaussian_sigma=self.__filter_gaussian_sigma_spin_box.value(),
+            prominence=prominence,
         )
 
     @Slot()
