@@ -281,6 +281,7 @@ class RetrospectiveAnalyzer(object):
         self,
         channels: list[int],
         prominence: float,
+        weights: list[float] = [],
         enable_multi_processing: bool = True,
     ) -> tuple[
         dict[int, tuple[list[list[float]], float]], dict[int, list[NDArray[np.float64]]]
@@ -340,11 +341,11 @@ class RetrospectiveAnalyzer(object):
                 {},
             )
 
-        return {k: _peaks_to_traces(v) for k, v in peaks.items()}, peaks
+        return {k: _peaks_to_traces(v, weights) for k, v in peaks.items()}, peaks
 
 
 def _peaks_to_traces(
-    peaks: list[NDArray[np.float64]],
+    peaks: list[NDArray[np.float64]], weights: list[float] = []
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 
@@ -356,6 +357,11 @@ def _peaks_to_traces(
     Returns:
         tuple[list[list[float]], float]: ([traces], FSR)
     """
+
+    for i, w in enumerate(weights):
+        for p in peaks:
+            p[:, i] *= w
+
     FSR = float(np.mean([d for sweep in peaks[::10] for d in np.diff(sweep[:, 0])]))
     population: NDArray[np.float64] = np.array(
         [p for sweep in peaks[::10] for p in sweep]
