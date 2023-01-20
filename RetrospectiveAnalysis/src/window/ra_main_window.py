@@ -134,7 +134,7 @@ class RaMainWindow(QMainWindow):
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            self.__file_plotter_widget.plot_file(file_path)
+            self.__file_plotter_widget.update(file_path)
 
     def slot_load_analyzer(self):
         # clear power list widget

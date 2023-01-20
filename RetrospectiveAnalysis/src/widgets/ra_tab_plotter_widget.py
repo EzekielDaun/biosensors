@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import logging
+
+from enum import IntEnum
 
 import os
 
 
 import numpy as np
+
+from scipy.signal import medfilt
+from scipy.ndimage import gaussian_filter1d
 
 from matplotlib.ticker import FuncFormatter
 
@@ -15,8 +22,13 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QCheckBox,
     QComboBox,
+    QLineEdit,
+    QLabel,
+    QSpinBox,
+    QDoubleSpinBox,
 )
 from PySide6.QtCore import QThread, Slot, Signal
+from PySide6.QtGui import QDoubleValidator
 
 from .ra_figure_widget import RaFigureWidget
 from ..core.retrospective_analysis import read_mat, get_lorentzian_peaks, lorentzian
@@ -72,6 +84,16 @@ class RaTabPlotterBase(QTabWidget):
 
 
 class RaFilePlotterWidget(QGroupBox):
+    class FilterOption(IntEnum):
+        NONE = 0
+        MEDIAN = 1
+        GAUSSIAN = 2
+
+    class PeakFindOption(IntEnum):
+        NONE = 0
+        NAIVE = 1
+        LORENTZIAN_FIT = 2
+
     class __Plotter(RaTabPlotterBase):
         __signal_work_start = Signal(str)
 
@@ -97,11 +119,28 @@ class RaFilePlotterWidget(QGroupBox):
             self.__signal_work_start.connect(self.slot_work_start)
 
             self.__current_tab_index: int = 0
-
             self.__current_file_basename: str | None = None
+            self.__on_work: bool = False
 
-        def plot_file(self, file_path: str):
+        @property
+        def on_work(self) -> bool:
+            return self.__on_work
+
+        def plot_file(
+            self,
+            file_path: str,
+            filter_option: RaFilePlotterWidget.FilterOption,
+            peak_find_option: RaFilePlotterWidget.PeakFindOption,
+            median_size: int = 0,
+            gaussian_sigma: float = 0.0,
+        ):
+            self.__filter_option = filter_option
+            self.__peak_find_option = peak_find_option
+            self.__median_size = median_size
+            self.__gaussian_sigma = gaussian_sigma
+
             self.__current_file_basename = os.path.basename(file_path)
+            self.__on_work = True
             self.__signal_work_start.emit(file_path)
 
         @Slot(str)
@@ -124,7 +163,26 @@ class RaFilePlotterWidget(QGroupBox):
             for i, power in enumerate(self.__worker.powers):
                 figure_widget = RaFigureWidget()
                 axes = figure_widget.figure.subplots(1, 1)
-                axes.plot(self.__worker.wavelengths, power)
+
+                match self.__filter_option:
+                    case RaFilePlotterWidget.FilterOption.NONE:
+                        axes.plot(self.__worker.wavelengths, power)
+                    case RaFilePlotterWidget.FilterOption.MEDIAN:
+                        axes.plot(self.__worker.wavelengths, power, alpha=0.35)
+                        axes.plot(
+                            self.__worker.wavelengths,
+                            medfilt(power, self.__median_size),
+                            alpha=0.75,
+                        )
+                        axes.legend(["Raw", "Median Filtered"])
+                    case RaFilePlotterWidget.FilterOption.GAUSSIAN:
+                        axes.plot(self.__worker.wavelengths, power, alpha=0.35)
+                        axes.plot(
+                            self.__worker.wavelengths,
+                            gaussian_filter1d(power, self.__gaussian_sigma),
+                            alpha=0.75,
+                        )
+                        axes.legend(["Raw", "Gaussian Filtered"])
 
                 axes.set_title(f"{self.__current_file_basename}")
                 axes.set_xlabel("Wavelength")
@@ -133,51 +191,154 @@ class RaFilePlotterWidget(QGroupBox):
                 figure_widget.figure_canvas.show()
                 self.addTab(figure_widget, f"Power {str(i + 1)}")
 
-                peaks = get_lorentzian_peaks(power, self.__worker.wavelengths, 0.2)
-                for j, peak in enumerate(peaks):
-                    x0, y0, _i, gamma, a = peak
-                    xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
-                    ys = lorentzian(xs, x0, y0, _i, gamma, a)
-                    axes.plot(xs, ys, "-")
+                match self.__peak_find_option:
+                    case RaFilePlotterWidget.PeakFindOption.NONE:
+                        pass
+                    case RaFilePlotterWidget.PeakFindOption.NAIVE:
+                        pass
+                    case RaFilePlotterWidget.PeakFindOption.LORENTZIAN_FIT:
+                        peaks = get_lorentzian_peaks(
+                            power, self.__worker.wavelengths, 0.2
+                        )
+                        for _j, peak in enumerate(peaks):
+                            x0, y0, _i, gamma, a = peak
+                            xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
+                            ys = lorentzian(xs, x0, y0, _i, gamma, a)
+                            axes.plot(xs, ys, "-")
             self.__worker.deleteLater()
 
             if self.__current_tab_index < self.count():
                 self.setCurrentIndex(self.__current_tab_index)
+
+            self.__on_work = False
 
     def __init__(self, parent=None):
         super().__init__(title="Sweep Plotter", parent=parent)
 
         self.__file_plotter = self.__Plotter(self)
 
-        self.__filtering_option_combobox = QComboBox()
-        self.__filtering_option_combobox.addItems(["None", "Median", "Gaussian"])
-
-        self.__enable_curve_fitting_checkbox = QCheckBox("Curve Fitting")
-        self.__curve_fitting_setting_group_box = QGroupBox("Settings")
-        self.__filtering_combo_box = QComboBox()
-        self.__filtering_combo_box.addItems(["None", "Savitzky-Golay", "Gaussian"])
-
-        self.__enable_curve_fitting_checkbox.stateChanged.connect(self.__curve_fitting_setting_group_box.setEnabled)  # type: ignore
-        self.__curve_fitting_setting_group_box.setEnabled(False)
-
-        self.__curve_fitting_setting_group_box.setLayout(QHBoxLayout())
-        self.__curve_fitting_setting_group_box.layout().addWidget(
-            self.__filtering_combo_box
-        )
+        self.setLayout(QVBoxLayout())
 
         self.__top_layout = QHBoxLayout()
-        self.__top_layout.addWidget(self.__enable_curve_fitting_checkbox)
-        self.__top_layout.addWidget(self.__curve_fitting_setting_group_box)
 
-        self.setLayout(QVBoxLayout())
+        self.__filter_group_box = QGroupBox("Filter")
+        self.__filter_group_box.setLayout(QHBoxLayout())
+        self.__filter_group_box.setEnabled(False)
+        self.__filter_option_combobox = QComboBox()
+        self.__filter_option_combobox.addItems(
+            [e.name.title() for e in self.FilterOption]
+        )
+        self.__filter_option_combobox.currentIndexChanged.connect(self.__slot_update)  # type: ignore
+
+        self.__filter_median_settings_group_box = QGroupBox("Median Filter")
+        self.__filter_median_settings_group_box.setLayout(QHBoxLayout())
+        self.__filter_median_size_label = QLabel("Size:")
+        self.__filter_median_size_spin_box = QSpinBox()
+        self.__filter_median_size_spin_box.setValue(3)
+        self.__filter_median_size_spin_box.setMinimum(1)
+        self.__filter_median_size_spin_box.setSingleStep(2)
+        self.__filter_median_size_spin_box.valueChanged.connect(self.__slot_update)  # type: ignore
+        self.__filter_median_settings_group_box.layout().addWidget(
+            self.__filter_median_size_label
+        )
+        self.__filter_median_settings_group_box.layout().addWidget(
+            self.__filter_median_size_spin_box
+        )
+
+        self.__filter_gaussian_settings_group_box = QGroupBox("Gaussian Filter")
+        self.__filter_gaussian_settings_group_box.setLayout(QHBoxLayout())
+        self.__filter_gaussian_sigma_label = QLabel("Sigma:")
+        self.__filter_gaussian_sigma_spin_box = QDoubleSpinBox()
+        self.__filter_gaussian_sigma_spin_box.setValue(0.05)
+        self.__filter_gaussian_sigma_spin_box.setMinimum(0.01)
+        self.__filter_gaussian_sigma_spin_box.setSingleStep(0.05)
+        self.__filter_gaussian_sigma_spin_box.valueChanged.connect(self.__slot_update)  # type: ignore
+        self.__filter_gaussian_settings_group_box.layout().addWidget(
+            self.__filter_gaussian_sigma_label
+        )
+        self.__filter_gaussian_settings_group_box.layout().addWidget(
+            self.__filter_gaussian_sigma_spin_box
+        )
+
+        self.__curve_fitting_group_box = QGroupBox("Curve Fitting")
+        self.__curve_fitting_group_box.setLayout(QHBoxLayout())
+        self.__curve_fitting_group_box.setEnabled(False)
+        self.__curve_fitting_option_combo_box = QComboBox()
+        self.__curve_fitting_option_combo_box.addItems(
+            [e.name.replace("_", " ").title() for e in self.PeakFindOption]
+        )
+        self.__curve_fitting_option_combo_box.currentIndexChanged.connect(self.__slot_update)  # type: ignore
+        self.__curve_fitting_group_box.layout().addWidget(
+            self.__curve_fitting_option_combo_box
+        )
+
+        self.__filter_group_box.layout().addWidget(self.__filter_option_combobox)
+
+        self.__top_layout.addWidget(self.__filter_group_box)
+        self.__top_layout.addWidget(self.__curve_fitting_group_box)
+
         self.layout().addLayout(self.__top_layout)  # type: ignore
         self.layout().addWidget(self.__file_plotter)
 
-    def plot_file(self, file_path: str):
-        self.__file_plotter.plot_file(file_path)
-
     def clear(self):
         self.__file_plotter.clear()
+        self.__filter_group_box.setEnabled(False)
+        self.__curve_fitting_group_box.setEnabled(False)
+
+    def update(self, file_path: str):
+        # enable filter and curve fitting group box
+        self.__filter_group_box.setEnabled(True)
+        self.__curve_fitting_group_box.setEnabled(True)
+
+        # update UI by filter option
+        self.__filter_group_box.layout().removeWidget(
+            self.__filter_median_settings_group_box
+        )
+        self.__filter_group_box.layout().removeWidget(
+            self.__filter_gaussian_settings_group_box
+        )
+        self.__filter_median_settings_group_box.hide()
+        self.__filter_gaussian_settings_group_box.hide()
+        match filter_option := self.FilterOption(
+            self.__filter_option_combobox.currentIndex()
+        ):
+            case self.FilterOption.NONE:
+                pass
+            case self.FilterOption.MEDIAN:
+                self.__filter_group_box.layout().addWidget(
+                    self.__filter_median_settings_group_box
+                )
+                self.__filter_median_settings_group_box.show()
+            case self.FilterOption.GAUSSIAN:
+                self.__filter_group_box.layout().addWidget(
+                    self.__filter_gaussian_settings_group_box
+                )
+                self.__filter_gaussian_settings_group_box.show()
+        # update UI by curve fitting option
+        match peak_find_option := self.PeakFindOption(
+            self.__curve_fitting_option_combo_box.currentIndex()
+        ):
+            case self.PeakFindOption.NONE:
+                pass
+            case self.PeakFindOption.NAIVE:
+                pass
+            case self.PeakFindOption.LORENTZIAN_FIT:
+                pass
+
+        # update plot
+        self.__last_file_path = file_path
+        self.__file_plotter.plot_file(
+            file_path,
+            filter_option,
+            peak_find_option,
+            median_size=self.__filter_median_size_spin_box.value(),
+            gaussian_sigma=self.__filter_gaussian_sigma_spin_box.value(),
+        )
+
+    @Slot()
+    def __slot_update(self):
+        if not self.__file_plotter.on_work:
+            self.update(self.__last_file_path)
 
 
 class RaSpectrogramPlotterWidget(RaTabPlotterBase):
