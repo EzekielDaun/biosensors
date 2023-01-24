@@ -38,7 +38,6 @@ def read_mat(
 def get_lorentzian_peaks(
     powers: NDArray[np.float64],
     wavelengths: NDArray[np.float64],
-    # prominence: float,
     find_peaks_kwargs: dict[str, float],
 ) -> NDArray[np.float64]:
 
@@ -54,8 +53,6 @@ def get_lorentzian_peaks(
         find_peaks_kwargs["height"] = 0
     find_peaks_kwargs["prominence"] *= max(powers) - min(powers)
     # https://www.mathworks.com/help/signal/ug/prominence.html
-    # prominence *= max(powers) - min(powers)
-    # width = int(len(powers) / 500)
 
     indices, properties = find_peaks(
         (-1) * powers,
@@ -170,7 +167,6 @@ def get_lorentzian_peaks(
 def _mat_to_peak_dict(
     path: str,
     channels: list[int],
-    # prominence: float,
     find_peaks_kwargs: dict[str, float],
     wavelength_multiplier: float,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
@@ -284,7 +280,6 @@ class RetrospectiveAnalyzer(object):
     def analyze(
         self,
         channels: list[int],
-        # prominence: float,
         find_peaks_kwargs: dict[str, float],
         weights: list[float] = [],
         enable_multi_processing: bool = True,

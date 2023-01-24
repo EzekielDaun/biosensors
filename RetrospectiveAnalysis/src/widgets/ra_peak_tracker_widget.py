@@ -27,7 +27,6 @@ class RaPeakTrackerWidget(QWidget):
             self,
             analyzer: Analyzer,
             channels: list[int],
-            # prominence: float,
             find_peak_kwargs: dict[str, float],
         ):
             super().__init__()
@@ -288,7 +287,6 @@ class RaPeakTrackerWidget(QWidget):
         self,
         analyzer: Analyzer,
         channels: list[int],
-        # prominence: float,
         find_peak_kwargs: dict[str, float],
     ):
         self.__analyzer = analyzer

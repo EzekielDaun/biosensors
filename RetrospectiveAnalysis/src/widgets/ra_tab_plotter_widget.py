@@ -21,15 +21,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QGroupBox,
-    QCheckBox,
     QComboBox,
-    QLineEdit,
     QLabel,
     QSpinBox,
     QDoubleSpinBox,
 )
 from PySide6.QtCore import QThread, Slot, Signal
-from PySide6.QtGui import QDoubleValidator
 
 from .ra_figure_widget import RaFigureWidget
 from ..core.retrospective_analysis import read_mat, get_lorentzian_peaks, lorentzian
