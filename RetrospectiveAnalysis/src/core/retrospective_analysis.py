@@ -48,7 +48,7 @@ def get_lorentzian_peaks(
     find_peaks_kwargs = find_peaks_kwargs.copy()
 
     if "width" not in find_peaks_kwargs:
-        find_peaks_kwargs["width"] = int(len(powers) / 500)
+        find_peaks_kwargs["width"] = 0
     if "height" not in find_peaks_kwargs:
         find_peaks_kwargs["height"] = 0
     find_peaks_kwargs["prominence"] *= max(powers) - min(powers)
@@ -159,7 +159,7 @@ def get_lorentzian_peaks(
                 )[0]
             )
         except RuntimeError as e:
-            raise RuntimeError(f"Curve fit failed at wavelength {peak_wavelength}")
+            logger.warning(f"Curve fitting at wavelength {peak_wavelength:.2f}: {e}")
 
     return np.array(ret)
 
@@ -175,14 +175,11 @@ def _mat_to_peak_dict(
     wavelengths *= wavelength_multiplier
     for c in channels:
         powers = power_matrix[c]
-        try:
-            temp_peaks = get_lorentzian_peaks(
-                powers,
-                wavelengths,
-                find_peaks_kwargs,
-            )
-        except RuntimeError as e:
-            raise RuntimeError(f"Failed to find peaks in {path} channel {c+1}\n{e}")
+        temp_peaks = get_lorentzian_peaks(
+            powers,
+            wavelengths,
+            find_peaks_kwargs,
+        )
         ret[c] = ret.get(c, []) + [temp_peaks]
 
     return ret
@@ -360,9 +357,16 @@ def _peaks_to_traces(
 
     for i, w in enumerate(weights):
         for p in peaks:
-            p[:, i] *= w
+            if p.ndim == 1:
+                p *= w
+            else:
+                p[:, i] *= w
 
-    FSR = float(np.mean([d for sweep in peaks[::10] for d in np.diff(sweep[:, 0])]))
+    FSR = float(
+        np.mean(
+            [d for sweep in peaks[::10] if sweep.ndim > 1 for d in np.diff(sweep[:, 0])]
+        )
+    )
     population: NDArray[np.float64] = np.array(
         [p for sweep in peaks[::10] for p in sweep]
     )
@@ -421,8 +425,9 @@ def _peaks_to_traces(
                 if temp is not None:
                     ret.append(list(accumulate([start_wavelength] + shifts)))
                     shifts = []
-                    last_peak = temp[0]
-                    start_wavelength = temp[0][0]
+                    if temp.size > 0:
+                        last_peak = temp[0]
+                        start_wavelength = temp[0][0]
                 continue
             elif (  # if the peak shift is too large but the shapes match
                 abs(pairs[0][1][0] - pairs[0][0][0]) > 0.5 * FSR

@@ -35,12 +35,9 @@ class RaPeakTrackerWidget(QWidget):
             self.__find_peak_kwargs = find_peak_kwargs
 
         def run(self):
-            try:
-                self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
-                    self.__channels, self.__find_peak_kwargs, [1, 1, 1, 1, 1]
-                )
-            except Exception as e:
-                logger.error(e)
+            self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
+                self.__channels, self.__find_peak_kwargs, [1, 1, 1, 1, 1]
+            )
 
         @property
         def all_traces(self):
