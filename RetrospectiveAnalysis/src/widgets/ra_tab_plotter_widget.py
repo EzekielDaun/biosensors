@@ -191,10 +191,10 @@ class RaFilePlotterWidget(QGroupBox):
                             prominence=self.__prominence
                             * (max(power_smoothed) - min(power_smoothed)),
                         )
-                        for i in indices:
+                        for j in indices:
                             axes.plot(
-                                self.__worker.wavelengths[i],
-                                power_smoothed[i],
+                                self.__worker.wavelengths[j],
+                                power_smoothed[j],
                                 "x",
                             )
                             # TODO: plot peak width
