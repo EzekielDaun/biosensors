@@ -190,14 +190,33 @@ class RaFilePlotterWidget(QGroupBox):
                             -1 * power_smoothed,
                             prominence=self.__prominence
                             * (max(power_smoothed) - min(power_smoothed)),
+                            width=0,
                         )
-                        for j in indices:
-                            axes.plot(
+                        for index, j in enumerate(indices):
+                            line = axes.plot(
                                 self.__worker.wavelengths[j],
                                 power_smoothed[j],
                                 "x",
                             )
-                            # TODO: plot peak width
+                            color = line[0].get_color()
+                            axes.hlines(
+                                y=-properties["width_heights"][index],
+                                xmin=self.__worker.wavelengths[
+                                    int(properties["left_ips"][index])
+                                ],
+                                xmax=self.__worker.wavelengths[
+                                    int(properties["right_ips"][index]) + 1
+                                ],
+                                color=color,
+                            )
+                            axes.vlines(
+                                x=self.__worker.wavelengths[j],
+                                ymin=power_smoothed[j]
+                                + properties["prominences"][index],
+                                ymax=power_smoothed[j],
+                                color=color,
+                            )
+
                     case RaFilePlotterWidget.PeakFindOption.LORENTZIAN_FIT:
                         peaks = get_lorentzian_peaks(
                             power,
