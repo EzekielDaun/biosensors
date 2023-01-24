@@ -21,7 +21,10 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QTextCursor
 
 from ..uic.ra_main_window import Ui_RaMainWindow
-from ..widgets.ra_tab_plotter_widget import RaFilePlotter, RaFolderPlotter
+from ..widgets.ra_tab_plotter_widget import (
+    RaFilePlotterWidget,
+    RaSpectrogramPlotterWidget,
+)
 from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
 
 from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
@@ -47,13 +50,13 @@ class RaMainWindow(QMainWindow):
         self.__ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
 
         # file plotter
-        self.__file_plotter = RaFilePlotter()
-        self.__ui.splitter.insertWidget(0, self.__file_plotter)
+        self.__file_plotter_widget = RaFilePlotterWidget()
+        self.__ui.splitter.insertWidget(0, self.__file_plotter_widget)
         self.__ui.splitter.setStretchFactor(0, 2)
 
         # spectrum plotter
         # intended to be popped up so not in any layout
-        self.__folder_plotter = RaFolderPlotter()
+        self.__folder_plotter = RaSpectrogramPlotterWidget()
         self.__folder_plotter.signal_spectrograms_work_done.connect(
             self.__ui.spectrogramButton.setEnabled
         )
@@ -111,7 +114,7 @@ class RaMainWindow(QMainWindow):
             self.__ui.peakTrackerPowerListWidget.clear()
             self.__ui.timeStampComboBox.clear()
             self.__peak_tracker_widget.clear()
-            self.__file_plotter.clear()
+            self.__file_plotter_widget.clear()
 
             # setup timestamp selector combo box
             pat = re.compile(r".*time.*\.csv")
@@ -134,7 +137,7 @@ class RaMainWindow(QMainWindow):
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            self.__file_plotter.plot_file(file_path)
+            self.__file_plotter_widget.update(file_path)
 
     def slot_load_analyzer(self):
         # clear power list widget
@@ -173,6 +176,17 @@ class RaMainWindow(QMainWindow):
 
         file_num, power_num = self.__analyzer.info()
         logger.info(f"{path} has {file_num} files with {power_num} power channels")
+
+        # update peak tracker output path combo box
+        self.__ui.peakTracingOutputPathComboBox.addItem(path)
+
+        # update spectrogram plotter start/stop values
+        self.__ui.sampleStartSpinBox.setMaximum(file_num)
+        self.__ui.sampleStopSpinBox.setMinimum(2)
+        self.__ui.sampleStopSpinBox.setMaximum(file_num)
+        self.__ui.sampleStopSpinBox.setValue(file_num)
+
+        # add power channels to power list widget
         for i in range(power_num):
             item = QListWidgetItem()
             checkbox = QCheckBox(f"Power {i+1}")
@@ -188,28 +202,25 @@ class RaMainWindow(QMainWindow):
         self.__ui.plotSpectrogramsGroupBox.setEnabled(True)
         self.__ui.peakTracingGroupBox.setEnabled(True)
 
+    # Spectrogram plotting slots
     def slot_plot_spectrogram(self):
         self.__folder_plotter.analyzer = self.__analyzer
         lw = self.__ui.powerListWidget
         powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
-        self.__folder_plotter.plot_spectrograms(
-            powers,
-            self.__ui.sampleStepSpinBox.value(),
-            self.__ui.xTicksSpinBox.value(),
-            self.__ui.yTicksSpinBox.value(),
-            self.__ui.powerUnitLineEdit.text(),
-        )
-        self.__folder_plotter.show()
-
-        logger.info("Spectrogram plotting started!")
-
-    def slot_track_peak(self):
-        lw = self.__ui.peakTrackerPowerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
-        self.__peak_tracker_widget.plot_initial(self.__analyzer, powers, 0.2)
-
-    def slot_save_results(self):
-        self.__peak_tracker_widget.save_results()
+        if len(powers) != 0:
+            self.__folder_plotter.plot_spectrograms(
+                powers,
+                self.__ui.sampleStepSpinBox.value(),
+                self.__ui.sampleStartSpinBox.value() - 1,
+                self.__ui.sampleStopSpinBox.value(),
+                self.__ui.xTicksSpinBox.value(),
+                self.__ui.yTicksSpinBox.value(),
+                self.__ui.powerUnitLineEdit.text(),
+            )
+            self.__folder_plotter.show()
+            logger.info("Spectrogram plotting started!")
+        else:
+            logger.warning("No power channel selected!")
 
     def slot_spectrogram_select_all(self):
         lw = self.__ui.powerListWidget
@@ -221,6 +232,26 @@ class RaMainWindow(QMainWindow):
         for i in range(lw.count()):
             lw.itemWidget(lw.item(i)).setChecked(False)  # type: ignore
 
+    def slot_spectrogram_on_start_spinbox_change(self, value: int):
+        file_num, _ = self.__analyzer.info()
+        self.__ui.sampleStopSpinBox.setMinimum(min(max(2, value + 1), file_num))
+
+    def slot_spectrogram_on_stop_spinbox_change(self, value: int):
+        self.__ui.sampleStartSpinBox.setMaximum(max(1, value - 1))
+
+    # Peak tracking slots
+    def slot_track_peak(self):
+        lw = self.__ui.peakTrackerPowerListWidget
+        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        self.__peak_tracker_widget.plot_initial(
+            self.__analyzer, powers, {"prominence": 0.2}
+        )
+
+    def slot_save_results(self):
+        output_path = self.__ui.peakTracingOutputPathComboBox.currentText()
+        os.makedirs(output_path, exist_ok=True)
+        self.__peak_tracker_widget.save_results(output_path)
+
     def slot_peak_tracking_select_all(self):
         lw = self.__ui.peakTrackerPowerListWidget
         for i in range(lw.count()):
@@ -230,3 +261,13 @@ class RaMainWindow(QMainWindow):
         lw = self.__ui.peakTrackerPowerListWidget
         for i in range(lw.count()):
             lw.itemWidget(lw.item(i)).setChecked(False)  # type: ignore
+
+    def slot_peak_tracking_select_output_path(self):
+        path = QFileDialog.getExistingDirectory(
+            dir=self.__ui.treeView.model().filePath(  # type: ignore
+                self.__ui.treeView.rootIndex()
+            ),
+        )
+        if path != "":
+            self.__ui.peakTracingOutputPathComboBox.setCurrentText(path)
+            self.__ui.peakTracingOutputPathComboBox.addItem(path)

@@ -72,9 +72,7 @@ class Ui_RaMainWindow(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.analyzerSettingsGroupBox = QGroupBox(self.layoutWidget)
         self.analyzerSettingsGroupBox.setObjectName(u"analyzerSettingsGroupBox")
-        self.horizontalLayout_2 = QHBoxLayout(self.analyzerSettingsGroupBox)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.gridLayout = QGridLayout()
+        self.gridLayout = QGridLayout(self.analyzerSettingsGroupBox)
         self.gridLayout.setObjectName(u"gridLayout")
         self.label_2 = QLabel(self.analyzerSettingsGroupBox)
         self.label_2.setObjectName(u"label_2")
@@ -85,7 +83,7 @@ class Ui_RaMainWindow(object):
         self.timeStampComboBox.setObjectName(u"timeStampComboBox")
         self.timeStampComboBox.setEditable(True)
 
-        self.gridLayout.addWidget(self.timeStampComboBox, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.timeStampComboBox, 0, 1, 1, 2)
 
         self.label_3 = QLabel(self.analyzerSettingsGroupBox)
         self.label_3.setObjectName(u"label_3")
@@ -97,6 +95,11 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.timeMultiplierLineEdit, 1, 1, 1, 1)
 
+        self.lineEdit_2 = QLineEdit(self.analyzerSettingsGroupBox)
+        self.lineEdit_2.setObjectName(u"lineEdit_2")
+
+        self.gridLayout.addWidget(self.lineEdit_2, 1, 2, 1, 1)
+
         self.label_4 = QLabel(self.analyzerSettingsGroupBox)
         self.label_4.setObjectName(u"label_4")
 
@@ -107,6 +110,11 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.wavelengthMultiplierLineEdit, 2, 1, 1, 1)
 
+        self.lineEdit = QLineEdit(self.analyzerSettingsGroupBox)
+        self.lineEdit.setObjectName(u"lineEdit")
+
+        self.gridLayout.addWidget(self.lineEdit, 2, 2, 1, 1)
+
         self.label_6 = QLabel(self.analyzerSettingsGroupBox)
         self.label_6.setObjectName(u"label_6")
 
@@ -115,32 +123,20 @@ class Ui_RaMainWindow(object):
         self.patternLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
         self.patternLineEdit.setObjectName(u"patternLineEdit")
 
-        self.gridLayout.addWidget(self.patternLineEdit, 3, 1, 1, 1)
-
-
-        self.horizontalLayout_2.addLayout(self.gridLayout)
-
-        self.verticalLayout_5 = QVBoxLayout()
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-        self.verticalLayout_5.addItem(self.verticalSpacer_3)
+        self.gridLayout.addWidget(self.patternLineEdit, 3, 1, 1, 2)
 
         self.loadAnalyzerButton = QPushButton(self.analyzerSettingsGroupBox)
         self.loadAnalyzerButton.setObjectName(u"loadAnalyzerButton")
 
-        self.verticalLayout_5.addWidget(self.loadAnalyzerButton)
-
-
-        self.horizontalLayout_2.addLayout(self.verticalLayout_5)
+        self.gridLayout.addWidget(self.loadAnalyzerButton, 4, 0, 1, 3)
 
 
         self.verticalLayout_2.addWidget(self.analyzerSettingsGroupBox)
 
         self.plotSpectrogramsGroupBox = QGroupBox(self.layoutWidget)
         self.plotSpectrogramsGroupBox.setObjectName(u"plotSpectrogramsGroupBox")
-        self.horizontalLayout_6 = QHBoxLayout(self.plotSpectrogramsGroupBox)
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.gridLayout_4 = QGridLayout(self.plotSpectrogramsGroupBox)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
         self.verticalLayout_4 = QVBoxLayout()
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.horizontalLayout_3 = QHBoxLayout()
@@ -164,74 +160,102 @@ class Ui_RaMainWindow(object):
         self.verticalLayout_4.addWidget(self.powerListWidget)
 
 
-        self.horizontalLayout_6.addLayout(self.verticalLayout_4)
+        self.gridLayout_4.addLayout(self.verticalLayout_4, 0, 0, 4, 1)
 
-        self.verticalLayout = QVBoxLayout()
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.gridLayout_2 = QGridLayout()
+        self.spectrogramStyleGroupBox = QGroupBox(self.plotSpectrogramsGroupBox)
+        self.spectrogramStyleGroupBox.setObjectName(u"spectrogramStyleGroupBox")
+        self.gridLayout_2 = QGridLayout(self.spectrogramStyleGroupBox)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.label = QLabel(self.plotSpectrogramsGroupBox)
-        self.label.setObjectName(u"label")
-        self.label.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.gridLayout_2.addWidget(self.label, 0, 0, 1, 1)
-
-        self.sampleStepSpinBox = QSpinBox(self.plotSpectrogramsGroupBox)
-        self.sampleStepSpinBox.setObjectName(u"sampleStepSpinBox")
-        self.sampleStepSpinBox.setMinimum(1)
-
-        self.gridLayout_2.addWidget(self.sampleStepSpinBox, 0, 1, 1, 1)
-
-        self.label_5 = QLabel(self.plotSpectrogramsGroupBox)
+        self.label_5 = QLabel(self.spectrogramStyleGroupBox)
         self.label_5.setObjectName(u"label_5")
         self.label_5.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_2.addWidget(self.label_5, 1, 0, 1, 1)
 
-        self.xTicksSpinBox = QSpinBox(self.plotSpectrogramsGroupBox)
+        self.xTicksSpinBox = QSpinBox(self.spectrogramStyleGroupBox)
         self.xTicksSpinBox.setObjectName(u"xTicksSpinBox")
         self.xTicksSpinBox.setValue(20)
 
         self.gridLayout_2.addWidget(self.xTicksSpinBox, 1, 1, 1, 1)
 
-        self.label_7 = QLabel(self.plotSpectrogramsGroupBox)
+        self.label_7 = QLabel(self.spectrogramStyleGroupBox)
         self.label_7.setObjectName(u"label_7")
         self.label_7.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_2.addWidget(self.label_7, 2, 0, 1, 1)
 
-        self.yTicksSpinBox = QSpinBox(self.plotSpectrogramsGroupBox)
+        self.yTicksSpinBox = QSpinBox(self.spectrogramStyleGroupBox)
         self.yTicksSpinBox.setObjectName(u"yTicksSpinBox")
         self.yTicksSpinBox.setMinimum(1)
         self.yTicksSpinBox.setValue(20)
 
         self.gridLayout_2.addWidget(self.yTicksSpinBox, 2, 1, 1, 1)
 
-        self.label_8 = QLabel(self.plotSpectrogramsGroupBox)
+        self.label_8 = QLabel(self.spectrogramStyleGroupBox)
         self.label_8.setObjectName(u"label_8")
         self.label_8.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_2.addWidget(self.label_8, 3, 0, 1, 1)
 
-        self.powerUnitLineEdit = QLineEdit(self.plotSpectrogramsGroupBox)
+        self.powerUnitLineEdit = QLineEdit(self.spectrogramStyleGroupBox)
         self.powerUnitLineEdit.setObjectName(u"powerUnitLineEdit")
 
         self.gridLayout_2.addWidget(self.powerUnitLineEdit, 3, 1, 1, 1)
 
 
-        self.verticalLayout.addLayout(self.gridLayout_2)
+        self.gridLayout_4.addWidget(self.spectrogramStyleGroupBox, 0, 1, 1, 1)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.spectrogramSettingsGroupBox = QGroupBox(self.plotSpectrogramsGroupBox)
+        self.spectrogramSettingsGroupBox.setObjectName(u"spectrogramSettingsGroupBox")
+        self.gridLayout_3 = QGridLayout(self.spectrogramSettingsGroupBox)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.label = QLabel(self.spectrogramSettingsGroupBox)
+        self.label.setObjectName(u"label")
+        self.label.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.verticalLayout.addItem(self.verticalSpacer)
+        self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1)
+
+        self.sampleStepSpinBox = QSpinBox(self.spectrogramSettingsGroupBox)
+        self.sampleStepSpinBox.setObjectName(u"sampleStepSpinBox")
+        self.sampleStepSpinBox.setMinimum(1)
+
+        self.gridLayout_3.addWidget(self.sampleStepSpinBox, 0, 1, 1, 1)
+
+        self.label_9 = QLabel(self.spectrogramSettingsGroupBox)
+        self.label_9.setObjectName(u"label_9")
+        self.label_9.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.gridLayout_3.addWidget(self.label_9, 1, 0, 1, 1)
+
+        self.sampleStartSpinBox = QSpinBox(self.spectrogramSettingsGroupBox)
+        self.sampleStartSpinBox.setObjectName(u"sampleStartSpinBox")
+        self.sampleStartSpinBox.setMinimum(1)
+
+        self.gridLayout_3.addWidget(self.sampleStartSpinBox, 1, 1, 1, 1)
+
+        self.label_10 = QLabel(self.spectrogramSettingsGroupBox)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.gridLayout_3.addWidget(self.label_10, 2, 0, 1, 1)
+
+        self.sampleStopSpinBox = QSpinBox(self.spectrogramSettingsGroupBox)
+        self.sampleStopSpinBox.setObjectName(u"sampleStopSpinBox")
+        self.sampleStopSpinBox.setMinimum(1)
+
+        self.gridLayout_3.addWidget(self.sampleStopSpinBox, 2, 1, 1, 1)
+
+
+        self.gridLayout_4.addWidget(self.spectrogramSettingsGroupBox, 1, 1, 1, 1)
+
+        self.verticalSpacer = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.gridLayout_4.addItem(self.verticalSpacer, 2, 1, 1, 1)
 
         self.spectrogramButton = QPushButton(self.plotSpectrogramsGroupBox)
         self.spectrogramButton.setObjectName(u"spectrogramButton")
 
-        self.verticalLayout.addWidget(self.spectrogramButton)
-
-
-        self.horizontalLayout_6.addLayout(self.verticalLayout)
+        self.gridLayout_4.addWidget(self.spectrogramButton, 3, 1, 1, 1)
 
 
         self.verticalLayout_2.addWidget(self.plotSpectrogramsGroupBox)
@@ -247,6 +271,29 @@ class Ui_RaMainWindow(object):
         self.peakTracingGroupBox.setSizePolicy(sizePolicy2)
         self.verticalLayout_3 = QVBoxLayout(self.peakTracingGroupBox)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.peakTracingSettingGroupBox = QGroupBox(self.peakTracingGroupBox)
+        self.peakTracingSettingGroupBox.setObjectName(u"peakTracingSettingGroupBox")
+        self.horizontalLayout_6 = QHBoxLayout(self.peakTracingSettingGroupBox)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_11 = QLabel(self.peakTracingSettingGroupBox)
+        self.label_11.setObjectName(u"label_11")
+
+        self.horizontalLayout_6.addWidget(self.label_11)
+
+        self.peakTracingOutputPathComboBox = QComboBox(self.peakTracingSettingGroupBox)
+        self.peakTracingOutputPathComboBox.setObjectName(u"peakTracingOutputPathComboBox")
+        self.peakTracingOutputPathComboBox.setEditable(True)
+
+        self.horizontalLayout_6.addWidget(self.peakTracingOutputPathComboBox)
+
+        self.peakTracingOutputPathPushButton = QPushButton(self.peakTracingSettingGroupBox)
+        self.peakTracingOutputPathPushButton.setObjectName(u"peakTracingOutputPathPushButton")
+
+        self.horizontalLayout_6.addWidget(self.peakTracingOutputPathPushButton)
+
+
+        self.verticalLayout_3.addWidget(self.peakTracingSettingGroupBox)
+
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.peakTrackingSelectAllButton = QPushButton(self.peakTracingGroupBox)
@@ -297,7 +344,7 @@ class Ui_RaMainWindow(object):
         RaMainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(RaMainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1280, 26))
+        self.menubar.setGeometry(QRect(0, 0, 1280, 29))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         RaMainWindow.setMenuBar(self.menubar)
@@ -336,6 +383,9 @@ class Ui_RaMainWindow(object):
         self.peakTrackingUnselectAllButton.clicked.connect(RaMainWindow.slot_peak_tracking_unselect_all)
         self.spectrogramSelectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_select_all)
         self.spectrogramUnselectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_unselect_all)
+        self.sampleStopSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_stop_spinbox_change)
+        self.sampleStartSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_start_spinbox_change)
+        self.peakTracingOutputPathPushButton.clicked.connect(RaMainWindow.slot_peak_tracking_select_output_path)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -357,24 +407,72 @@ class Ui_RaMainWindow(object):
         self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
         self.analyzerSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"1. Analyzer Settings", None))
         self.label_2.setText(QCoreApplication.translate("RaMainWindow", u"Timestamp File/Number", None))
+#if QT_CONFIG(tooltip)
+        self.timeStampComboBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"csv timestamp file or a fix interval number", None))
+#endif // QT_CONFIG(tooltip)
         self.timeStampComboBox.setCurrentText(QCoreApplication.translate("RaMainWindow", u"0.25", None))
-        self.label_3.setText(QCoreApplication.translate("RaMainWindow", u"Time Multiplier (to minutes):", None))
+        self.label_3.setText(QCoreApplication.translate("RaMainWindow", u"Time Multiplier:", None))
+#if QT_CONFIG(tooltip)
+        self.timeMultiplierLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"1/60 if convert from second to minute", None))
+#endif // QT_CONFIG(tooltip)
         self.timeMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1/60", None))
-        self.label_4.setText(QCoreApplication.translate("RaMainWindow", u"Wavelength Multiplier (to nm):", None))
+#if QT_CONFIG(tooltip)
+        self.lineEdit_2.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
+#endif // QT_CONFIG(tooltip)
+        self.lineEdit_2.setText(QCoreApplication.translate("RaMainWindow", u"min", None))
+        self.label_4.setText(QCoreApplication.translate("RaMainWindow", u"Wavelength Multiplier:", None))
+#if QT_CONFIG(tooltip)
+        self.wavelengthMultiplierLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"1e9 if convert from meter to nanometer", None))
+#endif // QT_CONFIG(tooltip)
         self.wavelengthMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1e9", None))
+#if QT_CONFIG(tooltip)
+        self.lineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
+#endif // QT_CONFIG(tooltip)
+        self.lineEdit.setText(QCoreApplication.translate("RaMainWindow", u"nm", None))
         self.label_6.setText(QCoreApplication.translate("RaMainWindow", u"Data File Pattern (RegEx):", None))
+#if QT_CONFIG(tooltip)
+        self.patternLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"regular expression for sweep number matching. (match the number in \"()\")", None))
+#endif // QT_CONFIG(tooltip)
         self.patternLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"r\".*sweep_(\\d+)\\.mat\"", None))
         self.loadAnalyzerButton.setText(QCoreApplication.translate("RaMainWindow", u"Load", None))
         self.plotSpectrogramsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Optional. Plot Spectrograms", None))
         self.spectrogramSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
         self.spectrogramUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
-        self.label.setText(QCoreApplication.translate("RaMainWindow", u"Sample Step:", None))
+        self.spectrogramStyleGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Style", None))
         self.label_5.setText(QCoreApplication.translate("RaMainWindow", u"X Ticks:", None))
+#if QT_CONFIG(tooltip)
+        self.xTicksSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"number of ticks in x axis, cannot be smaller than file numbers", None))
+#endif // QT_CONFIG(tooltip)
         self.label_7.setText(QCoreApplication.translate("RaMainWindow", u"Y Ticks:", None))
+#if QT_CONFIG(tooltip)
+        self.yTicksSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"number of tick in y axis", None))
+#endif // QT_CONFIG(tooltip)
         self.label_8.setText(QCoreApplication.translate("RaMainWindow", u"Power Unit:", None))
+#if QT_CONFIG(tooltip)
+        self.powerUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"the unit to display", None))
+#endif // QT_CONFIG(tooltip)
         self.powerUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"dBm", None))
+        self.spectrogramSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Settings", None))
+        self.label.setText(QCoreApplication.translate("RaMainWindow", u"Step:", None))
+#if QT_CONFIG(tooltip)
+        self.sampleStepSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"sample once per [step] files", None))
+#endif // QT_CONFIG(tooltip)
+        self.label_9.setText(QCoreApplication.translate("RaMainWindow", u"Start:", None))
+#if QT_CONFIG(tooltip)
+        self.sampleStartSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"the start number (regardless of actual sweep number)", None))
+#endif // QT_CONFIG(tooltip)
+        self.label_10.setText(QCoreApplication.translate("RaMainWindow", u"Stop:", None))
+#if QT_CONFIG(tooltip)
+        self.sampleStopSpinBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"the stop number (regardless of actual sweep number)", None))
+#endif // QT_CONFIG(tooltip)
         self.spectrogramButton.setText(QCoreApplication.translate("RaMainWindow", u"Spectrogram", None))
         self.peakTracingGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"2. Peak Tracing", None))
+        self.peakTracingSettingGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Settings", None))
+        self.label_11.setText(QCoreApplication.translate("RaMainWindow", u"Output Path:", None))
+#if QT_CONFIG(tooltip)
+        self.peakTracingOutputPathComboBox.setToolTip(QCoreApplication.translate("RaMainWindow", u"where the output .mat files should be saved", None))
+#endif // QT_CONFIG(tooltip)
+        self.peakTracingOutputPathPushButton.setText(QCoreApplication.translate("RaMainWindow", u"Select...", None))
         self.peakTrackingSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
         self.peakTrackingUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
         self.trackPeakButton.setText(QCoreApplication.translate("RaMainWindow", u"Start Track", None))
