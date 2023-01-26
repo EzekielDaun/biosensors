@@ -54,6 +54,9 @@ class RaPeakTrackerWidget(QWidget):
             traces: list[list[float]],
             fsr: float,
             analyzer: Analyzer,
+            time_unit: str,
+            wavelength_unit: str,
+            power_unit: str,
             parent=None,
         ):
             super().__init__(parent)
@@ -68,6 +71,9 @@ class RaPeakTrackerWidget(QWidget):
             self.__offsets = [0.0 for x in traces]
             self.__timestamps = analyzer.timestamps
             self.__analyzer = analyzer
+            self.__time_unit = time_unit
+            self.__power_unit = power_unit
+            self.__wavelength_unit = wavelength_unit
 
             self.__figure_widget = RaFigureWidget()
             self.__ui.splitter.addWidget(self.__figure_widget)
@@ -81,8 +87,6 @@ class RaPeakTrackerWidget(QWidget):
             self.__ui.plotOverlayButton.clicked.connect(self.__slot_plot_overlay)  # type: ignore
             self.__ui.plotOffsetSpectrogramButton.clicked.connect(self.__slot_plot_offset_spectrogram)  # type: ignore
 
-            self.__ui.assayComboBox.currentIndexChanged.connect(parent.slot_update_assay_name)  # type: ignore
-
             x0 = 0
             for i, trace in enumerate(self.__traces):
                 self.__ui.comboBox.addItem(
@@ -94,8 +98,8 @@ class RaPeakTrackerWidget(QWidget):
             self.__figure_widget.figure.clear()
             ax = self.__figure_widget.figure.subplots(1, 1)
             ax.set_title(f"{self.__name} Peak Shift")
-            ax.set_xlabel("Time (minutes)")
-            ax.set_ylabel("Wavelength (nm)")
+            ax.set_xlabel(f"Time ({self.__time_unit})")
+            ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
 
             x0 = 0
             for i, trace in enumerate(self.__traces):
@@ -108,10 +112,6 @@ class RaPeakTrackerWidget(QWidget):
                 x0 += len(trace)
 
             self.__figure_widget.figure_canvas.draw()
-
-        @property
-        def assay(self):
-            return self.__ui.assayComboBox.currentText()
 
         @property
         def name(self):
@@ -156,8 +156,8 @@ class RaPeakTrackerWidget(QWidget):
             ys = self.full_trace - self.full_trace[0]
 
             ax.plot(self.__timestamps[: len(ys)], ys)
-            ax.set_xlabel("Time (minutes)")
-            ax.set_ylabel("Peak Shift (nm)")
+            ax.set_xlabel(f"Time ({self.__time_unit})")
+            ax.set_ylabel(f"Peak Shift ({self.__wavelength_unit})")
             fig.set_size_inches(8, 5)
             ax.axis("auto")
             title = f"{self.__name} Peak Offset"
@@ -181,14 +181,14 @@ class RaPeakTrackerWidget(QWidget):
 
             img = ax.imshow(np.flip(spectrogram, 0), cmap="inferno", origin="lower")
             color_bar = fig.colorbar(img, orientation="horizontal")
-            color_bar.set_label(f"Power (dBm)")
+            color_bar.set_label(f"Power ({self.__power_unit})")
 
             ax.plot(ys)
-            ax.set_xlabel("Time (minutes)")
+            ax.set_xlabel(f"Time ({self.__time_unit})")
             ax.set_xticks(
                 [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
             )
-            ax.set_ylabel("Wavelength (nm)")
+            ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
             ax.set_yticks(
                 list(range(len(self.__analyzer.wavelengths)))[
                     :: int(len(self.__analyzer.wavelengths) / 7)
@@ -218,8 +218,8 @@ class RaPeakTrackerWidget(QWidget):
             ys = self.full_trace
             ys -= ys[0]
             trace_ax.plot(self.__timestamps[: len(ys)], ys)
-            trace_ax.set_xlabel("Time (minutes)")
-            trace_ax.set_ylabel("Wavelength (nm)")
+            trace_ax.set_xlabel(f"Time ({self.__time_unit})")
+            trace_ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
             trace_ax.set_title(f"{self.__name} Peak Offset")
 
             spectrogram_ax = plt.subplot(2, 1, 2)
@@ -237,11 +237,11 @@ class RaPeakTrackerWidget(QWidget):
                 aspect="auto",
             )
             spectrogram_ax.autoscale()
-            spectrogram_ax.set_xlabel("Time (min)")
+            spectrogram_ax.set_xlabel(f"Time ({self.__time_unit})")
             spectrogram_ax.set_xticks(
                 [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
             )
-            spectrogram_ax.set_ylabel("Wavelength (nm)")
+            spectrogram_ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
             spectrogram_ax.set_yticks(
                 list(range(len(self.__analyzer.wavelengths)))[
                     :: int(len(self.__analyzer.wavelengths) / 7)
@@ -258,7 +258,7 @@ class RaPeakTrackerWidget(QWidget):
             spectrogram_ax.set_title(f"{self.__name} Spectrogram")
 
             color_bar = plt.colorbar(img, orientation="horizontal")
-            color_bar.set_label(f"Power (dBm)")
+            color_bar.set_label(f"Power ({self.__power_unit})")
 
             plt.gcf().set_size_inches(8, 10)
 
@@ -278,17 +278,23 @@ class RaPeakTrackerWidget(QWidget):
         self.__tab_widget = QTabWidget()
         self.layout().addWidget(self.__tab_widget)
 
-        self.__assay_name_hint: set[str] = set()
+        self.__power_name_hint: set[str] = set()
 
     def plot_initial(
         self,
         analyzer: Analyzer,
         channels: list[int],
         find_peak_kwargs: dict[str, float],
+        time_unit: str,
+        wavelength_unit: str,
+        power_unit: str,
     ):
         self.__analyzer = analyzer
         self.__channels = channels
         self.__find_peak_kwargs = find_peak_kwargs
+        self.__time_unit = time_unit
+        self.__wavelength_unit = wavelength_unit
+        self.__power_unit = power_unit
         self.__signal_work_start.emit()
         self.__tab_widget.clear()
 
@@ -304,7 +310,6 @@ class RaPeakTrackerWidget(QWidget):
         savemat(
             f"peak_shifts.mat",
             {
-                # (tab.name + "_" + tab.assay)
                 (tab.name).replace(" ", "_").lower() + "_peakWL_list": tab.full_trace
                 for tab in all_tabs
             }
@@ -320,44 +325,43 @@ class RaPeakTrackerWidget(QWidget):
             }
             | {"t_array": self.__analyzer.timestamps},
         )
-        os.chdir(temp_dir)
-
-        mpl_default_colors: cycle[tuple[float]] = cycle(
-            map(
-                lambda x: tuple(
-                    int(x.lstrip("#")[i : i + 2], 16) / 255
-                    for i in (0, 2, 4)  # convert hex to rgb tuple
-                ),
-                plt.rcParams["axes.prop_cycle"].by_key()["color"],  # type: ignore
+        with open("WhatsThis.txt", "w") as f:
+            f.write(
+                r"""RA_results
+"peak_shifts.mat":
+    t_array [1D array]: time stamps
+    power_*_peakWL_list [1D array]: tracked peak wavelengths for channel *
+“peaks.mat”:
+    t_array [1D array]: time stamps
+    power* [cell array]: all the fitted peaks for channel *. The number of peaks in each sweep may vary.
+            The peak is stored by a 5-element vector [x0,y0,I,gamma,a], representing a sloped Lorentzian function:
+                y = y0 + ((I * (gamma / 2) ** 2) / ((gamma / 2) ** 2 + (x - x0) ** 2)) + a * (x - x0)
+            where
+                [x0] is the peak wavelength
+                [y0] is approximately the baseline
+                [I] is the peak intensity (negative for absorption peaks)
+                [gamma] is the peak width at half height
+                [a] is the baseline slope
+"""
             )
-        )
+        os.chdir(temp_dir)
 
         plt.close("all")
         axes = plt.axes()
-        assay_dict: dict[str, list[int]] = {}
-        for i, tab in enumerate(all_tabs):
-            assay_dict[tab.assay] = assay_dict.get(tab.assay, []) + [i]
-        for k, v in assay_dict.items():
-            lines = []
-            for index in v:
-                tab = all_tabs[index]
-                lines.append(tab.full_trace - tab.full_trace[0])
-
-            timestamps = self.__analyzer.timestamps
-
-            line_collection = LineCollection(
-                list(map(lambda x: list(zip(timestamps, x)), lines)),
-                color=next(mpl_default_colors),  # type: ignore
-                label=k,  # type: ignore
+        for tab in all_tabs:
+            axes.plot(
+                self.__analyzer.timestamps,
+                tab.full_trace - tab.full_trace[0],
+                label=tab.name,
             )
-            axes.add_collection(line_collection)  # type: ignore
         axes.set_title("Collated Overlaid Peak Shifts")
-        axes.set_xlabel("Time (minutes)")
-        axes.set_ylabel("Resonance Peak Shift (nm)")
+        axes.set_xlabel(f"Time ({self.__time_unit})")
+        axes.set_ylabel(f"Resonance Peak Shift ({self.__wavelength_unit})")
         plt.gcf().set_size_inches(8, 5)
         axes.axis("auto")
         axes.legend()
         plt.show()
+        plt.savefig("Collated Overlaid Peak Shifts.png")
 
     def __plot_traces(self):
         for c in self.__all_traces.keys():
@@ -366,28 +370,13 @@ class RaPeakTrackerWidget(QWidget):
                 self.__all_traces[c][0],
                 self.__all_traces[c][1],
                 self.__analyzer,
+                self.__time_unit,
+                self.__wavelength_unit,
+                self.__power_unit,
                 self,
             )
             self.__tab_widget.addTab(tab, f"Power{c+1}")
             tab.update()
-
-    @Slot()
-    def slot_update_assay_name(self):
-        self.__assay_name_hint.clear()
-        all_tabs: list[RaPeakTrackerWidget.__Tab] = [self.__tab_widget.widget(i) for i in range(self.__tab_widget.count())]  # type: ignore
-        for tab in all_tabs:
-            self.__assay_name_hint.add(tab.assay)
-        for tab in all_tabs:
-            tab.__ui.assayComboBox.setCompleter(
-                QCompleter(list(self.__assay_name_hint))
-            )
-            item_texts = [
-                tab.__ui.assayComboBox.itemText(i)
-                for i in range(tab.__ui.assayComboBox.count())
-            ]
-            tab.__ui.assayComboBox.addItems(
-                [s for s in self.__assay_name_hint if s != "" and s not in item_texts]
-            )
 
     @Slot()
     def __slot_work_start(self):

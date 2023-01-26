@@ -469,6 +469,8 @@ class RaSpectrogramPlotterWidget(RaTabPlotterBase):
         x_tick_number: int,
         y_tick_number: int,
         power_unit: str,
+        time_unit: str,
+        wavelength_unit: str,
     ):
         if self.analyzer is None:
             raise RuntimeError("Analyzer is not initialized")
@@ -485,6 +487,8 @@ class RaSpectrogramPlotterWidget(RaTabPlotterBase):
             self.__x_tick_step = int(len(self.analyzer.timestamps) / x_tick_number)
             self.__y_tick_step = int(len(self.analyzer.wavelengths) / y_tick_number)
             self.__power_unit = power_unit
+            self.__time_unit = time_unit
+            self.__wave_length_unit = wavelength_unit
             self.__signal_spectrograms_work_start.emit()
 
     @Slot()
@@ -528,14 +532,14 @@ class RaSpectrogramPlotterWidget(RaTabPlotterBase):
                 list(range(len(x_labels)))[:: self.__x_tick_step],
                 x_labels[:: self.__x_tick_step],
             )
-            ax.set_xlabel("Time (minutes)")
+            ax.set_xlabel(f"Time ({self.__time_unit})")
             ax.xaxis.set_major_formatter(x_formatter)
 
             ax.set_yticks(
                 list(range(len(y_labels)))[:: self.__y_tick_step],
                 y_labels[:: self.__y_tick_step],
             )
-            ax.set_ylabel("Wavelength (nm)")
+            ax.set_ylabel(f"Wavelength ({self.__wave_length_unit})")
             ax.yaxis.set_major_formatter(y_formatter)
 
             ax.set_title(f"Power {k+1} Spectrogram")

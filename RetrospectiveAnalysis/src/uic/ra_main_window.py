@@ -95,10 +95,10 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.timeMultiplierLineEdit, 1, 1, 1, 1)
 
-        self.lineEdit_2 = QLineEdit(self.analyzerSettingsGroupBox)
-        self.lineEdit_2.setObjectName(u"lineEdit_2")
+        self.timeUnitLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
+        self.timeUnitLineEdit.setObjectName(u"timeUnitLineEdit")
 
-        self.gridLayout.addWidget(self.lineEdit_2, 1, 2, 1, 1)
+        self.gridLayout.addWidget(self.timeUnitLineEdit, 1, 2, 1, 1)
 
         self.label_4 = QLabel(self.analyzerSettingsGroupBox)
         self.label_4.setObjectName(u"label_4")
@@ -110,10 +110,10 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.wavelengthMultiplierLineEdit, 2, 1, 1, 1)
 
-        self.lineEdit = QLineEdit(self.analyzerSettingsGroupBox)
-        self.lineEdit.setObjectName(u"lineEdit")
+        self.wavelengthUnitLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
+        self.wavelengthUnitLineEdit.setObjectName(u"wavelengthUnitLineEdit")
 
-        self.gridLayout.addWidget(self.lineEdit, 2, 2, 1, 1)
+        self.gridLayout.addWidget(self.wavelengthUnitLineEdit, 2, 2, 1, 1)
 
         self.label_6 = QLabel(self.analyzerSettingsGroupBox)
         self.label_6.setObjectName(u"label_6")
@@ -417,18 +417,18 @@ class Ui_RaMainWindow(object):
 #endif // QT_CONFIG(tooltip)
         self.timeMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1/60", None))
 #if QT_CONFIG(tooltip)
-        self.lineEdit_2.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
+        self.timeUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
 #endif // QT_CONFIG(tooltip)
-        self.lineEdit_2.setText(QCoreApplication.translate("RaMainWindow", u"min", None))
+        self.timeUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"min", None))
         self.label_4.setText(QCoreApplication.translate("RaMainWindow", u"Wavelength Multiplier:", None))
 #if QT_CONFIG(tooltip)
         self.wavelengthMultiplierLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"1e9 if convert from meter to nanometer", None))
 #endif // QT_CONFIG(tooltip)
         self.wavelengthMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1e9", None))
 #if QT_CONFIG(tooltip)
-        self.lineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
+        self.wavelengthUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
 #endif // QT_CONFIG(tooltip)
-        self.lineEdit.setText(QCoreApplication.translate("RaMainWindow", u"nm", None))
+        self.wavelengthUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"nm", None))
         self.label_6.setText(QCoreApplication.translate("RaMainWindow", u"Data File Pattern (RegEx):", None))
 #if QT_CONFIG(tooltip)
         self.patternLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"regular expression for sweep number matching. (match the number in \"()\")", None))

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_peak_tracker_tab_setting_widget.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.0
+## Created by: Qt User Interface Compiler version 6.4.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -108,24 +108,6 @@ class Ui_PeakTrackerTabSettingWidget(object):
 
         self.horizontalLayout_3.addWidget(self.groupBox_2)
 
-        self.groupBox_3 = QGroupBox(self.layoutWidget)
-        self.groupBox_3.setObjectName(u"groupBox_3")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy1.setHorizontalStretch(1)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.groupBox_3.sizePolicy().hasHeightForWidth())
-        self.groupBox_3.setSizePolicy(sizePolicy1)
-        self.horizontalLayout_2 = QHBoxLayout(self.groupBox_3)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.assayComboBox = QComboBox(self.groupBox_3)
-        self.assayComboBox.setObjectName(u"assayComboBox")
-        self.assayComboBox.setEditable(True)
-
-        self.horizontalLayout_2.addWidget(self.assayComboBox)
-
-
-        self.horizontalLayout_3.addWidget(self.groupBox_3)
-
         self.splitter.addWidget(self.layoutWidget)
 
         self.horizontalLayout_4.addWidget(self.splitter)
@@ -146,7 +128,5 @@ class Ui_PeakTrackerTabSettingWidget(object):
         self.plotOverlayButton.setText(QCoreApplication.translate("PeakTrackerTabSettingWidget", u"Overlay", None))
         self.plotOffsetSpectrogramButton.setText(QCoreApplication.translate("PeakTrackerTabSettingWidget", u"Offset+Spectrogram", None))
         self.autoSaveCheckBox.setText(QCoreApplication.translate("PeakTrackerTabSettingWidget", u"Auto-Save", None))
-        self.groupBox_3.setTitle(QCoreApplication.translate("PeakTrackerTabSettingWidget", u"Assay", None))
-        self.assayComboBox.setCurrentText(QCoreApplication.translate("PeakTrackerTabSettingWidget", u"unknown", None))
     # retranslateUi
 

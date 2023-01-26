@@ -216,6 +216,8 @@ class RaMainWindow(QMainWindow):
                 self.__ui.xTicksSpinBox.value(),
                 self.__ui.yTicksSpinBox.value(),
                 self.__ui.powerUnitLineEdit.text(),
+                self.__ui.timeUnitLineEdit.text(),
+                self.__ui.wavelengthUnitLineEdit.text(),
             )
             self.__folder_plotter.show()
             logger.info("Spectrogram plotting started!")
@@ -244,11 +246,18 @@ class RaMainWindow(QMainWindow):
         lw = self.__ui.peakTrackerPowerListWidget
         powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
         self.__peak_tracker_widget.plot_initial(
-            self.__analyzer, powers, {"prominence": 0.2}
+            self.__analyzer,
+            powers,
+            {"prominence": 0.2},
+            self.__ui.timeUnitLineEdit.text(),
+            self.__ui.wavelengthUnitLineEdit.text(),
+            self.__ui.powerUnitLineEdit.text(),
         )
 
     def slot_save_results(self):
-        output_path = self.__ui.peakTracingOutputPathComboBox.currentText()
+        output_path = os.path.join(
+            self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
+        )
         os.makedirs(output_path, exist_ok=True)
         self.__peak_tracker_widget.save_results(output_path)
 
