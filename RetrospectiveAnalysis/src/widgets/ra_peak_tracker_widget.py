@@ -330,10 +330,10 @@ class RaPeakTrackerWidget(QWidget):
                 r"""RA_results
 "peak_shifts.mat":
     t_array [1D array]: time stamps
-    power_*_peakWL_list [1D array]: tracked peak wavelengths for channel *
+    power_*_peakWL_list [1D array]: tracked peak wavelengths for channel * (offset included)
 “peaks.mat”:
     t_array [1D array]: time stamps
-    power* [cell array]: all the fitted peaks for channel *. The number of peaks in each sweep may vary.
+    power* [cell array]: all the fitted peaks for channel * (based on unchanged raw data). The number of peaks in each sweep may vary.
             The peak is stored by a 5-element vector [x0,y0,I,gamma,a], representing a sloped Lorentzian function:
                 y = y0 + ((I * (gamma / 2) ** 2) / ((gamma / 2) ** 2 + (x - x0) ** 2)) + a * (x - x0)
             where
