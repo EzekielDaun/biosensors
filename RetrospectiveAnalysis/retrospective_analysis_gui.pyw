@@ -20,19 +20,13 @@ if __name__ == "__main__":
     )
 
     log_folder_name = ".log"
-    try:
-        os.makedirs(f"{log_folder_name}")
-    except FileExistsError:
-        pass
-    finally:
-        t = time.strftime("%Y%m%d-%H%M%S", time.localtime())
-        file_handler = logging.FileHandler(os.path.join(log_folder_name, f"{t}.log"))
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(
-            logging.Formatter(
-                "{asctime}::{name}::{levelname:^7s}::{message}", style="{"
-            )
-        )
-        logging.getLogger().addHandler(file_handler)
+    os.makedirs(f"{log_folder_name}", exist_ok=True)
+    t = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+    file_handler = logging.FileHandler(os.path.join(log_folder_name, f"{t}.log"))
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(
+        logging.Formatter("{asctime}::{name}::{levelname:^7s}::{message}", style="{")
+    )
+    logging.getLogger().addHandler(file_handler)
 
     sys.exit(app.exec())
