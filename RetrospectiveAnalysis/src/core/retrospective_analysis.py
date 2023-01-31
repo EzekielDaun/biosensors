@@ -473,8 +473,9 @@ def _peaks_to_traces(
                 if temp is not None:
                     ret.append(list(accumulate([start_wavelength] + shifts)))
                     shifts = []
-                    last_peak = temp[0]
-                    start_wavelength = temp[0][0]
+                    if temp.size > 0:
+                        last_peak = temp[0]
+                        start_wavelength = temp[0][0]
                 continue
             else:  # normal case, an acceptable pair in other peaks is found
                 shifts.append(pairs[0][1][0] - pairs[0][0][0])
