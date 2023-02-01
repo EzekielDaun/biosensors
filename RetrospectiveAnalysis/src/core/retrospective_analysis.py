@@ -298,45 +298,31 @@ class RetrospectiveAnalyzer(object):
                 - traces: (list of list of floats, FSR), the traces start at an actual peak wavelength in spectrogram.
                 - peaks: list of sweep matrix, indexes are sweep number and values are rows of sweep vectors.
         """
-        if enable_multi_processing:
-            process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-            with mp.Pool(
-                processes=max(1, process_num - 2)
-            ) as pool:  # reserve one for GUI and one for other programs
-                peaks: dict[int, list[NDArray[np.float64]]] = reduce(
-                    lambda acc, b: {
-                        x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
-                    },
-                    pool.starmap(
-                        _mat_to_peak_dict,
-                        zip(
-                            [
-                                os.path.join(self.__folder_path, f)
-                                for f in self.__filenames
-                            ],
-                            repeat(channels),
-                            repeat(find_peaks_kwargs),
-                            repeat(self.__wavelength_multiplier),
-                        ),
-                    ),
-                    {},
-                )
-        else:
-            peaks: dict[int, list[NDArray[np.float64]]] = reduce(
-                lambda acc, b: {
-                    x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
-                },
-                starmap(
-                    _mat_to_peak_dict,
-                    zip(
-                        [os.path.join(self.__folder_path, f) for f in self.__filenames],
-                        repeat(channels),
-                        repeat(find_peaks_kwargs),
-                        repeat(self.__wavelength_multiplier),
-                    ),
+
+        def __starmap(*args, **kwargs):
+            if enable_multi_processing:
+                process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
+                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                    *args, **kwargs
+                )  # reserve one for GUI and one for other programs
+            else:
+                return starmap(*args, **kwargs)
+
+        peaks: dict[int, list[NDArray[np.float64]]] = reduce(
+            lambda acc, b: {
+                x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
+            },
+            __starmap(
+                _mat_to_peak_dict,
+                zip(
+                    [os.path.join(self.__folder_path, f) for f in self.__filenames],
+                    repeat(channels),
+                    repeat(find_peaks_kwargs),
+                    repeat(self.__wavelength_multiplier),
                 ),
-                {},
-            )
+            ),
+            {},
+        )
 
         return {k: _peaks_to_traces(v, weights) for k, v in peaks.items()}, peaks
 
