@@ -34,7 +34,7 @@ disp("Large image files (>1MB) = "+string(largeImages)+" images!");
 compressedImages=1;
 for i=1:size(imageList,1)
     if(imageList(i).bytes/(1024*1024)>imageCompressionThreshold_Mb)
-        image = imread(imageList(i).name);
+        image = imread([imageList(i).folder '\' imageList(i).name]);
         image_compressed=imresize(image,CompressionRatio);
         compressedFileName =[outputFolder '\' imageList(i).name];
         if(string(imagesFolder)==string(outputFolder))
