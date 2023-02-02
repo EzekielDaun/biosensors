@@ -178,6 +178,7 @@ class RaMainWindow(QMainWindow):
         logger.info(f"{path} has {file_num} files with {power_num} power channels")
 
         # update peak tracker output path combo box
+        self.__ui.peakTracingOutputPathComboBox.setCurrentText(path)
         self.__ui.peakTracingOutputPathComboBox.addItem(path)
 
         # update spectrogram plotter start/stop values
