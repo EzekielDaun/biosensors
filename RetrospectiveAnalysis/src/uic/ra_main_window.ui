@@ -327,7 +327,7 @@
                   <string>the stop number (regardless of actual sweep number)</string>
                  </property>
                  <property name="minimum">
-                  <number>1</number>
+                  <number>2</number>
                  </property>
                 </widget>
                </item>
@@ -376,7 +376,7 @@
           <property name="title">
            <string>Settings</string>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QLabel" name="label_11">
              <property name="text">
@@ -398,6 +398,40 @@
             <widget class="QPushButton" name="peakTracingOutputPathPushButton">
              <property name="text">
               <string>Select...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>From:</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="peakTracingStartSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>to:</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="peakTracingStopSpinBox">
+             <property name="minimum">
+              <number>2</number>
              </property>
             </widget>
            </item>
@@ -759,6 +793,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>peakTracingStartSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_peak_tracking_on_start_spinbox_change(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>754</x>
+     <y>99</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>peakTracingStopSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_peak_tracking_on_stop_spinbox_change(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>931</x>
+     <y>99</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>slot_open_clicked()</slot>
@@ -774,5 +840,7 @@
   <slot>slot_spectrogram_on_stop_spinbox_change(int)</slot>
   <slot>slot_spectrogram_on_start_spinbox_change(int)</slot>
   <slot>slot_peak_tracking_select_output_path()</slot>
+  <slot>slot_peak_tracking_on_start_spinbox_change(int)</slot>
+  <slot>slot_peak_tracking_on_stop_spinbox_change(int)</slot>
  </slots>
 </ui>

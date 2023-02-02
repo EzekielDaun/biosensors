@@ -3,6 +3,8 @@ import logging
 from itertools import starmap, cycle
 import os
 
+from typing import Optional
+
 import numpy as np
 
 from scipy.io import savemat
@@ -27,16 +29,21 @@ class RaPeakTrackerWidget(QWidget):
             self,
             analyzer: Analyzer,
             channels: list[int],
+            start_stop_step: tuple[int, Optional[int], int],
             find_peak_kwargs: dict[str, float],
         ):
             super().__init__()
             self.__analyzer = analyzer
             self.__channels = channels
+            self.__start_stop_step = start_stop_step
             self.__find_peak_kwargs = find_peak_kwargs
 
         def run(self):
             self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
-                self.__channels, self.__find_peak_kwargs, [1, 1, 1, 1, 1]
+                self.__channels,
+                self.__start_stop_step,
+                self.__find_peak_kwargs,
+                [1, 1, 1, 1, 1],
             )
 
         @property
@@ -54,6 +61,7 @@ class RaPeakTrackerWidget(QWidget):
             traces: list[list[float]],
             fsr: float,
             analyzer: Analyzer,
+            start_stop_step: tuple[int, Optional[int], int],
             time_unit: str,
             wavelength_unit: str,
             power_unit: str,
@@ -69,7 +77,9 @@ class RaPeakTrackerWidget(QWidget):
             self.__fsr = fsr
             self.__fsr_multipliers = [0 for x in traces]
             self.__offsets = [0.0 for x in traces]
-            self.__timestamps = analyzer.timestamps
+            self.__timestamps = analyzer.timestamps[
+                start_stop_step[0] : start_stop_step[1] : start_stop_step[2]
+            ]
             self.__analyzer = analyzer
             self.__time_unit = time_unit
             self.__power_unit = power_unit
@@ -284,6 +294,7 @@ class RaPeakTrackerWidget(QWidget):
         self,
         analyzer: Analyzer,
         channels: list[int],
+        start_stop_step: tuple[int, Optional[int], int],
         find_peak_kwargs: dict[str, float],
         time_unit: str,
         wavelength_unit: str,
@@ -291,6 +302,7 @@ class RaPeakTrackerWidget(QWidget):
     ):
         self.__analyzer = analyzer
         self.__channels = channels
+        self.__start_stop_step = start_stop_step
         self.__find_peak_kwargs = find_peak_kwargs
         self.__time_unit = time_unit
         self.__wavelength_unit = wavelength_unit
@@ -313,7 +325,13 @@ class RaPeakTrackerWidget(QWidget):
                 (tab.name).replace(" ", "_").lower() + "_peakWL_list": tab.full_trace
                 for tab in all_tabs
             }
-            | {"t_array": self.__analyzer.timestamps},
+            | {
+                "t_array": self.__analyzer.timestamps[
+                    self.__start_stop_step[0] : self.__start_stop_step[
+                        1
+                    ] : self.__start_stop_step[2]
+                ]
+            },
         )
 
         # save all fitted peaks
@@ -323,7 +341,13 @@ class RaPeakTrackerWidget(QWidget):
                 "power" + str(k + 1): np.array(v, dtype="object")
                 for k, v in self.__all_peaks.items()
             }
-            | {"t_array": self.__analyzer.timestamps},
+            | {
+                "t_array": self.__analyzer.timestamps[
+                    self.__start_stop_step[0] : self.__start_stop_step[
+                        1
+                    ] : self.__start_stop_step[2]
+                ]
+            },
         )
         with open("WhatsThis.txt", "w") as f:
             f.write(
@@ -350,7 +374,11 @@ class RaPeakTrackerWidget(QWidget):
         axes = plt.axes()
         for tab in all_tabs:
             axes.plot(
-                self.__analyzer.timestamps,
+                self.__analyzer.timestamps[
+                    self.__start_stop_step[0] : self.__start_stop_step[
+                        1
+                    ] : self.__start_stop_step[2]
+                ],
                 tab.full_trace - tab.full_trace[0],
                 label=tab.name,
             )
@@ -370,6 +398,7 @@ class RaPeakTrackerWidget(QWidget):
                 self.__all_traces[c][0],
                 self.__all_traces[c][1],
                 self.__analyzer,
+                self.__start_stop_step,
                 self.__time_unit,
                 self.__wavelength_unit,
                 self.__power_unit,
@@ -383,6 +412,7 @@ class RaPeakTrackerWidget(QWidget):
         self.__worker = self.__Worker(
             self.__analyzer,
             self.__channels,
+            self.__start_stop_step,
             self.__find_peak_kwargs,
         )
         self.__worker.finished.connect(self.__slot_work_done)  # type: ignore

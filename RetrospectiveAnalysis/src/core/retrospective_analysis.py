@@ -6,6 +6,8 @@ import re
 from functools import reduce
 from itertools import accumulate, pairwise, product, repeat, starmap
 
+from typing import Optional
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.io import loadmat
@@ -277,6 +279,7 @@ class RetrospectiveAnalyzer(object):
     def analyze(
         self,
         channels: list[int],
+        start_stop_step: tuple[int, Optional[int], int],
         find_peaks_kwargs: dict[str, float],
         weights: list[float] = [],
         enable_multi_processing: bool = True,
@@ -308,6 +311,8 @@ class RetrospectiveAnalyzer(object):
             else:
                 return starmap(*args, **kwargs)
 
+        start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
+
         peaks: dict[int, list[NDArray[np.float64]]] = reduce(
             lambda acc, b: {
                 x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
@@ -315,7 +320,10 @@ class RetrospectiveAnalyzer(object):
             __starmap(
                 _mat_to_peak_dict,
                 zip(
-                    [os.path.join(self.__folder_path, f) for f in self.__filenames],
+                    [
+                        os.path.join(self.__folder_path, f)
+                        for f in self.__filenames[start:stop:step]
+                    ],
                     repeat(channels),
                     repeat(find_peaks_kwargs),
                     repeat(self.__wavelength_multiplier),
@@ -506,7 +514,9 @@ if __name__ == "__main__":
 
     # Plot traces
 
-    all_traces, all_peaks = analyzer.analyze(channels, {"prominence": 0.05})
+    all_traces, all_peaks = analyzer.analyze(
+        channels, (0, None, 1), {"prominence": 0.05}
+    )
     for c in channels:
         fig = plt.figure()
         ax = fig.add_subplot(111)

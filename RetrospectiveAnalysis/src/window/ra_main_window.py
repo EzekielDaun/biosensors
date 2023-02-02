@@ -186,6 +186,11 @@ class RaMainWindow(QMainWindow):
         self.__ui.sampleStopSpinBox.setMaximum(file_num)
         self.__ui.sampleStopSpinBox.setValue(file_num)
 
+        # update peak tracing start/stop values
+        self.__ui.peakTracingStartSpinBox.setMaximum(file_num)
+        self.__ui.peakTracingStopSpinBox.setMaximum(file_num)
+        self.__ui.peakTracingStopSpinBox.setValue(file_num)
+
         # add power channels to power list widget
         for i in range(power_num):
             item = QListWidgetItem()
@@ -248,6 +253,11 @@ class RaMainWindow(QMainWindow):
         self.__peak_tracker_widget.plot_initial(
             self.__analyzer,
             powers,
+            (
+                self.__ui.peakTracingStartSpinBox.value() - 1,
+                self.__ui.peakTracingStopSpinBox.value(),
+                1,
+            ),
             {"prominence": 0.2},
             self.__ui.timeUnitLineEdit.text(),
             self.__ui.wavelengthUnitLineEdit.text(),
@@ -280,3 +290,10 @@ class RaMainWindow(QMainWindow):
         if path != "":
             self.__ui.peakTracingOutputPathComboBox.setCurrentText(path)
             self.__ui.peakTracingOutputPathComboBox.addItem(path)
+
+    def slot_peak_tracking_on_start_spinbox_change(self, value: int):
+        file_num, _ = self.__analyzer.info()
+        self.__ui.peakTracingStopSpinBox.setMinimum(min(max(2, value + 1), file_num))
+
+    def slot_peak_tracking_on_stop_spinbox_change(self, value: int):
+        self.__ui.peakTracingStartSpinBox.setMaximum(max(1, value - 1))
