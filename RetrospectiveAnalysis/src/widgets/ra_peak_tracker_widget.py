@@ -80,6 +80,7 @@ class RaPeakTrackerWidget(QWidget):
             self.__timestamps = analyzer.timestamps[
                 start_stop_step[0] : start_stop_step[1] : start_stop_step[2]
             ]
+            self.__start_stop_step = start_stop_step
             self.__analyzer = analyzer
             self.__time_unit = time_unit
             self.__power_unit = power_unit
@@ -183,6 +184,11 @@ class RaPeakTrackerWidget(QWidget):
 
             spectrogram = self.__analyzer.get_spectrograms([self.__power_index])[
                 self.__power_index
+            ][
+                :,
+                self.__start_stop_step[0] : self.__start_stop_step[
+                    1
+                ] : self.__start_stop_step[2],
             ]
             ys = self.full_trace
             ys -= min(self.__analyzer.wavelengths)
@@ -235,6 +241,11 @@ class RaPeakTrackerWidget(QWidget):
             spectrogram_ax = plt.subplot(2, 1, 2)
             spectrogram = self.__analyzer.get_spectrograms([self.__power_index])[
                 self.__power_index
+            ][
+                :,
+                self.__start_stop_step[0] : self.__start_stop_step[
+                    1
+                ] : self.__start_stop_step[2],
             ]
             ys = self.full_trace
             ys -= min(self.__analyzer.wavelengths)
