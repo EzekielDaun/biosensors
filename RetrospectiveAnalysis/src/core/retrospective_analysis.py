@@ -52,7 +52,7 @@ def get_lorentzian_peaks(
     if "width" not in find_peaks_kwargs:
         find_peaks_kwargs["width"] = 0
     if "height" not in find_peaks_kwargs:
-        find_peaks_kwargs["height"] = 0
+        find_peaks_kwargs["height"] = -max(powers)
     find_peaks_kwargs["prominence"] *= max(powers) - min(powers)
     # https://www.mathworks.com/help/signal/ug/prominence.html
 
