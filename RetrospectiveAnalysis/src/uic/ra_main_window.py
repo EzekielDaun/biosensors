@@ -315,6 +315,18 @@ class Ui_RaMainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.peakTracingStopSpinBox)
 
+        self.label_14 = QLabel(self.peakTracingSettingGroupBox)
+        self.label_14.setObjectName(u"label_14")
+        self.label_14.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.horizontalLayout_2.addWidget(self.label_14)
+
+        self.peakTracingStepSpinBox = QSpinBox(self.peakTracingSettingGroupBox)
+        self.peakTracingStepSpinBox.setObjectName(u"peakTracingStepSpinBox")
+        self.peakTracingStepSpinBox.setMinimum(1)
+
+        self.horizontalLayout_2.addWidget(self.peakTracingStepSpinBox)
+
 
         self.verticalLayout_3.addWidget(self.peakTracingSettingGroupBox)
 
@@ -501,6 +513,7 @@ class Ui_RaMainWindow(object):
         self.peakTracingOutputPathPushButton.setText(QCoreApplication.translate("RaMainWindow", u"Select...", None))
         self.label_12.setText(QCoreApplication.translate("RaMainWindow", u"From:", None))
         self.label_13.setText(QCoreApplication.translate("RaMainWindow", u"to:", None))
+        self.label_14.setText(QCoreApplication.translate("RaMainWindow", u"step:", None))
         self.peakTrackingSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
         self.peakTrackingUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
         self.trackPeakButton.setText(QCoreApplication.translate("RaMainWindow", u"Start Track", None))

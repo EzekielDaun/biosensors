@@ -435,6 +435,23 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>step:</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="peakTracingStepSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
