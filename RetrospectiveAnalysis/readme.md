@@ -12,8 +12,8 @@ Python version >= 3.10
 winget install --id Python.Python.3.11
 ```
 #### Install Dependencies
-- Use PowerShell to run `install-dependencies.ps1`
-- Run `retrospective-analysis.ps1` to start the GUI.
+- Right click `install-dependencies.ps1`, select `Run with PowerShell`. Answer `Y` if prompted.
+- RIght click and run `retrospective-analysis.ps1` in the same method to start the GUI.
 ### macOS 12 
 
 ```shell
