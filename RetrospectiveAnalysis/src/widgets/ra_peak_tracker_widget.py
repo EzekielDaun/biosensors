@@ -30,19 +30,16 @@ class RaPeakTrackerWidget(QWidget):
             analyzer: Analyzer,
             channels: list[int],
             start_stop_step: tuple[int, Optional[int], int],
-            find_peak_kwargs: dict[str, float],
         ):
             super().__init__()
             self.__analyzer = analyzer
             self.__channels = channels
             self.__start_stop_step = start_stop_step
-            self.__find_peak_kwargs = find_peak_kwargs
 
         def run(self):
             self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
                 self.__channels,
                 self.__start_stop_step,
-                self.__find_peak_kwargs,
                 [1, 1, 1, 1, 1],
             )
 
@@ -306,7 +303,6 @@ class RaPeakTrackerWidget(QWidget):
         analyzer: Analyzer,
         channels: list[int],
         start_stop_step: tuple[int, Optional[int], int],
-        find_peak_kwargs: dict[str, float],
         time_unit: str,
         wavelength_unit: str,
         power_unit: str,
@@ -314,7 +310,6 @@ class RaPeakTrackerWidget(QWidget):
         self.__analyzer = analyzer
         self.__channels = channels
         self.__start_stop_step = start_stop_step
-        self.__find_peak_kwargs = find_peak_kwargs
         self.__time_unit = time_unit
         self.__wavelength_unit = wavelength_unit
         self.__power_unit = power_unit
@@ -421,10 +416,7 @@ class RaPeakTrackerWidget(QWidget):
     @Slot()
     def __slot_work_start(self):
         self.__worker = self.__Worker(
-            self.__analyzer,
-            self.__channels,
-            self.__start_stop_step,
-            self.__find_peak_kwargs,
+            self.__analyzer, self.__channels, self.__start_stop_step
         )
         self.__worker.finished.connect(self.__slot_work_done)  # type: ignore
         self.__worker.start()

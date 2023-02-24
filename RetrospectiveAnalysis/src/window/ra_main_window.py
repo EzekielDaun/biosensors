@@ -259,7 +259,6 @@ class RaMainWindow(QMainWindow):
                 self.__ui.peakTracingStopSpinBox.value(),
                 self.__ui.peakTracingStepSpinBox.value(),
             ),
-            {"prominence": 0.2},
             self.__ui.timeUnitLineEdit.text(),
             self.__ui.wavelengthUnitLineEdit.text(),
             self.__ui.powerUnitLineEdit.text(),

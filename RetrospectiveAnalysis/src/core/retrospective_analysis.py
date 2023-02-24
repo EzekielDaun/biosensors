@@ -14,6 +14,8 @@ from scipy.io import loadmat
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from scipy.spatial.distance import cdist
+from scipy.ndimage import gaussian_filter1d
+from sklearn.metrics import r2_score
 
 logger = logging.getLogger(__name__)
 
@@ -40,128 +42,93 @@ def read_mat(
 def get_lorentzian_peaks(
     powers: NDArray[np.float64],
     wavelengths: NDArray[np.float64],
-    find_peaks_kwargs: dict[str, float],
 ) -> NDArray[np.float64]:
 
     if len(powers) != len(wavelengths):
         raise RuntimeError("Number of wavelengths and powers do not match")
 
-    # avoid modifying the original dict
-    find_peaks_kwargs = find_peaks_kwargs.copy()
-
-    if "width" not in find_peaks_kwargs:
-        find_peaks_kwargs["width"] = 0
-    if "height" not in find_peaks_kwargs:
-        find_peaks_kwargs["height"] = -max(powers)
-    find_peaks_kwargs["prominence"] *= max(powers) - min(powers)
-    # https://www.mathworks.com/help/signal/ug/prominence.html
-
+    powers_smoothed = gaussian_filter1d(powers, sigma=8)
     indices, properties = find_peaks(
-        (-1) * powers,
-        **find_peaks_kwargs,
+        -1 * powers_smoothed,
+        prominence=0.1 * (max(powers_smoothed) - min(powers_smoothed)),
+        width=0,
+        height=min(-1 * powers_smoothed),
     )
-
-    for _ in range(20):
-        # set a iteration limit to prevent infinite loops in case the sweep only have one peak
-        if len(indices) >= 2:
-            break
-        find_peaks_kwargs["prominence"] /= 2
-        find_peaks_kwargs["width"] = int(find_peaks_kwargs["width"] / 2)
-        indices, properties = find_peaks(
-            (-1) * powers,
-            **find_peaks_kwargs,
-        )
-
-    # apply distance bound to avoid close peaks (peaks that are splitted into a few sharp and close peaks)
-    find_peaks_kwargs["distance"] = int(len(powers) / (len(indices) + 2))
-    indices, properties = find_peaks(
-        (-1) * powers,
-        **find_peaks_kwargs,
-    )
-
-    # ignore peaks at 10% wavelength on both sides
-    for i in reversed(
-        [
-            i
-            for i, index in enumerate(indices)
-            if wavelengths[index] > 0.1 * len(powers)
-            and wavelengths[index] < 0.9 * len(powers)
-        ]
-    ):
-        np.delete(indices, i)
-        for v in properties.values():
-            np.delete(v, i)
-
-    fsr = float(abs(np.mean(np.diff(wavelengths[indices]))))
-    # if only one peak, there will be a numpy runtime warning and fsr will be nan
-    fsr = float(0.5 * abs(wavelengths[0] - wavelengths[-1])) if np.isnan(fsr) else fsr
+    __base_indices = [int(np.mean(p)) for p in pairwise(indices)]
+    left_base_indices = [0] + __base_indices
+    right_base_indices = __base_indices + [len(powers_smoothed) - 1]
 
     ret: list[tuple[float, float, float, float]] = []
     for i, peak_index in enumerate(indices):
-        peak_wavelength = float(wavelengths[peak_index])
-
-        left_base_index = int(properties["left_bases"][i])
-        right_base_index = int(properties["right_bases"][i])
-
-        left_ips_index = int(properties["left_ips"][i])
-        right_ips_index = int(properties["right_ips"][i])
-
-        left_base_avg = float(
-            np.mean(
-                powers[
-                    max(0, left_base_index - 50) : min(
-                        len(powers) - 1, left_base_index + 50
-                    )
-                ]
-            )
-        )
-        right_base_avg = float(
-            np.mean(
-                powers[
-                    max(0, right_base_index - 50) : min(
-                        len(powers) - 1, right_base_index + 50
-                    )
-                ]
-            )
-        )
-
-        base = float(np.mean([left_base_avg, right_base_avg]))
-        width: float = wavelengths[right_ips_index] - wavelengths[left_ips_index]
-        height: float = abs(properties["peak_heights"][i] - abs(base))
+        left_base_index = max(properties["left_bases"][i], left_base_indices[i])
+        right_base_index = min(properties["right_bases"][i], right_base_indices[i])
 
         try:
-            ret.append(
-                curve_fit(
-                    f=lorentzian,
-                    xdata=wavelengths[left_base_index:right_base_index],
-                    ydata=powers[left_base_index:right_base_index],
-                    p0=[
-                        peak_wavelength,  # x0
-                        base,  # y0
-                        -height,  # I
-                        width,  # gamma
-                        0,  # a
+            parameters, _ = curve_fit(
+                f=lorentzian,
+                xdata=wavelengths[left_base_index:right_base_index],
+                ydata=powers[left_base_index:right_base_index],
+                p0=[
+                    wavelengths[peak_index],  # x0
+                    np.mean([powers[left_base_index], powers[right_base_index]]),  # y0
+                    -100,  # I
+                    0.01
+                    * (
+                        wavelengths[right_base_index] - wavelengths[left_base_index]
+                    ),  # gamma
+                    0,  # a
+                ],
+                bounds=(
+                    [
+                        wavelengths[left_base_index],
+                        -np.inf,
+                        -np.inf,
+                        -np.inf,
+                        -np.inf,
                     ],
-                    bounds=(
-                        [
-                            peak_wavelength - fsr * 0.3,
-                            base - abs(base * 0.2),
-                            -height * 1.5,
-                            width * 0.5,
-                            -np.inf,
-                        ],
-                        [
-                            peak_wavelength + fsr * 0.3,
-                            base + abs(base * 0.2),
-                            -height * 0.5,
-                            width * 3.5,
-                            np.inf,
-                        ],
-                    ),
-                )[0]
+                    [
+                        wavelengths[right_base_index],
+                        0,
+                        0,
+                        np.inf,
+                        np.inf,
+                    ],
+                ),
             )
+
+            x0, y0, _i, gamma, a = parameters
+            if y0 > 0.9 * np.mean(
+                [powers_smoothed[left_base_index], powers_smoothed[right_base_index]]
+            ):
+                logger.debug(
+                    f"Baseline not found for peak at wavelength {wavelengths[peak_index]:.2f}"
+                )
+                continue
+            elif (
+                r2_score(
+                    powers[left_base_index:right_base_index],
+                    lorentzian(
+                        wavelengths[left_base_index:right_base_index],
+                        x0,
+                        y0,
+                        _i,
+                        gamma,
+                        a,
+                    ),
+                )
+                < 0.80
+            ):
+                logger.debug(
+                    f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}"
+                )
+                continue
+            else:
+                ret.append(parameters)
         except RuntimeError as e:
-            logger.warning(f"Curve fitting at wavelength {peak_wavelength:.2f}: {e}")
+            logger.debug(
+                f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
+            )
+            continue
 
     return np.array(ret)
 
@@ -169,7 +136,6 @@ def get_lorentzian_peaks(
 def _mat_to_peak_dict(
     path: str,
     channels: list[int],
-    find_peaks_kwargs: dict[str, float],
     wavelength_multiplier: float,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
     ret = {}
@@ -180,7 +146,6 @@ def _mat_to_peak_dict(
         temp_peaks = get_lorentzian_peaks(
             powers,
             wavelengths,
-            find_peaks_kwargs,
         )
         ret[c] = ret.get(c, []) + [temp_peaks]
 
@@ -280,7 +245,6 @@ class RetrospectiveAnalyzer(object):
         self,
         channels: list[int],
         start_stop_step: tuple[int, Optional[int], int],
-        find_peaks_kwargs: dict[str, float],
         weights: list[float] = [],
         enable_multi_processing: bool = True,
     ) -> tuple[
@@ -325,7 +289,6 @@ class RetrospectiveAnalyzer(object):
                         for f in self.__filenames[start:stop:step]
                     ],
                     repeat(channels),
-                    repeat(find_peaks_kwargs),
                     repeat(self.__wavelength_multiplier),
                 ),
             ),
@@ -514,9 +477,7 @@ if __name__ == "__main__":
 
     # Plot traces
 
-    all_traces, all_peaks = analyzer.analyze(
-        channels, (0, None, 1), {"prominence": 0.05}
-    )
+    all_traces, all_peaks = analyzer.analyze(channels, (0, None, 1))
     for c in channels:
         fig = plt.figure()
         ax = fig.add_subplot(111)
