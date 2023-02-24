@@ -88,7 +88,7 @@ def get_lorentzian_peaks(
                     ],
                     [
                         wavelengths[right_base_index],
-                        0,
+                        10,
                         0,
                         np.inf,
                         np.inf,
@@ -97,11 +97,12 @@ def get_lorentzian_peaks(
             )
 
             x0, y0, _i, gamma, a = parameters
-            if y0 > 0.9 * np.mean(
+            baseline_estimation = np.mean(
                 [powers_smoothed[left_base_index], powers_smoothed[right_base_index]]
-            ):
+            )
+            if y0 - baseline_estimation > 0.1 * abs(baseline_estimation):
                 logger.debug(
-                    f"Baseline not found for peak at wavelength {wavelengths[peak_index]:.2f}"
+                    f"Baseline not found for peak at wavelength {wavelengths[peak_index]:.2f}. Estimated baseline: {baseline_estimation:.2f}, peak height: {y0:.2f}"
                 )
                 continue
             elif (
@@ -119,7 +120,7 @@ def get_lorentzian_peaks(
                 < 0.80
             ):
                 logger.debug(
-                    f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}"
+                    f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}. R2 = {r2_score(powers[left_base_index:right_base_index], lorentzian(wavelengths[left_base_index:right_base_index], x0, y0, _i, gamma, a)):.2f}"
                 )
                 continue
             else:
