@@ -65,8 +65,7 @@ python retrospective_analysis_gui.pyw
    1. Select the trace (Trace1 Time xx-xx) in the combo box
    2. Adjust the offset by multiples of FSR or any arbitrary number in the spinboxes
 8. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the selected folder when clicking those buttons
-9. Assign an assay name to this channel in the `Assay` block
-10. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (**This figure will not be saved automatically**)
+9.  Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (This figure will always be automatically saved)
 
 ## FAQ
 
