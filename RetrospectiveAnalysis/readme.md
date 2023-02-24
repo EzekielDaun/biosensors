@@ -12,8 +12,8 @@ Python version >= 3.10
 winget install --id Python.Python.3.11
 ```
 #### Install Dependencies
-- Right click `install-dependencies.ps1`, select `Run with PowerShell`. Answer `Y` if prompted.
-- RIght click and run `retrospective-analysis.ps1` in the same method to start the GUI.
+- Right-click `install-dependencies.ps1`, select `Run with PowerShell`. Answer `Y` if prompted.
+- Right-click and run `retrospective-analysis.ps1` in the same method to start the GUI.
 ### macOS 12 
 
 ```shell
@@ -71,8 +71,8 @@ python retrospective_analysis_gui.pyw
 
 - Peak tracking raises an error / never stops
   - Please first check the spectrograms in each channel. And only track the channels with resonance peaks.
-- There are invisible trace sections
-  - This is usually due to the trace containing only a single data point. Try shifting a few FSRs and check the overlay result.
+- What are the dots in peak tracking results?
+  - This is usually because the trace section contains only a single data point. These points are invisible in all other output plots but will exist in the result matrix. Try manually aligning these points to have a better data result.
 - Curve fitting exceeds iteration limits
   - Try to re-run another time. If the error still exists, try running it on another PC.
   - This error was seen for data from detector 5 in the binding assay of Spike Protein Assay Trial 4 ran in October 2022. More details can be found in the experimental summary of this experiment on the Biosensor Microfluidic Subgroup Google Drive.

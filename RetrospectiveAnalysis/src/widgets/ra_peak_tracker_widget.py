@@ -116,6 +116,7 @@ class RaPeakTrackerWidget(QWidget):
                     np.array(trace)
                     + self.__fsr * self.__fsr_multipliers[i]
                     + self.__offsets[i],
+                    "o" if len(trace) <= 2 else "-",
                 )
                 x0 += len(trace)
 
