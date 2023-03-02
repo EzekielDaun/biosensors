@@ -141,12 +141,16 @@ class RaFilePlotterWidget(QGroupBox):
                 figure_widget = RaFigureWidget()
                 axes = figure_widget.figure.subplots(1, 1)
                 axes.plot(self.__worker.wavelengths, power)
-                peaks = get_lorentzian_peaks(power, self.__worker.wavelengths)
+                peaks, fsr, er, q = get_lorentzian_peaks(
+                    power, self.__worker.wavelengths
+                )
                 for _j, peak in enumerate(peaks):
                     x0, y0, _i, gamma, a = peak
                     xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
                     ys = lorentzian(xs, x0, y0, _i, gamma, a)
                     axes.plot(xs, ys, "-", alpha=0.5)
+                    # axes.text(x0, y0, f"ER:{er[_j]:.2f}")
+                    # axes.text(x0, y0 + _i, f"Q:{q[_j]:.2f}")
 
                 axes.set_title(f"{self.__current_file_basename}")
                 axes.set_xlabel("Wavelength")

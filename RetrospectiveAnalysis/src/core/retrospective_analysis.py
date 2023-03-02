@@ -42,7 +42,9 @@ def read_mat(
 def get_lorentzian_peaks(
     powers: NDArray[np.float64],
     wavelengths: NDArray[np.float64],
-) -> NDArray[np.float64]:
+) -> tuple[
+    NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
+]:
 
     if len(powers) != len(wavelengths):
         raise RuntimeError("Number of wavelengths and powers do not match")
@@ -58,7 +60,9 @@ def get_lorentzian_peaks(
     left_base_indices = [0] + __base_indices
     right_base_indices = __base_indices + [len(powers_smoothed) - 1]
 
-    ret: list[tuple[float, float, float, float]] = []
+    ret_peaks: list[tuple[float, float, float, float]] = []
+    ret_er: list[float] = []
+    ret_q: list[float] = []
     for i, peak_index in enumerate(indices):
         left_base_index = max(properties["left_bases"][i], left_base_indices[i])
         right_base_index = min(properties["right_bases"][i], right_base_indices[i])
@@ -124,14 +128,27 @@ def get_lorentzian_peaks(
                 )
                 continue
             else:
-                ret.append(parameters)
+                ret_peaks.append(parameters)
+                ret_er.append(parameters[2])
+                xs = wavelengths[left_base_index:right_base_index]
+                ys_linear = 10 ** ((powers[left_base_index:right_base_index]) / 10)
+                target = np.mean([np.max(ys_linear), np.min(ys_linear)])
+                for i, y in enumerate(ys_linear):
+                    if y <= target:
+                        left = xs[i]
+                        break
+                for i, y in reversed(list(enumerate(ys_linear))):
+                    if y <= target:
+                        right = xs[i]
+                        break
+                ret_q.append(right - left)  # type: ignore
         except RuntimeError as e:
             logger.debug(
                 f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
             )
             continue
-
-    return np.array(ret)
+    ret_fsr = np.diff(np.array(ret_peaks).T[0])
+    return np.array(ret_peaks), np.array(ret_fsr), np.array(ret_er), np.array(ret_q)
 
 
 def _mat_to_peak_dict(
@@ -147,7 +164,7 @@ def _mat_to_peak_dict(
         temp_peaks = get_lorentzian_peaks(
             powers,
             wavelengths,
-        )
+        )[0]
         ret[c] = ret.get(c, []) + [temp_peaks]
 
     return ret
