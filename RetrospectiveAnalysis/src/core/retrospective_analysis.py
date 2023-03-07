@@ -67,11 +67,19 @@ def get_lorentzian_peaks(
         left_base_index = max(properties["left_bases"][i], left_base_indices[i])
         right_base_index = min(properties["right_bases"][i], right_base_indices[i])
 
+        wavelength_range = wavelengths[left_base_index:right_base_index]
+        power_range = powers[left_base_index:right_base_index]
+        indices_fixed = np.argwhere(power_range != float(-100)).flatten()
+        if len(indices_fixed) <= 8 or max(np.diff(indices_fixed) > 10):
+            continue
+        wavelength_fixed = wavelength_range[indices_fixed]
+        power_fixed = power_range[indices_fixed]
+
         try:
             parameters, _ = curve_fit(
                 f=lorentzian,
-                xdata=wavelengths[left_base_index:right_base_index],
-                ydata=powers[left_base_index:right_base_index],
+                xdata=wavelength_fixed,
+                ydata=power_fixed,
                 p0=[
                     wavelengths[peak_index],  # x0
                     np.mean([powers[left_base_index], powers[right_base_index]]),  # y0
@@ -85,35 +93,27 @@ def get_lorentzian_peaks(
                 bounds=(
                     [
                         wavelengths[left_base_index],
-                        -np.inf,
-                        -np.inf,
-                        -np.inf,
+                        -100,
+                        -100,
+                        0,
                         -np.inf,
                     ],
                     [
                         wavelengths[right_base_index],
                         10,
                         0,
-                        np.inf,
+                        max(wavelength_fixed) - min(wavelength_fixed),
                         np.inf,
                     ],
                 ),
             )
 
             x0, y0, _i, gamma, a = parameters
-            baseline_estimation = np.mean(
-                [powers_smoothed[left_base_index], powers_smoothed[right_base_index]]
-            )
-            if y0 - baseline_estimation > 0.1 * abs(baseline_estimation):
-                logger.debug(
-                    f"Baseline not found for peak at wavelength {wavelengths[peak_index]:.2f}. Estimated baseline: {baseline_estimation:.2f}, peak height: {y0:.2f}"
-                )
-                continue
-            elif (
+            if (
                 r2_score(
-                    powers[left_base_index:right_base_index],
+                    power_fixed,
                     lorentzian(
-                        wavelengths[left_base_index:right_base_index],
+                        wavelength_fixed,
                         x0,
                         y0,
                         _i,
@@ -124,7 +124,7 @@ def get_lorentzian_peaks(
                 < 0.80
             ):
                 logger.debug(
-                    f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}. R2 = {r2_score(powers[left_base_index:right_base_index], lorentzian(wavelengths[left_base_index:right_base_index], x0, y0, _i, gamma, a)):.2f}"
+                    f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}. R2 = {r2_score(power_fixed, lorentzian(wavelength_fixed, x0, y0, _i, gamma, a)):.2f}"
                 )
                 continue
             else:
@@ -132,16 +132,29 @@ def get_lorentzian_peaks(
                 ret_er.append(parameters[2])
                 xs = wavelengths[left_base_index:right_base_index]
                 ys_linear = 10 ** ((powers[left_base_index:right_base_index]) / 10)
-                target = np.mean([np.max(ys_linear), np.min(ys_linear)])
-                for i, y in enumerate(ys_linear):
-                    if y <= target:
-                        left = xs[i]
-                        break
-                for i, y in reversed(list(enumerate(ys_linear))):
-                    if y <= target:
-                        right = xs[i]
-                        break
-                ret_q.append(x0 / (right - left))  # type: ignore
+                ys_linear *= 1e3  # value too small will cause nonsense fitting result
+
+                params_linear, _ = curve_fit(
+                    f=lorentzian,
+                    xdata=xs,
+                    ydata=ys_linear,
+                    p0=[
+                        x0,
+                        0,
+                        -1e3,
+                        0.01
+                        * (
+                            wavelengths[right_base_index] - wavelengths[left_base_index]
+                        ),
+                        0,
+                    ],
+                    bounds=(
+                        [wavelengths[left_base_index], 0, -np.inf, -np.inf, -np.inf],
+                        [np.inf, np.inf, np.inf, np.inf, np.inf],
+                    ),
+                )
+                ret_q.append(params_linear[0] / params_linear[3])
+
         except RuntimeError as e:
             logger.debug(
                 f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
