@@ -141,7 +141,7 @@ def get_lorentzian_peaks(
                     if y <= target:
                         right = xs[i]
                         break
-                ret_q.append(right - left)  # type: ignore
+                ret_q.append(x0 / (right - left))  # type: ignore
         except RuntimeError as e:
             logger.debug(
                 f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
