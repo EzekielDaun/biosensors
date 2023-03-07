@@ -147,7 +147,7 @@ def get_lorentzian_peaks(
                 f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
             )
             continue
-    ret_fsr = np.diff(np.array(ret_peaks).T[0])
+    ret_fsr = np.diff(np.array(ret_peaks).T[0]) if len(ret_peaks) > 1 else np.array([])
     return np.array(ret_peaks), np.array(ret_fsr), np.array(ret_er), np.array(ret_q)
 
 
