@@ -129,7 +129,7 @@ def get_lorentzian_peaks(
                 continue
             else:
                 ret_peaks.append(parameters)
-                ret_er.append(parameters[2])
+                ret_er.append(-parameters[2])
                 xs = wavelengths[left_base_index:right_base_index]
                 ys_linear = 10 ** ((powers[left_base_index:right_base_index]) / 10)
                 ys_linear *= 1e3  # value too small will cause nonsense fitting result
