@@ -149,8 +149,9 @@ class RaFilePlotterWidget(QGroupBox):
                     xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
                     ys = lorentzian(xs, x0, y0, _i, gamma, a)
                     axes.plot(xs, ys, "-", alpha=0.5)
-                    axes.text(x0, y0, f"ER:{er[_j]:.2f}")
-                    axes.text(x0, y0 + _i, f"Q:{q[_j]:.2f}")
+                    if _j < len(er) and _j < len(q):
+                        axes.text(x0, y0, f"ER:{er[_j]:.2f}")
+                        axes.text(x0, y0 + _i, f"Q:{q[_j]:.4g}")
 
                 axes.set_title(f"{self.__current_file_basename}")
                 axes.set_xlabel("Wavelength")

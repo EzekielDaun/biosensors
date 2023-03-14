@@ -141,7 +141,7 @@ def get_lorentzian_peaks(
                     p0=[
                         x0,
                         0,
-                        -1e3,
+                        -1e3*1e-3,
                         0.01
                         * (
                             wavelengths[right_base_index] - wavelengths[left_base_index]
@@ -149,8 +149,8 @@ def get_lorentzian_peaks(
                         0,
                     ],
                     bounds=(
-                        [wavelengths[left_base_index], 0, -np.inf, -np.inf, -np.inf],
-                        [np.inf, np.inf, np.inf, np.inf, np.inf],
+                        [wavelengths[left_base_index], 0, -1e3, 0, -np.inf],
+                        [np.inf, 1, 0, np.inf, np.inf],
                     ),
                 )
                 ret_q.append(params_linear[0] / params_linear[3])
