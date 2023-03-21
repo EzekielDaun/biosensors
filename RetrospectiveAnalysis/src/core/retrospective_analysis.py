@@ -49,7 +49,9 @@ def get_lorentzian_peaks(
     if len(powers) != len(wavelengths):
         raise RuntimeError("Number of wavelengths and powers do not match")
 
-    powers_smoothed = gaussian_filter1d(powers, sigma=8)
+    powers_smoothed: NDArray[np.float64] = gaussian_filter1d(
+        powers, sigma=8
+    )  # type: ignore
     indices, properties = find_peaks(
         -1 * powers_smoothed,
         prominence=0.1 * (max(powers_smoothed) - min(powers_smoothed)),
@@ -141,7 +143,7 @@ def get_lorentzian_peaks(
                     p0=[
                         x0,
                         0,
-                        -1e3*1e-3,
+                        -1e3 * 1e-3,
                         0.01
                         * (
                             wavelengths[right_base_index] - wavelengths[left_base_index]
@@ -276,7 +278,6 @@ class RetrospectiveAnalyzer(object):
         self,
         channels: list[int],
         start_stop_step: tuple[int, Optional[int], int],
-        weights: list[float] = [],
         enable_multi_processing: bool = True,
     ) -> tuple[
         dict[int, tuple[list[list[float]], float]], dict[int, list[NDArray[np.float64]]]
@@ -326,11 +327,11 @@ class RetrospectiveAnalyzer(object):
             {},
         )
 
-        return {k: _peaks_to_traces(v, weights) for k, v in peaks.items()}, peaks
+        return {k: _peaks_to_traces(v) for k, v in peaks.items()}, peaks
 
 
 def _peaks_to_traces(
-    peaks: list[NDArray[np.float64]], weights: list[float] = []
+    peaks: list[NDArray[np.float64]]
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 
@@ -342,13 +343,6 @@ def _peaks_to_traces(
     Returns:
         tuple[list[list[float]], float]: ([traces], FSR)
     """
-
-    for i, w in enumerate(weights):
-        for p in peaks:
-            if p.ndim == 1:
-                p *= w
-            else:
-                p[:, i] *= w
 
     FSR = float(
         np.mean(

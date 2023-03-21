@@ -40,7 +40,6 @@ class RaPeakTrackerWidget(QWidget):
             self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
                 self.__channels,
                 self.__start_stop_step,
-                [1, 1, 1, 1, 1],
             )
 
         @property
@@ -296,8 +295,6 @@ class RaPeakTrackerWidget(QWidget):
         self.setLayout(QVBoxLayout())
         self.__tab_widget = QTabWidget()
         self.layout().addWidget(self.__tab_widget)
-
-        self.__power_name_hint: set[str] = set()
 
     def plot_initial(
         self,
