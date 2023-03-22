@@ -370,7 +370,7 @@
        <property name="title">
         <string>2. Peak Tracing</string>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QGroupBox" name="peakTracingSettingGroupBox">
           <property name="title">
@@ -456,29 +456,36 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <item>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
            <widget class="QPushButton" name="peakTrackingSelectAllButton">
             <property name="text">
              <string>Select All</string>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="peakTrackingUnselectAllButton">
+          <item row="0" column="1" rowspan="2">
+           <widget class="QPushButton" name="FSRERQButton">
             <property name="text">
-             <string>Unselect All</string>
+             <string>FSR ER Q</string>
             </property>
            </widget>
           </item>
-          <item>
+          <item row="0" column="2">
            <widget class="QPushButton" name="trackPeakButton">
             <property name="text">
              <string>Start Track</string>
             </property>
            </widget>
           </item>
-          <item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="peakTrackingUnselectAllButton">
+            <property name="text">
+             <string>Unselect All</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
            <widget class="QPushButton" name="saveResultsButton">
             <property name="enabled">
              <bool>false</bool>
@@ -842,6 +849,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>FSRERQButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_fsr_er_q()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>666</x>
+     <y>155</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>slot_open_clicked()</slot>
@@ -859,5 +882,6 @@
   <slot>slot_peak_tracking_select_output_path()</slot>
   <slot>slot_peak_tracking_on_start_spinbox_change(int)</slot>
   <slot>slot_peak_tracking_on_stop_spinbox_change(int)</slot>
+  <slot>slot_fsr_er_q()</slot>
  </slots>
 </ui>

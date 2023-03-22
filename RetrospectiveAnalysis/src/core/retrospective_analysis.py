@@ -185,6 +185,25 @@ def _mat_to_peak_dict(
     return ret
 
 
+def _mat_to_fsr_er_q_dict(
+    path: str,
+    channels: list[int],
+    wavelength_multiplier: float,
+) -> dict[int, list[list[NDArray[np.float64]]]]:
+    ret = {}
+    power_matrix, wavelengths = read_mat(path)
+    wavelengths *= wavelength_multiplier
+    for c in channels:
+        powers = power_matrix[c]
+        __peaks, fsr, er, q = get_lorentzian_peaks(
+            powers,
+            wavelengths,
+        )
+        ret[c] = ret.get(c, []) + [(fsr, er, q)]
+
+    return ret
+
+
 class RetrospectiveAnalyzer(object):
     def __init__(
         self,
@@ -329,9 +348,49 @@ class RetrospectiveAnalyzer(object):
 
         return {k: _peaks_to_traces(v) for k, v in peaks.items()}, peaks
 
+    def analyze_fsr_er_q(
+        self,
+        channels: list[int],
+        start_stop_step: tuple[int, Optional[int], int],
+        enable_multi_processing: bool = True,
+    ):
+        def __starmap(*args, **kwargs):
+            if enable_multi_processing:
+                process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
+                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                    *args, **kwargs
+                )  # reserve one for GUI and one for other programs
+            else:
+                return starmap(*args, **kwargs)
+
+        start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
+
+        fsr_er_q_dict: dict[
+            int,
+            list[tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]],
+        ] = reduce(
+            lambda acc, b: {
+                x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
+            },
+            __starmap(
+                _mat_to_fsr_er_q_dict,
+                zip(
+                    [
+                        os.path.join(self.__folder_path, f)
+                        for f in self.__filenames[start:stop:step]
+                    ],
+                    repeat(channels),
+                    repeat(self.__wavelength_multiplier),
+                ),
+            ),
+            {},
+        )
+
+        return fsr_er_q_dict
+
 
 def _peaks_to_traces(
-    peaks: list[NDArray[np.float64]]
+    peaks: list[NDArray[np.float64]],
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 

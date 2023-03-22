@@ -50,6 +50,28 @@ class RaPeakTrackerWidget(QWidget):
         def all_peaks(self):
             return self.__all_peaks
 
+    class __FSR_ER_Q_Worker(QThread):
+        def __init__(
+            self,
+            analyzer: Analyzer,
+            channels: list[int],
+            start_stop_step: tuple[int, Optional[int], int],
+        ):
+            super().__init__()
+            self.__analyzer = analyzer
+            self.__channels = channels
+            self.__start_stop_step = start_stop_step
+
+        def run(self):
+            self.__fsr_er_q_dict = self.__analyzer.analyze_fsr_er_q(
+                self.__channels,
+                self.__start_stop_step,
+            )
+
+        @property
+        def fsr_er_q_dict(self):
+            return self.__fsr_er_q_dict
+
     class __Tab(QWidget):
         def __init__(
             self,
@@ -288,9 +310,13 @@ class RaPeakTrackerWidget(QWidget):
     __signal_work_start = Signal()
     signal_work_done = Signal(bool)
 
+    __signal_fsr_er_q_work_start = Signal()
+    signal_fsr_er_q_work_done = Signal(bool)
+
     def __init__(self):
         super().__init__()
         self.__signal_work_start.connect(self.__slot_work_start)
+        self.__signal_fsr_er_q_work_start.connect(self.__slot_fsr_er_q_work_start)
 
         self.setLayout(QVBoxLayout())
         self.__tab_widget = QTabWidget()
@@ -434,3 +460,62 @@ class RaPeakTrackerWidget(QWidget):
             self.__worker.deleteLater()
             self.signal_work_done.emit(True)
             logger.info("Peak Tracking finished!")
+
+    def fsr_er_q(
+        self,
+        analyzer: Analyzer,
+        channels: list[int],
+        start_stop_step: tuple[int, Optional[int], int],
+    ):
+        self.__analyzer = analyzer
+        self.__channels = channels
+        self.__start_stop_step = start_stop_step
+        self.__signal_fsr_er_q_work_start.emit()
+
+    @Slot()
+    def __slot_fsr_er_q_work_start(self):
+        self.__fsr_er_q_worker = self.__FSR_ER_Q_Worker(
+            self.__analyzer, self.__channels, self.__start_stop_step
+        )
+        self.__fsr_er_q_worker.finished.connect(self.__slot_fsr_er_q_work_done)  # type: ignore
+        self.__fsr_er_q_worker.start()
+        self.signal_fsr_er_q_work_done.emit(False)
+        logger.info("FSR ER Q analysis started!")
+
+    @Slot()
+    def __slot_fsr_er_q_work_done(self):
+        self.__fsr_er_q_worker.finished.disconnect(self.__slot_fsr_er_q_work_done)  # type: ignore
+        try:
+            fsr_er_q_dict = self.__fsr_er_q_worker.fsr_er_q_dict
+            fsr = {k: [np.array(vv[0]) for vv in v] for k, v in fsr_er_q_dict.items()}
+            er = {k: [np.array(vv[1]) for vv in v] for k, v in fsr_er_q_dict.items()}
+            q = {k: [np.array(vv[2]) for vv in v] for k, v in fsr_er_q_dict.items()}
+
+            savemat(
+                "fsr_er_q.mat",
+                {
+                    f"fsr_channel_{k+1}": np.array(v, dtype="object")
+                    for k, v in fsr.items()
+                }
+                | {
+                    f"er_channel_{k+1}": np.array(v, dtype="object")
+                    for k, v in er.items()
+                }
+                | {
+                    f"q_channel_{k+1}": np.array(v, dtype="object")
+                    for k, v in q.items()
+                }
+                | {
+                    "t_array": self.__analyzer.timestamps[
+                        self.__start_stop_step[0] : self.__start_stop_step[
+                            1
+                        ] : self.__start_stop_step[2]
+                    ]
+                },
+            )
+        except Exception as e:
+            logger.error(e)
+        finally:
+            self.__fsr_er_q_worker.deleteLater()
+            self.signal_fsr_er_q_work_done.emit(True)
+            logger.info("FSR ER Q analysis done!")
