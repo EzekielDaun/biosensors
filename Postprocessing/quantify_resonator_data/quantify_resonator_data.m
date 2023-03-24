@@ -54,8 +54,8 @@ if ~exist(outPath, 'dir')
     mkdir(outPath);
     startFile = 1; % start at the beginning of the dataset
 else
-    if exist([outPath, '/', dataFilename], 'file') && ~restartAnalysis
-        load([outPath, '/', dataFilename]);
+    if exist([outPath, filesep, dataFilename], 'file') && ~restartAnalysis
+        load([outPath, filesep, dataFilename]);
     else
         startFile = 1; % start at the beginning of the dataset
     end
@@ -184,26 +184,26 @@ for fileIdx = startFile:length(fileList)
         set(h2, 'Position', figPos);
         fname = strrep(fileList(fileIdx).name, '.mat', '');
         title([fname, ' detector ', num2str(detIdx), ' peaks']);
-        saveas(h2, [outPath, '/', fname, '_det', num2str(detIdx), '_fitPlot.fig']);
-        saveas(h2, [outPath, '/', fname, '_det', num2str(detIdx), '_fitPlot.svg']);
-        saveas(h2, [outPath, '/', fname, '_det', num2str(detIdx), '_fitPlot.png']);
+        saveas(h2, [outPath, filesep, fname, '_det', num2str(detIdx), '_fitPlot.fig']);
+        saveas(h2, [outPath, filesep, fname, '_det', num2str(detIdx), '_fitPlot.svg']);
+        saveas(h2, [outPath, filesep, fname, '_det', num2str(detIdx), '_fitPlot.png']);
         if numPeaks>0
             h3 = figure(3);
             set(h3, 'Position', figPos);
             fname = strrep(fileList(fileIdx).name, '.mat', '');
             title([fname, ' detector ', num2str(detIdx), ' baseline']);
-            saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.fig']);
-            saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.svg']);
-            saveas(h3, [outPath, '/', fname, '_det', num2str(detIdx), '_baselinePlot.png']);
+            saveas(h3, [outPath, filesep, fname, '_det', num2str(detIdx), '_baselinePlot.fig']);
+            saveas(h3, [outPath, filesep, fname, '_det', num2str(detIdx), '_baselinePlot.svg']);
+            saveas(h3, [outPath, filesep, fname, '_det', num2str(detIdx), '_baselinePlot.png']);
         end
-        if ishandle(4)
+        if numPeaks>0 && ishandle(4)
             h4 = figure(4);
             set(h4, 'Position', figPos);
             fname = strrep(fileList(fileIdx).name, '.mat', '');
             title([fname, ' detector ', num2str(detIdx), ' logPlot']);
-            saveas(h4, [outPath, '/', fname, '_det', num2str(detIdx), '_logPlot.fig']);
-            saveas(h4, [outPath, '/', fname, '_det', num2str(detIdx), '_logPlot.svg']);
-            saveas(h4, [outPath, '/', fname, '_det', num2str(detIdx), '_logPlot.png']);
+            saveas(h4, [outPath, filesep, fname, '_det', num2str(detIdx), '_logPlot.fig']);
+            saveas(h4, [outPath, filesep, fname, '_det', num2str(detIdx), '_logPlot.svg']);
+            saveas(h4, [outPath, filesep, fname, '_det', num2str(detIdx), '_logPlot.png']);
         end
         commandwindow
         if waitBetweenDets
@@ -259,7 +259,7 @@ for fileIdx = startFile:length(fileList)
     T.Properties.VariableNames = [{'Filename'},{'Detector'},{'Wavelength Range'},{'Number of Resonances'},{'Average ER'},{'Average Q'},{'FSR'},{'FSR Error'},{'Finesse'},{'Average Rsq'},{'Rsq Stdev'},{'Average Peak Rsq'},{'Peak Rsq Stdev'},{'Resonance Wavelengths'},{'ERs'},{'FWHMs'},{'Qs'},{'R-squareds'},{'Peak region R-squareds'},{'Average ER (from fits)'},{'ERs (from fits)'}];
     writetable(T, [outPath, '/quantifiedResonatorData.xlsx']);
     startFile = fileIdx+1;
-    save([outPath, '/', dataFilename])
+    save([outPath, filesep, dataFilename])
     
 end
 
@@ -300,24 +300,27 @@ return
 
 function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, ERs_fit, FWHMs, Qs, fitParams, gofs] = analyze_resonance(wavelength, power)
     noiseLevel = -60; % set the threshold for noise: if >half the power values are less than this, don't analyze
-    minProminence = 2; % min 2 dB ER
-    minDistance = 2; % min 1 nm FSR
+    minProminence = 1.5; % min 2 dB ER
+    minDistance = 3; % min 1 nm FSR
     useEqualFitWidth = 1; % set to 1 to use a fit window size based on the width of the widest peak in the spectrum.  0 to set per-peak.
-    fitWidthMult = 6; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
+    fitWidthMult = 4; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
+    baselineWidthMult = 0.5; % proportion of the peak fitting window to subtract from the spectra for baseline fitting
     resampleFactor = 50; % factor by which to increase the wavelength sampling frequency in the fit
-    RsqThresh = 0.85; % threshold for Rsq goodness of fit to decide if it is "good enough" to use for subsequent calculations
+    RsqThresh = 0.7; % threshold for Rsq goodness of fit to decide if it is "good enough" to use for subsequent calculations
     linearizeFit = 1; % set to 0 to run the Lorentzian fit on the decibel (dBm) data; set to 1 to linearize before fitting
-    dBThresh = [5,2]; % Extinction Ratio threshold for calculating FWHM and Q from fit.  
-                      % First element is the dB-scale ER threshold if we are fitting linearized power; 
-                      %second element is the dB-scale ER threshold if we are fitting dB scale power. 
-                      %Can only calculate FWHM and Q in dB scale if ER > 3; choose 5 here for safety for dB scale
+    dBThresh = [5,1.5]; % Extinction Ratio threshold for calculating FWHM and Q from fit.  
+                      % First element is the dB-scale ER threshold if we are fitting dB scale power; 
+                      % Second element is the dB-scale ER threshold if we are fitting linearized power. 
+                      % Can only calculate FWHM and Q in dB scale if ER > 3; choose 5 here for safety for dB scale
     useThreshForER = 1; % set to 1 to use the Rsq threshold to determine peaks for ER calculation (peaks with Rsq less than RsqThresh will have their ERs set to NaN)
     use_medFilter = 0; % set to 0 to run peak finder on the raw data. Otherwise, set to a median filter width (e.g., 3 or 5) to median-filter the data prior to peak finding (note that this will reduce ER calculation accuracy).
     correct_powerData.flag = 1; % set to 1 to automatically replace power data in case of anomalous readings
     correct_powerData.badData = -100; % this field holds the anomalous reading to be replaced in the power data
     correct_powerData.repData = -80; % this field holds the new value with which to replace the anomalous reading
-    correct_powerData.removeClipping = 1; % set to 1 to remove repeated values in the power matrix corresponding to clipVal
+    correct_powerData.removeClipping = 0; % set to 1 to remove repeated values in the power matrix corresponding to clipVal
     correct_powerData.clipVal = -80; % this is the power value corresponding to clipped data
+    dbg = 0; % plot debug figures of each fit?
+    width_scale = 1; % scaling factor to convert from the found peak width (from findpeaks()) to the initial condition for the third Lorentzian fit parameter
     
     % correct the power data for anomalous readings, if we want to do so
     power_pkFind = power;
@@ -400,24 +403,30 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
         [~, pkCentreIdx] = min(abs(wavelength - locs(pkIdx)));
         xdiff = mean(diff(wavelength));
         if useEqualFitWidth
-            fitWidth = ceil(max(w)*0.5*fitWidthMult/xdiff); 
+            fitWidth = ceil(max(w)*baselineWidthMult*fitWidthMult/xdiff); 
         else
-            fitWidth = ceil(w(pkIdx)*0.5*fitWidthMult/xdiff); 
+            fitWidth = ceil(w(pkIdx)*baselineWidthMult*fitWidthMult/xdiff); 
         end
         startIdx = max([1, pkCentreIdx-fitWidth]); % start at the first element of the arrays if we don't have enough room for full fit window
         endIdx = min([length(wavelength), pkCentreIdx+fitWidth]); % end at the last element of the arrays if we don't have enough room for full fit window
         baseline((startIdx):(endIdx)) = nan(size(baseline((startIdx):(endIdx))));
+        excludeIdx = isnan(baseline);
     end
     
-    % do a 3rd degree polynomial fit to the baseline data and subtract it
-    % from the power spectrum
-    excludeIdx = isnan(baseline);
-    [p, S, mu] = polyfit(wavelength(~excludeIdx), baseline(~excludeIdx), 3);
-    figure(3); clf; plot(wavelength, baseline, '.k');
-    xlabel('Wavelength (nm)'); ylabel('Baseline Power (dB)')
-    hold on; plot(wavelength, polyval(p, wavelength, S, mu), 'c');
-    % subtract the polynomial fit from the power
-    power = power - polyval(p, wavelength, S, mu);
+    if length(wavelength(~excludeIdx)) < 5 % if we don't have at least 10 baseline points to fit, write a warning
+        warning('***Warning: Not enough non-peak points found to perform baseline correction.');
+        baselineCorrected = 0;
+    else % else do the baseline correction.
+        % do a 3rd degree polynomial fit to the baseline data and subtract it
+        % from the power spectrum
+        [p, S, mu] = polyfit(wavelength(~excludeIdx), baseline(~excludeIdx), 3);
+        figure(3); clf; plot(wavelength, baseline, '.k');
+        xlabel('Wavelength (nm)'); ylabel('Baseline Power (dB)')
+        hold on; plot(wavelength, polyval(p, wavelength, S, mu), 'c');
+        % subtract the polynomial fit from the power
+        power = power - polyval(p, wavelength, S, mu);
+        baselineCorrected = 1;
+    end
     
     % plot the data 
     if linearizeFit
@@ -431,7 +440,9 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
     % overlay the plotted peaks and start assigning the parameters to be
     % returned (baseline correct plotted peaks with the baseline polynomial fit)
     pks_plot = -pks;
-    pks_plot = pks_plot-polyval(p, locs, S, mu);
+    if baselineCorrected
+        pks_plot = pks_plot-polyval(p, locs, S, mu);
+    end
     if linearizeFit
         hold on; plot(locs, 10.^(pks_plot./10), 'm^')
         % also plot the dB-scale data for troubleshooting
@@ -457,6 +468,10 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
         endIdx = min([length(wavelength), pkCentreIdx+fitWidth]); % end at the last element of the arrays if we don't have enough room for full fit window
         x = wavelength((startIdx):(endIdx));
         y = -power((startIdx):(endIdx));
+        if dbg
+            disp(['****** fitting an array of ', num2str(length(y)), ' points with ', num2str(length(nonzeros(isnan(y)))), ' NaNs.']);
+        end
+        
         
         % fit the data using the lorentzfit() file exchange function by
         % Jared Wells https://www.mathworks.com/matlabcentral/fileexchange/33775-lorentzfit-x-y-varargin
@@ -469,21 +484,46 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
             y = 1-y/ymax; % normalize the power data and turn it into a positive peak
             % remove the NaNs from the data to be fitted
             x_nonan = x(~isnan(y));
-            y_nonan = y(~isnan(y));  
+            y_nonan = y(~isnan(y));
+            
+            if length(y_nonan) < 5 % if we don't have enough datapoints to fit, don't attempt the fit.
+                disp(['***Peak ', num2str(pkIdx), ' warning: could not fit the data because there were insufficient non-NaN datapoints.']);
+                FWHMs(pkIdx) = NaN;
+                Qs(pkIdx) = NaN;
+                gofs(pkIdx).rsq_peak = NaN;
+                ERs_fit(pkIdx) = NaN;
+                if useThreshForER
+                    ERs(pkIdx) = NaN;
+                end
+                continue
+            end
+            
             % set up the linearized starting values and bounds and run the
             % fit
-            p0 = [1, locs(pkIdx), w(pkIdx), mean(y_nonan)]; % starting values for the fit
-            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), max([5*max(y), 10])]; % bounds for the fit parameters
+            p0 = [(max(y_nonan)-min(y_nonan))*w(pkIdx)/width_scale, locs(pkIdx), w(pkIdx)/width_scale, min(y_nonan)]; % starting values for the fit
+            bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), max([5*max(y_nonan), 10])]; % bounds for the fit parameters
             [~, fitpar, resnorm, res, jacobian] = lorentzfit(x_nonan,y_nonan,p0,bounds);
+            if dbg
+                xfit = min(x):xdiff/resampleFactor:max(x);
+                yfit = (fitpar(1)./((xfit - fitpar(2)).^2 + fitpar(3)) + fitpar(4));
+                yfit_start = (p0(1)./((xfit - p0(2)).^2 + p0(3)) + p0(4));
+                disp(['****** fitted ', num2str(length(y_nonan)), ' points.   max(y_nonan) = ', num2str(max(y_nonan)), ', min(y_nonan) = ', num2str(min(y_nonan))])
+                disp(['****** pkW from peakfinder = ', num2str(w(pkIdx)), ', Lorentzian width = ', num2str(fitpar(3))])
+
+                h_temp = figure(100); set(h_temp, 'Position', [1569 239 560 420]);
+                clf; plot(x_nonan, y_nonan, '.k'); hold on; plot(xfit, yfit, 'm'); hold on; plot(xfit, yfit_start, 'g')
+                title(['Debug fit plot for peak ', num2str(pkIdx)]); xlabel('Wavelength (nm)'), ylabel('Normalized power');
+                legend([{'Data'}, {'Fitted curve'}, {'Fit initial conditions'}])
+                figure(2);
+            end
         else
             % remove the NaNs from the data to be fitted
             x_nonan = x(~isnan(y));
             y_nonan = y(~isnan(y));
-            p0 = [-ERs(pkIdx), locs(pkIdx), w(pkIdx), mean(y_nonan)]; % starting values for the fit
+            p0 = [-ERs(pkIdx), locs(pkIdx), w(pkIdx), max(y_nonan)]; % starting values for the fit
             bounds = [0, min(x), 0, 0; inf, max(x), 10*w(pkIdx), max([5*max(y), 10])]; % bounds for the fit parameters
             [~, fitpar, resnorm, res, jacobian] = lorentzfit(x_nonan,y_nonan,p0,bounds);
         end
-        
         
         % get higher-res yfit data and plot overlay, and calculate
         % fit-calculated ERs
@@ -593,13 +633,13 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
     end
     % ER
     if any(~isnan(ERs))
-        avg_ER = mean(ERs);
+        avg_ER = mean(ERs(~isnan(ERs)));
     else
         avg_ER = NaN;
     end
     % ER from fit
     if any(~isnan(ERs_fit))
-        avg_ER_fit = mean(ERs_fit);
+        avg_ER_fit = mean(ERs_fit(~isnan(ERs_fit)));
     else
         avg_ER_fit = NaN;
     end
