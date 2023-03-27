@@ -42,7 +42,7 @@ fprintf('The constant heater power is %f mW.\n',P*1e3);
 bh = 80e-6;     % Width of the heater (m)
 dm = 100e-9;    % Thickness of PECVD SiO2 cladding layer (m)
 lh = 60e-6;     % Length of heater (m)
-lu = 120e-6;     % Distance from heater to upstream sensor (m)
+lu = 2000e-6;     % Distance from heater to upstream sensor (m)
 ld = lu;     % Distance from heater to downstream sensor (m)
 Ws = 22e-6;     % Sensor width, perpendicular to flow (m)
 L = 220e-9;     % Sensor height, along flow direction (m)
@@ -50,11 +50,11 @@ RangeL = 10;
 RangeU = 80;
 
 % Channel parameters
-Wc = 250e-6;    % channel width (m)
-h = 200e-6;     % channel height (m)
+Wc = 1200e-6;    % channel width (m)
+h = 500e-6;     % channel height (m)
 Dh = 4*Wc*h/(2*(Wc+h)); % channel hydraulic diameter (m)
 dx = 1e-7;
-lX = 500e-6; 
+lX = 3000e-6; 
 
 k = 0.5+kSiO2*dm/(lf*h); % Dimensionless factor (we can set it to 1/2)
 fprintf('The dimensionless factor is %f.\n',k);
@@ -64,7 +64,7 @@ cx = 1e-9/60;   % Conversion factor from (uL/min) to (m^3/s)
 
 % Simulation parameters
 Q1 = 0;         % Fluid flow rate (uL/min)
-Q2 = 20;        % Fluid flow rate (uL/min)
+Q2 = 10;        % Fluid flow rate (uL/min)
 Q3 = 80;        % Fluid flow rate (uL/min)
 
 % Conversion for simulation
@@ -160,8 +160,9 @@ xline(-lu*1e6,'k-','Upstream','LineWidth',2);
 xline(ld*1e6,'k-','Downstream','LineWidth',2);
 xlabel('Displacement (\mum)','FontSize',12);
 ylabel('T (degC)', 'FontSize', 15);
-legend('Q = 0 \muL/min', 'Q = 20 \muL/min', 'Q = 80 \muL/min');
+legend('Q = 0 \muL/min', 'Q = 10 \muL/min', 'Q = 80 \muL/min');
 grid on;
+saveas(gcf,'1.jpg');
 
 %%
 %Considering the range 
@@ -181,20 +182,22 @@ deltaT = -T0.*((exp(gamma_2.*(ld-lh/2))) - (exp(gamma_1.*(-lu+lh/2))));
 
 figure;
 semilogx(Q,T0+T_ambient,'r-','LineWidth', 2);
-xline(RangeL,'k-','Range','LineWidth',2);
-xline(RangeU,'k-','Range','LineWidth',2);
+xline(RangeL,'k-','Range - 10 \muL/min','LineWidth',2);
+xline(RangeU,'k-','Range - 80 \muL/min','LineWidth',2);
 xlabel('Flow Rate (\muL/min)','FontSize',12);
 ylabel('Heater T (degC)', 'FontSize', 15);
 grid on;
+saveas(gcf,'2.jpg');
 
 figure;
 semilogx(Q,deltaT,'r-','LineWidth', 2);
 hold on;
-xline(RangeL,'k-','Range','LineWidth',2);
-xline(RangeU,'k-','Range','LineWidth',2);
+xline(RangeL,'k-','Range - 10 \muL/min','LineWidth',2);
+xline(RangeU,'k-','Range - 80 \muL/min','LineWidth',2);
 xlabel('Flow Rate (\muL/min)','FontSize',12);
 ylabel('\Delta T (degC)', 'FontSize', 15);
 grid on;
+saveas(gcf,'3.jpg');
 
 %%
 

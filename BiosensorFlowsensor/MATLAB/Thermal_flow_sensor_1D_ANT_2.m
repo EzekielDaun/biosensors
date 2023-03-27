@@ -157,6 +157,7 @@ xlabel('Displacement (\mum)','FontSize',12);
 ylabel('T (degC)', 'FontSize', 15);
 legend('Q = 0 \muL/min', 'Q = 20 \muL/min', 'Q = 80 \muL/min');
 grid on;
+saveas(gcf,'1.jpg');
 
 %%
 %Considering the range 
@@ -179,9 +180,11 @@ semilogx(Q,T0+T_ambient,'r-','LineWidth', 2)
 xlabel('Flow Rate (\muL/min)','FontSize',12);
 ylabel('Heater T (degC)', 'FontSize', 15);
 grid on;
+saveas(gcf,'2.jpg');
 
 figure;
 semilogx(Q,deltaT,'r-','LineWidth', 2)
 xlabel('Flow Rate (\muL/min)','FontSize',12);
 ylabel('\Delta T (degC)', 'FontSize', 15);
 grid on;
+saveas(gcf,'3.jpg');
