@@ -466,11 +466,13 @@ class RaPeakTrackerWidget(QWidget):
         analyzer: Analyzer,
         channels: list[int],
         start_stop_step: tuple[int, Optional[int], int],
+        path:str
     ):
         self.__analyzer = analyzer
         self.__channels = channels
         self.__start_stop_step = start_stop_step
         self.__signal_fsr_er_q_work_start.emit()
+        self.__path = path
 
     @Slot()
     def __slot_fsr_er_q_work_start(self):
@@ -485,11 +487,16 @@ class RaPeakTrackerWidget(QWidget):
     @Slot()
     def __slot_fsr_er_q_work_done(self):
         self.__fsr_er_q_worker.finished.disconnect(self.__slot_fsr_er_q_work_done)  # type: ignore
+
+        temp_dir = os.curdir
+        os.chdir(self.__path)
+
         try:
             fsr_er_q_dict = self.__fsr_er_q_worker.fsr_er_q_dict
             fsr = {k: [np.array(vv[0]) for vv in v] for k, v in fsr_er_q_dict.items()}
             er = {k: [np.array(vv[1]) for vv in v] for k, v in fsr_er_q_dict.items()}
             q = {k: [np.array(vv[2]) for vv in v] for k, v in fsr_er_q_dict.items()}
+
 
             savemat(
                 "fsr_er_q.mat",
@@ -518,4 +525,5 @@ class RaPeakTrackerWidget(QWidget):
         finally:
             self.__fsr_er_q_worker.deleteLater()
             self.signal_fsr_er_q_work_done.emit(True)
+            os.chdir(temp_dir)
             logger.info("FSR ER Q analysis done!")

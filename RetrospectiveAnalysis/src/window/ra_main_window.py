@@ -305,6 +305,10 @@ class RaMainWindow(QMainWindow):
     def slot_fsr_er_q(self):
         lw = self.__ui.peakTrackerPowerListWidget
         powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        output_path = os.path.join(
+            self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
+        )
+        os.makedirs(output_path, exist_ok=True)
         self.__peak_tracker_widget.fsr_er_q(
             self.__analyzer,
             powers,
@@ -313,4 +317,5 @@ class RaMainWindow(QMainWindow):
                 self.__ui.peakTracingStopSpinBox.value(),
                 self.__ui.peakTracingStepSpinBox.value(),
             ),
+            output_path,
         )
