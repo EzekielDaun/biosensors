@@ -14,7 +14,7 @@ winget install --id Python.Python.3.11
 
 #### Install Dependencies
 
-- Right-click `install-dependencies.ps1`, select `Run with PowerShell`. Answer `Y` if prompted.
+- Right-click `install-dependencies.ps1`, and select `Run with PowerShell`. Answer `Y` if prompted.
 - Right-click and run `retrospective-analysis.ps1` in the same method to start the GUI.
 
 ### macOS 12 
@@ -93,9 +93,19 @@ Variables in this file:
 
   The fitted peaks are represented by a 5-element vector: $\left[x_0, y_0, I, \gamma, a\right]$, where $x_0$ is the peak position, $y_0$ is the baseline, $I$ is the peak height (ER if in dB scale), $\gamma$ is the peak width (FWHM), and $a$ is a first-order compensate term for baseline drift.
 
+  One can use `power[sweep_index][peak_index]` to find such 5-parameter vector for one specific peak.
+
   The corresponding sloped Lorentzian function is: $f(x) = y_0 + {I}\frac{(\frac{\gamma}{2})^2}{(x-x_0)^2+(\frac{\gamma}{2})^2} + a(x-x_0)$. One can use this function to restore the fitted peaks.
 
+- `power*_peak_group_indices`: a cell array containing the indices of the peaks in each group. The shape is `1 x #groups`. Each element is a #length$\times$2 matrix, where each row is `(sweep_index,peak_index)`. One can use `[sweep_index][peak_index]` to index the `power*`, `er_channel_*` and `q_channel_*` to get the corresponding peak information.
 - `t_array`: a vector of time stamps for each sweep
+
+### `fsr_er_q.mat`
+
+Variables in this file:
+
+- `er_channel_*`, `q_channel_*`: a cell array containing the extinction ratio / quality factor for all the fitted peaks in each power channel. The shape will be similar to `power*` in `peaks.mat`. One can use `er[sweep_index][peak_index]` to find the data for one specific peak.
+- `fsr_channel_*`: a cell array containing the free spectral range for each power channel. The shape and indexing are similar to `er_channel_*` and `q_channel_*`, except that each sweep will have one less element.
 
 ## FAQ
 

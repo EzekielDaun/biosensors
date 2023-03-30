@@ -19,6 +19,7 @@ from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QCompleter
 from .ra_figure_widget import RaFigureWidget
 from ..uic.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
 from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
+from ..core.retrospective_analysis import group_peaks
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,10 @@ class RaPeakTrackerWidget(QWidget):
         @property
         def name(self):
             return self.__name
+
+        @property
+        def power_index(self):
+            return self.__power_index
 
         @property
         def full_trace(self):
@@ -377,8 +382,21 @@ class RaPeakTrackerWidget(QWidget):
                         1
                     ] : self.__start_stop_step[2]
                 ]
+            }
+            | {
+                "power"
+                + str(tab.power_index + 1)
+                + "_peak_group_indices": np.array(
+                    group_peaks(
+                        [[p[0] for p in ps] for ps in self.__all_peaks[tab.power_index]],  # type: ignore
+                        tab.full_trace,
+                    ),
+                    dtype="object",
+                )
+                for tab in all_tabs
             },
         )
+
         with open("WhatsThis.txt", "w") as f:
             f.write(
                 r"""RA_results
@@ -466,7 +484,7 @@ class RaPeakTrackerWidget(QWidget):
         analyzer: Analyzer,
         channels: list[int],
         start_stop_step: tuple[int, Optional[int], int],
-        path:str
+        path: str,
     ):
         self.__analyzer = analyzer
         self.__channels = channels
@@ -496,7 +514,6 @@ class RaPeakTrackerWidget(QWidget):
             fsr = {k: [np.array(vv[0]) for vv in v] for k, v in fsr_er_q_dict.items()}
             er = {k: [np.array(vv[1]) for vv in v] for k, v in fsr_er_q_dict.items()}
             q = {k: [np.array(vv[2]) for vv in v] for k, v in fsr_er_q_dict.items()}
-
 
             savemat(
                 "fsr_er_q.mat",
