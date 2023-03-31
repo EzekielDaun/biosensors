@@ -101,6 +101,7 @@ Variables in this file:
 
 - Peak tracking raises an error / never stops
   - Please first check the spectrograms in each channel. And only track the channels with resonance peaks.
+  - If that doesn't solve the problem, check the first sweep in each channel. If there is no peak in the first sweep, the peak tracking will fail. Either not to include this channel, or select a different starting file number, or manually remove that sweep `.mat` file.
 - What are the dots in peak tracking results?
   - This is usually because the trace section contains only a single data point. These points are invisible in all other output plots but will exist in the result matrix. Try manually aligning these points to have a better data result.
 
