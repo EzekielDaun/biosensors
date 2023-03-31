@@ -344,23 +344,31 @@ def _peaks_to_traces(
         tuple[list[list[float]], float]: ([traces], FSR)
     """
 
-    FSR = float(
-        np.mean(
-            [d for sweep in peaks[::10] if sweep.ndim > 1 for d in np.diff(sweep[:, 0])]
+    try:
+        FSR = float(
+            np.mean(
+                [
+                    d
+                    for sweep in peaks[::10]
+                    if sweep.ndim > 1
+                    for d in np.diff(sweep[:, 0])
+                ]
+            )
         )
-    )
-    population: NDArray[np.float64] = np.array(
-        [p for sweep in peaks[::10] for p in sweep]
-    )
-    mean_population = np.mean(population, axis=0)
-    std_population = np.std(population, axis=0)
+        population: NDArray[np.float64] = np.array(
+            [p for sweep in peaks[::10] for p in sweep]
+        )
+        mean_population = np.mean(population, axis=0)
+        std_population = np.std(population, axis=0)
 
-    pair_iter = enumerate(pairwise(peaks))
+        pair_iter = enumerate(pairwise(peaks))
 
-    ret: list[list[float]] = []
-    shifts: list[float] = []
-    start_wavelength: float = peaks[0][0][0]
-    last_peak = peaks[0][0]
+        ret: list[list[float]] = []
+        shifts: list[float] = []
+        start_wavelength: float = peaks[0][0][0]
+        last_peak = peaks[0][0]
+    except IndexError as e:
+        raise IndexError("No peaks found in the first sweep.") from e
     for i, (p1s, p2s) in pair_iter:
         ps = sorted(  # possible peaks in p2s to pair with the last peak
             [p for p in p2s if abs(p[0] - last_peak[0]) < 0.3 * FSR],

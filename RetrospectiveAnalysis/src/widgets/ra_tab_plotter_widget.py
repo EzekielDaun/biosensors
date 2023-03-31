@@ -268,49 +268,60 @@ class RaSpectrogramPlotterWidget(RaTabPlotterBase):
     def __slot_spectrograms_work_done(self):
         self.__worker.finished.disconnect(self.__slot_spectrograms_work_done)  # type: ignore
 
-        # make new plots
-        x_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
-            self.analyzer.timestamps[
-                self.__start_index : self.__stop_index : self.__step
-            ]
-        )
-        y_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
-            self.analyzer.wavelengths[::-1]
-        )
-        x_formatter = FuncFormatter(
-            lambda x, _: x_labels[int(x)] if int(x) in range(len(x_labels)) else None
-        )
-        y_formatter = FuncFormatter(
-            lambda y, _: y_labels[int(y)] if int(y) in range(len(y_labels)) else None
-        )
-        for k, v in self.__worker.spectrogram_dict.items():
-            figure_widget = RaFigureWidget()
-            ax = figure_widget.figure.subplots(1, 1)
-            image = ax.imshow(v, cmap="inferno")
-
-            ax.set_xticks(
-                list(range(len(x_labels)))[:: self.__x_tick_step],
-                x_labels[:: self.__x_tick_step],
+        try:
+            # make new plots
+            x_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
+                self.analyzer.timestamps[
+                    self.__start_index : self.__stop_index : self.__step
+                ]
             )
-            ax.set_xlabel(f"Time ({self.__time_unit})")
-            ax.xaxis.set_major_formatter(x_formatter)
-
-            ax.set_yticks(
-                list(range(len(y_labels)))[:: self.__y_tick_step],
-                y_labels[:: self.__y_tick_step],
+            y_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
+                self.analyzer.wavelengths[::-1]
             )
-            ax.set_ylabel(f"Wavelength ({self.__wave_length_unit})")
-            ax.yaxis.set_major_formatter(y_formatter)
+            x_formatter = FuncFormatter(
+                lambda x, _: x_labels[int(x)]
+                if int(x) in range(len(x_labels))
+                else None
+            )
+            y_formatter = FuncFormatter(
+                lambda y, _: y_labels[int(y)]
+                if int(y) in range(len(y_labels))
+                else None
+            )
+            for k, v in self.__worker.spectrogram_dict.items():
+                figure_widget = RaFigureWidget()
+                ax = figure_widget.figure.subplots(1, 1)
+                image = ax.imshow(v, cmap="inferno")
 
-            ax.set_title(f"Power {k+1} Spectrogram")
-            ax.axis("auto")
+                ax.set_xticks(
+                    list(range(len(x_labels)))[:: self.__x_tick_step],
+                    x_labels[:: self.__x_tick_step],
+                )
+                ax.set_xlabel(f"Time ({self.__time_unit})")
+                ax.xaxis.set_major_formatter(x_formatter)
 
-            color_bar = figure_widget.figure.colorbar(image, orientation="horizontal")
-            color_bar.set_label(f"Power ({self.__power_unit})")
+                ax.set_yticks(
+                    list(range(len(y_labels)))[:: self.__y_tick_step],
+                    y_labels[:: self.__y_tick_step],
+                )
+                ax.set_ylabel(f"Wavelength ({self.__wave_length_unit})")
+                ax.yaxis.set_major_formatter(y_formatter)
 
-            figure_widget.figure.set_tight_layout(True)
-            figure_widget.figure_canvas.show()
-            self.addTab(figure_widget, f"Power {k+1}")
+                ax.set_title(f"Power {k+1} Spectrogram")
+                ax.axis("auto")
+
+                color_bar = figure_widget.figure.colorbar(
+                    image, orientation="horizontal"
+                )
+                color_bar.set_label(f"Power ({self.__power_unit})")
+
+                figure_widget.figure.set_tight_layout(True)
+                figure_widget.figure_canvas.show()
+                self.addTab(figure_widget, f"Power {k+1}")
+        except IndexError | ValueError as e:
+            raise IndexError(
+                "Could not plot spectrograms. Please check range and tick settings"
+            ) from e
 
         del self.__worker
         logger.info("Spectrogram plotting done!")
