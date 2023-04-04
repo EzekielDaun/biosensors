@@ -351,8 +351,10 @@ class RaPeakTrackerWidget(QWidget):
     def save_results(self, path: str):
         all_tabs: list[RaPeakTrackerWidget.__Tab] = [self.__tab_widget.widget(i) for i in range(self.__tab_widget.count())]  # type: ignore
 
+        # save initial path
         temp_dir = os.curdir
         os.chdir(path)
+
         # save peak shifts
         savemat(
             f"peak_shifts.mat",
@@ -369,11 +371,11 @@ class RaPeakTrackerWidget(QWidget):
             },
         )
 
-        # save all fitted peaks
+        # save all fitted peaks and peak trace indices
         savemat(
             f"peaks.mat",
             {
-                "power" + str(k + 1): np.array(v, dtype="object")
+                "channel" + str(k + 1): np.array(v, dtype="object")
                 for k, v in self.__all_peaks.items()
             }
             | {
@@ -384,9 +386,9 @@ class RaPeakTrackerWidget(QWidget):
                 ]
             }
             | {
-                "power"
+                "channel"
                 + str(tab.power_index + 1)
-                + "_peak_group_indices": np.array(
+                + "_peak_trace_indices": np.array(
                     group_peaks(
                         [[p[0] for p in ps] for ps in self.__all_peaks[tab.power_index]],  # type: ignore
                         tab.full_trace,
@@ -397,25 +399,7 @@ class RaPeakTrackerWidget(QWidget):
             },
         )
 
-        with open("WhatsThis.txt", "w") as f:
-            f.write(
-                r"""RA_results
-"peak_shifts.mat":
-    t_array [1D array]: time stamps
-    power_*_peakWL_list [1D array]: tracked peak wavelengths for channel * (offset included)
-“peaks.mat”:
-    t_array [1D array]: time stamps
-    power* [cell array]: all the fitted peaks for channel * (based on unchanged raw data). The number of peaks in each sweep may vary.
-            The peak is stored by a 5-element vector [x0,y0,I,gamma,a], representing a sloped Lorentzian function:
-                y = y0 + ((I * (gamma / 2) ** 2) / ((gamma / 2) ** 2 + (x - x0) ** 2)) + a * (x - x0)
-            where
-                [x0] is the peak wavelength
-                [y0] is approximately the baseline
-                [I] is the peak intensity (negative for absorption peaks)
-                [gamma] is the peak width at half height
-                [a] is the baseline slope
-"""
-            )
+        # restore initial path
         os.chdir(temp_dir)
 
         plt.close("all")
@@ -518,15 +502,15 @@ class RaPeakTrackerWidget(QWidget):
             savemat(
                 "fsr_er_q.mat",
                 {
-                    f"fsr_channel_{k+1}": np.array(v, dtype="object")
+                    f"channel{k+1}_fsr": np.array(v, dtype="object")
                     for k, v in fsr.items()
                 }
                 | {
-                    f"er_channel_{k+1}": np.array(v, dtype="object")
+                    f"channel{k+1}_er": np.array(v, dtype="object")
                     for k, v in er.items()
                 }
                 | {
-                    f"q_channel_{k+1}": np.array(v, dtype="object")
+                    f"channel{k+1}_q": np.array(v, dtype="object")
                     for k, v in q.items()
                 }
                 | {
