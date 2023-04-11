@@ -16,6 +16,7 @@ from scipy.signal import find_peaks
 from scipy.spatial.distance import cdist
 from scipy.ndimage import gaussian_filter1d
 from sklearn.metrics import r2_score
+from cv2 import HoughLinesPointSet
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +186,58 @@ def _mat_to_peak_dict(
     return ret
 
 
+def _mat_to_fsr_er_q_dict(
+    path: str,
+    channels: list[int],
+    wavelength_multiplier: float,
+) -> dict[int, list[list[NDArray[np.float64]]]]:
+    ret = {}
+    power_matrix, wavelengths = read_mat(path)
+    wavelengths *= wavelength_multiplier
+    for c in channels:
+        powers = power_matrix[c]
+        __peaks, fsr, er, q = get_lorentzian_peaks(
+            powers,
+            wavelengths,
+        )
+        ret[c] = ret.get(c, []) + [(fsr, er, q)]
+
+    return ret
+
+
+def group_peaks(
+    peaks_wl: list[NDArray[np.float64]],
+    reference: NDArray[np.float64],
+):
+    peaks_wl_horizontal = [p - reference[i] for i, p in enumerate(peaks_wl)]
+    point_set = np.array([[i, p] for i, ps in enumerate(peaks_wl_horizontal) for p in ps], dtype=np.float32)  # type: ignore
+    lines = np.squeeze(
+        HoughLinesPointSet(
+            point_set.reshape(-1, 1, 2),
+            lines_max=15,
+            threshold=20,
+            min_rho=-100,
+            max_rho=100,
+            rho_step=0.1,
+            min_theta=(min_theta := np.pi / 2 - np.pi / 180 * 10),
+            max_theta=(max_theta := np.pi / 2 + np.pi / 180 * 10),
+            theta_step=(max_theta - min_theta) / 2,  # only check horizontal line
+        )
+    )
+    rhos = lines.T[1]
+
+    groups: list[list[tuple[int, int]]] = [[] for _ in range(len(rhos))]
+    EPSILON = 0.1
+    for i, ps in enumerate(peaks_wl_horizontal):
+        for j, p in enumerate(ps):
+            for k, r in enumerate(rhos):
+                if abs(p - r) < EPSILON:
+                    groups[k].append((i, j))
+                    break
+
+    return groups
+
+
 class RetrospectiveAnalyzer(object):
     def __init__(
         self,
@@ -329,9 +382,49 @@ class RetrospectiveAnalyzer(object):
 
         return {k: _peaks_to_traces(v) for k, v in peaks.items()}, peaks
 
+    def analyze_fsr_er_q(
+        self,
+        channels: list[int],
+        start_stop_step: tuple[int, Optional[int], int],
+        enable_multi_processing: bool = True,
+    ):
+        def __starmap(*args, **kwargs):
+            if enable_multi_processing:
+                process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
+                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                    *args, **kwargs
+                )  # reserve one for GUI and one for other programs
+            else:
+                return starmap(*args, **kwargs)
+
+        start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
+
+        fsr_er_q_dict: dict[
+            int,
+            list[tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]],
+        ] = reduce(
+            lambda acc, b: {
+                x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
+            },
+            __starmap(
+                _mat_to_fsr_er_q_dict,
+                zip(
+                    [
+                        os.path.join(self.__folder_path, f)
+                        for f in self.__filenames[start:stop:step]
+                    ],
+                    repeat(channels),
+                    repeat(self.__wavelength_multiplier),
+                ),
+            ),
+            {},
+        )
+
+        return fsr_er_q_dict
+
 
 def _peaks_to_traces(
-    peaks: list[NDArray[np.float64]]
+    peaks: list[NDArray[np.float64]],
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 

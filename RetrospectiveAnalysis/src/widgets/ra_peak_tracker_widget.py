@@ -19,6 +19,7 @@ from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QCompleter
 from .ra_figure_widget import RaFigureWidget
 from ..uic.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
 from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
+from ..core.retrospective_analysis import group_peaks
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,28 @@ class RaPeakTrackerWidget(QWidget):
         @property
         def all_peaks(self):
             return self.__all_peaks
+
+    class __FSR_ER_Q_Worker(QThread):
+        def __init__(
+            self,
+            analyzer: Analyzer,
+            channels: list[int],
+            start_stop_step: tuple[int, Optional[int], int],
+        ):
+            super().__init__()
+            self.__analyzer = analyzer
+            self.__channels = channels
+            self.__start_stop_step = start_stop_step
+
+        def run(self):
+            self.__fsr_er_q_dict = self.__analyzer.analyze_fsr_er_q(
+                self.__channels,
+                self.__start_stop_step,
+            )
+
+        @property
+        def fsr_er_q_dict(self):
+            return self.__fsr_er_q_dict
 
     class __Tab(QWidget):
         def __init__(
@@ -124,6 +147,10 @@ class RaPeakTrackerWidget(QWidget):
         @property
         def name(self):
             return self.__name
+
+        @property
+        def power_index(self):
+            return self.__power_index
 
         @property
         def full_trace(self):
@@ -288,9 +315,13 @@ class RaPeakTrackerWidget(QWidget):
     __signal_work_start = Signal()
     signal_work_done = Signal(bool)
 
+    __signal_fsr_er_q_work_start = Signal()
+    signal_fsr_er_q_work_done = Signal(bool)
+
     def __init__(self):
         super().__init__()
         self.__signal_work_start.connect(self.__slot_work_start)
+        self.__signal_fsr_er_q_work_start.connect(self.__slot_fsr_er_q_work_start)
 
         self.setLayout(QVBoxLayout())
         self.__tab_widget = QTabWidget()
@@ -320,8 +351,10 @@ class RaPeakTrackerWidget(QWidget):
     def save_results(self, path: str):
         all_tabs: list[RaPeakTrackerWidget.__Tab] = [self.__tab_widget.widget(i) for i in range(self.__tab_widget.count())]  # type: ignore
 
+        # save initial path
         temp_dir = os.curdir
         os.chdir(path)
+
         # save peak shifts
         savemat(
             f"peak_shifts.mat",
@@ -338,11 +371,11 @@ class RaPeakTrackerWidget(QWidget):
             },
         )
 
-        # save all fitted peaks
+        # save all fitted peaks and peak trace indices
         savemat(
             f"peaks.mat",
             {
-                "power" + str(k + 1): np.array(v, dtype="object")
+                "channel" + str(k + 1): np.array(v, dtype="object")
                 for k, v in self.__all_peaks.items()
             }
             | {
@@ -351,27 +384,22 @@ class RaPeakTrackerWidget(QWidget):
                         1
                     ] : self.__start_stop_step[2]
                 ]
+            }
+            | {
+                "channel"
+                + str(tab.power_index + 1)
+                + "_peak_trace_indices": np.array(
+                    group_peaks(
+                        [[p[0] for p in ps] for ps in self.__all_peaks[tab.power_index]],  # type: ignore
+                        tab.full_trace,
+                    ),
+                    dtype="object",
+                )
+                for tab in all_tabs
             },
         )
-        with open("WhatsThis.txt", "w") as f:
-            f.write(
-                r"""RA_results
-"peak_shifts.mat":
-    t_array [1D array]: time stamps
-    power_*_peakWL_list [1D array]: tracked peak wavelengths for channel * (offset included)
-“peaks.mat”:
-    t_array [1D array]: time stamps
-    power* [cell array]: all the fitted peaks for channel * (based on unchanged raw data). The number of peaks in each sweep may vary.
-            The peak is stored by a 5-element vector [x0,y0,I,gamma,a], representing a sloped Lorentzian function:
-                y = y0 + ((I * (gamma / 2) ** 2) / ((gamma / 2) ** 2 + (x - x0) ** 2)) + a * (x - x0)
-            where
-                [x0] is the peak wavelength
-                [y0] is approximately the baseline
-                [I] is the peak intensity (negative for absorption peaks)
-                [gamma] is the peak width at half height
-                [a] is the baseline slope
-"""
-            )
+
+        # restore initial path
         os.chdir(temp_dir)
 
         plt.close("all")
@@ -434,3 +462,69 @@ class RaPeakTrackerWidget(QWidget):
             self.__worker.deleteLater()
             self.signal_work_done.emit(True)
             logger.info("Peak Tracking finished!")
+
+    def fsr_er_q(
+        self,
+        analyzer: Analyzer,
+        channels: list[int],
+        start_stop_step: tuple[int, Optional[int], int],
+        path: str,
+    ):
+        self.__analyzer = analyzer
+        self.__channels = channels
+        self.__start_stop_step = start_stop_step
+        self.__signal_fsr_er_q_work_start.emit()
+        self.__path = path
+
+    @Slot()
+    def __slot_fsr_er_q_work_start(self):
+        self.__fsr_er_q_worker = self.__FSR_ER_Q_Worker(
+            self.__analyzer, self.__channels, self.__start_stop_step
+        )
+        self.__fsr_er_q_worker.finished.connect(self.__slot_fsr_er_q_work_done)  # type: ignore
+        self.__fsr_er_q_worker.start()
+        self.signal_fsr_er_q_work_done.emit(False)
+        logger.info("FSR ER Q analysis started!")
+
+    @Slot()
+    def __slot_fsr_er_q_work_done(self):
+        self.__fsr_er_q_worker.finished.disconnect(self.__slot_fsr_er_q_work_done)  # type: ignore
+
+        temp_dir = os.curdir
+        os.chdir(self.__path)
+
+        try:
+            fsr_er_q_dict = self.__fsr_er_q_worker.fsr_er_q_dict
+            fsr = {k: [np.array(vv[0]) for vv in v] for k, v in fsr_er_q_dict.items()}
+            er = {k: [np.array(vv[1]) for vv in v] for k, v in fsr_er_q_dict.items()}
+            q = {k: [np.array(vv[2]) for vv in v] for k, v in fsr_er_q_dict.items()}
+
+            savemat(
+                "fsr_er_q.mat",
+                {
+                    f"channel{k+1}_fsr": np.array(v, dtype="object")
+                    for k, v in fsr.items()
+                }
+                | {
+                    f"channel{k+1}_er": np.array(v, dtype="object")
+                    for k, v in er.items()
+                }
+                | {
+                    f"channel{k+1}_q": np.array(v, dtype="object")
+                    for k, v in q.items()
+                }
+                | {
+                    "t_array": self.__analyzer.timestamps[
+                        self.__start_stop_step[0] : self.__start_stop_step[
+                            1
+                        ] : self.__start_stop_step[2]
+                    ]
+                },
+            )
+        except Exception as e:
+            logger.error(e)
+        finally:
+            self.__fsr_er_q_worker.deleteLater()
+            self.signal_fsr_er_q_work_done.emit(True)
+            os.chdir(temp_dir)
+            logger.info("FSR ER Q analysis done!")

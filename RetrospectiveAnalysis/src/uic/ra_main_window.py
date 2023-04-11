@@ -269,8 +269,8 @@ class Ui_RaMainWindow(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.peakTracingGroupBox.sizePolicy().hasHeightForWidth())
         self.peakTracingGroupBox.setSizePolicy(sizePolicy2)
-        self.verticalLayout_3 = QVBoxLayout(self.peakTracingGroupBox)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout = QVBoxLayout(self.peakTracingGroupBox)
+        self.verticalLayout.setObjectName(u"verticalLayout")
         self.peakTracingSettingGroupBox = QGroupBox(self.peakTracingGroupBox)
         self.peakTracingSettingGroupBox.setObjectName(u"peakTracingSettingGroupBox")
         self.horizontalLayout_2 = QHBoxLayout(self.peakTracingSettingGroupBox)
@@ -328,33 +328,38 @@ class Ui_RaMainWindow(object):
         self.horizontalLayout_2.addWidget(self.peakTracingStepSpinBox)
 
 
-        self.verticalLayout_3.addWidget(self.peakTracingSettingGroupBox)
+        self.verticalLayout.addWidget(self.peakTracingSettingGroupBox)
 
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.gridLayout_5 = QGridLayout()
+        self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.peakTrackingSelectAllButton = QPushButton(self.peakTracingGroupBox)
         self.peakTrackingSelectAllButton.setObjectName(u"peakTrackingSelectAllButton")
 
-        self.horizontalLayout_5.addWidget(self.peakTrackingSelectAllButton)
+        self.gridLayout_5.addWidget(self.peakTrackingSelectAllButton, 0, 0, 1, 1)
 
-        self.peakTrackingUnselectAllButton = QPushButton(self.peakTracingGroupBox)
-        self.peakTrackingUnselectAllButton.setObjectName(u"peakTrackingUnselectAllButton")
+        self.FSRERQButton = QPushButton(self.peakTracingGroupBox)
+        self.FSRERQButton.setObjectName(u"FSRERQButton")
 
-        self.horizontalLayout_5.addWidget(self.peakTrackingUnselectAllButton)
+        self.gridLayout_5.addWidget(self.FSRERQButton, 0, 1, 2, 1)
 
         self.trackPeakButton = QPushButton(self.peakTracingGroupBox)
         self.trackPeakButton.setObjectName(u"trackPeakButton")
 
-        self.horizontalLayout_5.addWidget(self.trackPeakButton)
+        self.gridLayout_5.addWidget(self.trackPeakButton, 0, 2, 1, 1)
+
+        self.peakTrackingUnselectAllButton = QPushButton(self.peakTracingGroupBox)
+        self.peakTrackingUnselectAllButton.setObjectName(u"peakTrackingUnselectAllButton")
+
+        self.gridLayout_5.addWidget(self.peakTrackingUnselectAllButton, 1, 0, 1, 1)
 
         self.saveResultsButton = QPushButton(self.peakTracingGroupBox)
         self.saveResultsButton.setObjectName(u"saveResultsButton")
         self.saveResultsButton.setEnabled(False)
 
-        self.horizontalLayout_5.addWidget(self.saveResultsButton)
+        self.gridLayout_5.addWidget(self.saveResultsButton, 1, 2, 1, 1)
 
 
-        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
+        self.verticalLayout.addLayout(self.gridLayout_5)
 
         self.splitter_2 = QSplitter(self.peakTracingGroupBox)
         self.splitter_2.setObjectName(u"splitter_2")
@@ -371,7 +376,7 @@ class Ui_RaMainWindow(object):
         self.peakTrackerWidget.setObjectName(u"peakTrackerWidget")
         self.splitter_2.addWidget(self.peakTrackerWidget)
 
-        self.verticalLayout_3.addWidget(self.splitter_2)
+        self.verticalLayout.addWidget(self.splitter_2)
 
         self.splitter_3.addWidget(self.peakTracingGroupBox)
 
@@ -424,6 +429,7 @@ class Ui_RaMainWindow(object):
         self.peakTracingOutputPathPushButton.clicked.connect(RaMainWindow.slot_peak_tracking_select_output_path)
         self.peakTracingStartSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_start_spinbox_change)
         self.peakTracingStopSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_stop_spinbox_change)
+        self.FSRERQButton.clicked.connect(RaMainWindow.slot_fsr_er_q)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -515,8 +521,9 @@ class Ui_RaMainWindow(object):
         self.label_13.setText(QCoreApplication.translate("RaMainWindow", u"to:", None))
         self.label_14.setText(QCoreApplication.translate("RaMainWindow", u"step:", None))
         self.peakTrackingSelectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Select All", None))
-        self.peakTrackingUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
+        self.FSRERQButton.setText(QCoreApplication.translate("RaMainWindow", u"FSR ER Q", None))
         self.trackPeakButton.setText(QCoreApplication.translate("RaMainWindow", u"Start Track", None))
+        self.peakTrackingUnselectAllButton.setText(QCoreApplication.translate("RaMainWindow", u"Unselect All", None))
         self.saveResultsButton.setText(QCoreApplication.translate("RaMainWindow", u"Save Results", None))
         self.menuFile.setTitle(QCoreApplication.translate("RaMainWindow", u"File", None))
         self.logDockWidget.setWindowTitle(QCoreApplication.translate("RaMainWindow", u"Log", None))

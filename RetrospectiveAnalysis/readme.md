@@ -14,7 +14,7 @@ winget install --id Python.Python.3.11
 
 #### Install Dependencies
 
-- Right-click `install-dependencies.ps1`, select `Run with PowerShell`. Answer `Y` if prompted.
+- Right-click `install-dependencies.ps1`, and select `Run with PowerShell`. Answer `Y` if prompted.
 - Right-click and run `retrospective-analysis.ps1` in the same method to start the GUI.
 
 ### macOS 12 
@@ -85,7 +85,7 @@ These variables should have the same size.
 
 Variables in this file:
 
-- `power*`: a cell array containing all the fitted peaks for each power channel
+- `channel*`: a cell array containing all the fitted peaks for each power channel
   There are two cases for the shape of this cell array:
 
   1. If all the sweeps have the same number of peaks, the shape will be `#sweeps x #peaks x 5`
@@ -93,9 +93,19 @@ Variables in this file:
 
   The fitted peaks are represented by a 5-element vector: $\left[x_0, y_0, I, \gamma, a\right]$, where $x_0$ is the peak position, $y_0$ is the baseline, $I$ is the peak height (ER if in dB scale), $\gamma$ is the peak width (FWHM), and $a$ is a first-order compensate term for baseline drift.
 
-  The corresponding sloped Lorentzian function is: $f(x) = y_0 + {I}\frac{(\frac{\gamma}{2})^2}{(x-x_0)^2+(\frac{\gamma}{2})^2} + a(x-x_0)$. One can use this function to restore the fitted peaks.
+  **One can always take it as a 2D array of vector and use`channel*[sweep_index][peak_index]` to find such 5-parameter vector for one specific peak.**
 
+  The corresponding sloped Lorentzian function is: $f(x) = y_0 + {I}\frac{(\frac{\gamma}{2})^2}{(x-x_0)^2+(\frac{\gamma}{2})^2} + a(x-x_0)$. One can use this function to restore the spectrum around the fitted peaks.
+
+- `channel*_peak_trace_indices`: a cell array containing the indices of the peaks in each group. The shape is `1 x #groups`. Each element is a #length$\times$2 matrix, where each row is `(sweep_index,peak_index)`. One can use `[sweep_index][peak_index]` to index the `channel*`, `channel_er*` and `channel_q*` to get the corresponding peak information.
 - `t_array`: a vector of time stamps for each sweep
+
+### `fsr_er_q.mat`
+
+Variables in this file:
+
+- `channel*_er`, `channel*_q`: a cell array containing the extinction ratio / quality factor for all the fitted peaks in each power channel. The shape will be similar to `channel*` in `peaks.mat`. One can use `er[sweep_index][peak_index]` to find the data for one specific peak.
+- `channel*_fsr`: a cell array containing the free spectral range for each power channel. The shape and indexing are similar to `channel*_er` and `channel*_q`, except that each sweep will have one less element.
 
 ## FAQ
 

@@ -71,6 +71,9 @@ class RaMainWindow(QMainWindow):
         self.__peak_tracker_widget.signal_work_done.connect(
             self.__ui.saveResultsButton.setEnabled
         )
+        self.__peak_tracker_widget.signal_fsr_er_q_work_done.connect(
+            self.__ui.FSRERQButton.setEnabled
+        )
 
         # Redirect stdout and stderr to log panel
         self.__signal_write.connect(self.slot_log_write)
@@ -297,3 +300,22 @@ class RaMainWindow(QMainWindow):
 
     def slot_peak_tracking_on_stop_spinbox_change(self, value: int):
         self.__ui.peakTracingStartSpinBox.setMaximum(max(1, value - 1))
+
+    # FSR ER Q slots
+    def slot_fsr_er_q(self):
+        lw = self.__ui.peakTrackerPowerListWidget
+        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        output_path = os.path.join(
+            self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
+        )
+        os.makedirs(output_path, exist_ok=True)
+        self.__peak_tracker_widget.fsr_er_q(
+            self.__analyzer,
+            powers,
+            (
+                self.__ui.peakTracingStartSpinBox.value() - 1,
+                self.__ui.peakTracingStopSpinBox.value(),
+                self.__ui.peakTracingStepSpinBox.value(),
+            ),
+            output_path,
+        )
