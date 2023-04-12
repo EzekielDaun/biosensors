@@ -97,7 +97,7 @@ Variables in this file:
 
   The corresponding sloped Lorentzian function is: $f(x) = y_0 + {I}\frac{(\frac{\gamma}{2})^2}{(x-x_0)^2+(\frac{\gamma}{2})^2} + a(x-x_0)$. One can use this function to restore the spectrum around the fitted peaks.
 
-- `channel*_peak_trace_indices`: a cell array containing the indices of the peaks in each group. The shape is `1 x #groups`. Each element is a #length$\times$2 matrix, where each row is `(sweep_index,peak_index)`. One can use `[sweep_index][peak_index]` to index the `channel*`, `channel_er*` and `channel_q*` to get the corresponding peak information.
+- `channel*_peak_trace_indices`: a cell array containing the indices of the peaks in each trace. The shape is `1 x #traces`. Each element is a #length $\times 2$ matrix representing a trace, where each row is `(sweep_index,peak_index)`. One can use `[sweep_index][peak_index]` to index the `channel*`, `channel_er*` and `channel_q*` to get the corresponding peak information.
 - `t_array`: a vector of time stamps for each sweep
 
 ### `fsr_er_q.mat`
