@@ -3,7 +3,6 @@ import os
 import re
 import sys
 
-
 from PySide6.QtWidgets import (
     QMainWindow,
     QFileSystemModel,
@@ -12,12 +11,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QVBoxLayout,
 )
-from PySide6.QtCore import (
-    QDir,
-    Qt,
-    Signal,
-    Slot,
-)
+from PySide6.QtCore import QDir, Qt, Signal, Slot
 from PySide6.QtGui import QTextCursor
 
 from ..uic.ra_main_window import Ui_RaMainWindow
@@ -104,7 +98,7 @@ class RaMainWindow(QMainWindow):
             dir=os.path.expanduser("~"),
         )
         if folder_path == "":
-            self.__ui.statusbar.showMessage(f"Retrospective Analysis - Open cancelled")
+            self.__ui.statusbar.showMessage("Retrospective Analysis - Open cancelled")
         else:
             tree_view = self.__ui.treeView
             model: QFileSystemModel = tree_view.model()  # type: ignore

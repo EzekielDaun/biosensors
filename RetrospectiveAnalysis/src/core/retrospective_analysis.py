@@ -46,6 +46,15 @@ def get_lorentzian_peaks(
 ) -> tuple[
     NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
 ]:
+    """get_lorentzian_peaks
+
+    Args:
+        powers (NDArray[np.float64]): 1D array of power
+        wavelengths (NDArray[np.float64]): 1D array of wavelength
+
+    Returns:
+        tuple[ NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64] ]: [[x0,y0,I,gamma,a]], [FSR], [ER], [Q]
+    """
 
     if len(powers) != len(wavelengths):
         raise RuntimeError("Number of wavelengths and powers do not match")
@@ -72,8 +81,11 @@ def get_lorentzian_peaks(
 
         wavelength_range = wavelengths[left_base_index:right_base_index]
         power_range = powers[left_base_index:right_base_index]
+
+        # -100 is a bug value and should be ignored
         indices_fixed = np.argwhere(power_range != float(-100)).flatten()
         if len(indices_fixed) <= 8 or max(np.diff(indices_fixed) > 10):
+            # skip when total valid points < 8 or too sparse (> 10 apart)
             continue
         wavelength_fixed = wavelength_range[indices_fixed]
         power_fixed = power_range[indices_fixed]
@@ -134,6 +146,8 @@ def get_lorentzian_peaks(
                 ret_peaks.append(parameters)
                 ret_er.append(-parameters[2])
                 xs = wavelengths[left_base_index:right_base_index]
+
+                # convert to linear scale for Q calculation
                 ys_linear = 10 ** ((powers[left_base_index:right_base_index]) / 10)
                 ys_linear *= 1e3  # value too small will cause nonsense fitting result
 
@@ -156,7 +170,7 @@ def get_lorentzian_peaks(
                         [np.inf, 1, 0, np.inf, np.inf],
                     ),
                 )
-                ret_q.append(params_linear[0] / params_linear[3])
+                ret_q.append(params_linear[0] / params_linear[3])  # Q = x0/gamma
 
         except RuntimeError as e:
             logger.debug(
@@ -172,6 +186,16 @@ def _mat_to_peak_dict(
     channels: list[int],
     wavelength_multiplier: float,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
+    """_mat_to_peak_dict
+
+    Args:
+        path (str): path to .mat file
+        channels (list[int]): indices of channels to be parsed
+        wavelength_multiplier (float): wavelength multiplier
+
+    Returns:
+        dict[int, list[list[NDArray[np.float64]]]]: dict of peaks, key=channel, value=list of peaks
+    """
     ret = {}
     power_matrix, wavelengths = read_mat(path)
     wavelengths *= wavelength_multiplier
@@ -191,6 +215,16 @@ def _mat_to_fsr_er_q_dict(
     channels: list[int],
     wavelength_multiplier: float,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
+    """_mat_to_fsr_er_q_dict
+
+    Args:
+        path (str): path to .mat file
+        channels (list[int]): indices of channels to be parsed
+        wavelength_multiplier (float): wavelength multiplier
+
+    Returns:
+        dict[int, list[list[NDArray[np.float64]]]]: dict of fsr,er,q, key=channel, value=list of (fsr,er,q)
+    """
     ret = {}
     power_matrix, wavelengths = read_mat(path)
     wavelengths *= wavelength_multiplier
@@ -208,7 +242,18 @@ def _mat_to_fsr_er_q_dict(
 def group_peaks(
     peaks_wl: list[NDArray[np.float64]],
     reference: NDArray[np.float64],
-):
+) -> list[list[tuple[int, int]]]:
+    """group_peaks
+
+    Args:
+        peaks_wl (list[NDArray[np.float64]]): jagged array of peak wavelengths
+        reference (NDArray[np.float64]): 1D array of reference wavelengths from peak tracking result
+
+        The above two arguments should have the same length in their first dimension
+
+    Returns:
+        list[list[tuple[int, int]]]: 1D array of trace, where a trace is [(i,j)], peaks_wl[i][j] is a peak in this trace
+    """
     peaks_wl_horizontal = [p - reference[i] for i, p in enumerate(peaks_wl)]
     point_set = np.array([[i, p] for i, ps in enumerate(peaks_wl_horizontal) for p in ps], dtype=np.float32)  # type: ignore
     lines = np.squeeze(
@@ -219,9 +264,9 @@ def group_peaks(
             min_rho=-100,
             max_rho=100,
             rho_step=0.1,
-            min_theta=(min_theta := np.pi / 2 - np.pi / 180 * 10),
-            max_theta=(max_theta := np.pi / 2 + np.pi / 180 * 10),
-            theta_step=(max_theta - min_theta) / 2,  # only check horizontal line
+            min_theta=(min_theta := np.pi / 2 - np.pi / 180 * 10), # -10 deg
+            max_theta=(max_theta := np.pi / 2 + np.pi / 180 * 10), # +10 deg
+            theta_step=(max_theta - min_theta) / 2,  # set a large step to check horizontal line only
         )
     )
     rhos = lines.T[1]
@@ -278,7 +323,7 @@ class RetrospectiveAnalyzer(object):
                 "Timestamp must be a filename string or a time interval float"
             )
 
-        # check the first file for wavelengths
+        # check the first file for wavelengths, assume all files have the same wavelengths
         self.__wavelengths = (
             read_mat(os.path.join(self.__folder_path, self.__filenames[0]))[1]
             * wavelength_multiplier
@@ -481,6 +526,7 @@ def _peaks_to_traces(
             pairs = sorted(  # match other peaks in case that the peak correspond to the last peak is missing due to noise
                 product([p for p in p1s if p[0] != last_peak[0]], p2s),
                 key=lambda x: cdist(
+                    # contain x0 or not
                     # [(x[0][1:] - mean_population[1:]) / std_population[1:]],
                     # [(x[1][1:] - mean_population[1:]) / std_population[1:]],
                     [(x[0][:] - mean_population[:]) / std_population[:]],
@@ -570,7 +616,6 @@ def _peaks_to_traces(
 
 
 if __name__ == "__main__":
-
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FuncFormatter
 

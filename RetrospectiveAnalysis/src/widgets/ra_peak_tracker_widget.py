@@ -1,20 +1,15 @@
 import logging
-
-from itertools import starmap, cycle
+from itertools import starmap
 import os
 
 from typing import Optional
 
 import numpy as np
-
 from scipy.io import savemat
-
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-
 
 from PySide6.QtCore import QThread, Slot, Signal
-from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QCompleter
+from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
 
 from .ra_figure_widget import RaFigureWidget
 from ..uic.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
@@ -357,7 +352,7 @@ class RaPeakTrackerWidget(QWidget):
 
         # save peak shifts
         savemat(
-            f"peak_shifts.mat",
+            "peak_shifts.mat",
             {
                 (tab.name).replace(" ", "_").lower() + "_peakWL_list": tab.full_trace
                 for tab in all_tabs
@@ -373,7 +368,7 @@ class RaPeakTrackerWidget(QWidget):
 
         # save all fitted peaks and peak trace indices
         savemat(
-            f"peaks.mat",
+            "peaks.mat",
             {
                 "channel" + str(k + 1): np.array(v, dtype="object")
                 for k, v in self.__all_peaks.items()
@@ -509,10 +504,7 @@ class RaPeakTrackerWidget(QWidget):
                     f"channel{k+1}_er": np.array(v, dtype="object")
                     for k, v in er.items()
                 }
-                | {
-                    f"channel{k+1}_q": np.array(v, dtype="object")
-                    for k, v in q.items()
-                }
+                | {f"channel{k+1}_q": np.array(v, dtype="object") for k, v in q.items()}
                 | {
                     "t_array": self.__analyzer.timestamps[
                         self.__start_stop_step[0] : self.__start_stop_step[

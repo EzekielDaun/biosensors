@@ -2,15 +2,10 @@ from __future__ import annotations
 
 import logging
 
-from enum import IntEnum
-
 import os
 
-
 import numpy as np
-
 from matplotlib.ticker import FuncFormatter
-
 
 from PySide6.QtWidgets import (
     QTabWidget,
@@ -73,16 +68,6 @@ class RaTabPlotterBase(QTabWidget):
 
 
 class RaFilePlotterWidget(QGroupBox):
-    class FilterOption(IntEnum):
-        NONE = 0
-        MEDIAN = 1
-        GAUSSIAN = 2
-
-    class PeakFindOption(IntEnum):
-        NONE = 0
-        NAIVE = 1
-        LORENTZIAN_FIT = 2
-
     class __Plotter(RaTabPlotterBase):
         __signal_work_start = Signal(str)
 
@@ -109,15 +94,9 @@ class RaFilePlotterWidget(QGroupBox):
 
             self.__current_tab_index: int = 0
             self.__current_file_basename: str | None = None
-            self.__on_work: bool = False
-
-        @property
-        def on_work(self) -> bool:
-            return self.__on_work
 
         def plot_file(self, file_path: str):
             self.__current_file_basename = os.path.basename(file_path)
-            self.__on_work = True
             self.__signal_work_start.emit(file_path)
 
         @Slot(str)
@@ -165,8 +144,6 @@ class RaFilePlotterWidget(QGroupBox):
             if self.__current_tab_index < self.count():
                 self.setCurrentIndex(self.__current_tab_index)
 
-            self.__on_work = False
-
     def __init__(self, parent=None):
         super().__init__(title="Sweep Plotter", parent=parent)
 
@@ -178,7 +155,6 @@ class RaFilePlotterWidget(QGroupBox):
         self.__file_plotter.clear()
 
     def update(self, file_path: str):
-
         self.__file_plotter.plot_file(file_path)
 
 
