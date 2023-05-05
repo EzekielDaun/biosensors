@@ -3,26 +3,24 @@ import os
 import re
 import sys
 
-from PySide6.QtWidgets import (
-    QMainWindow,
-    QFileSystemModel,
-    QFileDialog,
-    QListWidgetItem,
-    QCheckBox,
-    QVBoxLayout,
-)
 from PySide6.QtCore import QDir, Qt, Signal, Slot
 from PySide6.QtGui import QTextCursor
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QFileDialog,
+    QFileSystemModel,
+    QListWidgetItem,
+    QMainWindow,
+    QVBoxLayout,
+)
 
+from ..core.passive_tools import PassiveAnalyzer as Analyzer
 from ..uic.ra_main_window import Ui_RaMainWindow
+from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
 from ..widgets.ra_tab_plotter_widget import (
     RaFilePlotterWidget,
     RaSpectrogramPlotterWidget,
 )
-from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
-
-from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
-
 
 logger = logging.getLogger(__name__)
 

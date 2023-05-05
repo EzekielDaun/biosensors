@@ -1,17 +1,15 @@
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 import re
 
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from src.core.lib import get_lorentzian_peaks
 from scipy.io import loadmat
-from core.retrospective_analysis import get_lorentzian_peaks
-
 
 if __name__ == "__main__":
     base_folder = os.path.expanduser(
-        # "/Users/yifeiliu/Downloads/2022-08-18_OOC_Trial3/bioassay"
-        "/Users/yifeiliu/Downloads/Data - Various Temperatures"
+        "~/path/to/folder"
     )
     pat = re.compile(r"laser_sweep_(\d+)\.mat")
     filenames = sorted(
@@ -64,7 +62,7 @@ if __name__ == "__main__":
         plt.hlines(r, min(peak_set[:, 0]), max(peak_set[:, 0]))
     plt.show()
 
-    for (x, y) in peak_set:
+    for x, y in peak_set:
         plt.scatter(x, y + trace[int(x)], color="blue")
     plt.show()
 

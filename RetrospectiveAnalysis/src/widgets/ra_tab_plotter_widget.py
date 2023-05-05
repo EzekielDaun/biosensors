@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 import logging
-
 import os
 
 import numpy as np
 from matplotlib.ticker import FuncFormatter
-
+from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtWidgets import (
+    QGroupBox,
     QTabWidget,
     QVBoxLayout,
-    QGroupBox,
 )
-from PySide6.QtCore import QThread, Slot, Signal
 
+from ..core.lib import get_lorentzian_peaks, lorentzian
+from ..core.passive_tools import PassiveAnalyzer as Analyzer
+from ..core.passive_tools import read_mat
 from .ra_figure_widget import RaFigureWidget
-from ..core.retrospective_analysis import read_mat, get_lorentzian_peaks, lorentzian
-from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
 
 logger = logging.getLogger(__name__)
 

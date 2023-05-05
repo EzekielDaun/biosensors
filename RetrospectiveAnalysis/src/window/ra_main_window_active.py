@@ -30,9 +30,9 @@ from pyqtgraph import PlotWidget, ScatterPlotItem
 
 from ..uic.ra_main_window_active import Ui_RaMainWindowActive
 
-from ..core.retrospective_analysis import (
+from ..core.lib import (
     get_lorentzian_peaks,
-    _peaks_to_traces,
+    peaks_to_traces,
     group_peaks,
 )
 from ..core.active_tools import (
@@ -435,7 +435,7 @@ class RaMainWindow(QMainWindow):
 
             def get_peaks(powers: NDArray[np.float64]):
                 with mp.Pool() as pool:
-                    return _peaks_to_traces(
+                    return peaks_to_traces(
                         reduce(
                             lambda x, y: x + [y[0]],
                             pool.starmap(

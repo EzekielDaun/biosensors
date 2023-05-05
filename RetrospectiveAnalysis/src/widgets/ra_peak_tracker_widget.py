@@ -1,20 +1,18 @@
 import logging
-from itertools import starmap
 import os
-
+from itertools import starmap
 from typing import Optional
 
-import numpy as np
-from scipy.io import savemat
 import matplotlib.pyplot as plt
+import numpy as np
+from PySide6.QtCore import QThread, Signal, Slot
+from PySide6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
+from scipy.io import savemat
 
-from PySide6.QtCore import QThread, Slot, Signal
-from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
-
-from .ra_figure_widget import RaFigureWidget
+from ..core.lib import group_peaks
+from ..core.passive_tools import PassiveAnalyzer as Analyzer
 from ..uic.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
-from ..core.retrospective_analysis import RetrospectiveAnalyzer as Analyzer
-from ..core.retrospective_analysis import group_peaks
+from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)
 
