@@ -1,45 +1,40 @@
 import logging
+import multiprocessing as mp
 import os
 import re
 import sys
-
-from itertools import islice, repeat, cycle
-from functools import reduce
-import multiprocessing as mp
-import toml
-from pathlib import Path
-
-import numpy as np
-from numpy.typing import NDArray
-from scipy.io import savemat
-import matplotlib.pyplot as plt
-
-from typing import Any, Optional
 from collections.abc import Callable
+from functools import reduce
+from itertools import cycle, islice, repeat
+from pathlib import Path
+from typing import Any, Optional
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pyqtgraph as pg
+import toml
+from numpy.typing import NDArray
+from pyqtgraph import PlotWidget, ScatterPlotItem
+from PySide6.QtCore import QDir, Qt, QThread, Signal, Slot
+from PySide6.QtGui import QTextCursor, QTransform
 from PySide6.QtWidgets import (
-    QMainWindow,
     QFileDialog,
+    QMainWindow,
     QVBoxLayout,
 )
-from PySide6.QtCore import QDir, Signal, Slot, QThread, Qt
-from PySide6.QtGui import QTextCursor, QTransform
+from scipy.io import savemat
 
-import pyqtgraph as pg
-from pyqtgraph import PlotWidget, ScatterPlotItem
-
-from ..uic.ra_main_window_active import Ui_RaMainWindowActive
-
-from ..core.lib import (
-    get_lorentzian_peaks,
-    peaks_to_traces,
-    group_peaks,
-)
 from ..core.active_tools import (
     RampUpSweepCSVReader,
     generate_wavelength,
     thermal_simulation,
 )
+from ..core.lib import (
+    get_lorentzian_peaks,
+    group_peaks,
+    peaks_to_traces,
+)
+from ..uic.ra_main_window_active import Ui_RaMainWindowActive
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +43,7 @@ def sweep_to_wavelength_fsr(
     power_time, tau: float, wavelength_range: tuple[float, float], frequency: float
 ):
     power, time = power_time
-    temp_reference = thermal_simulation(frequency, 50, 100, tau)
+    temp_reference = thermal_simulation(frequency, 50, 1000, tau)
     wavelength, power = generate_wavelength(power, temp_reference, wavelength_range)
     peaks, fsr, er, q = get_lorentzian_peaks(power, wavelength)
     if len(fsr) > 1:
@@ -59,7 +54,7 @@ def sweep_to_wavelength_fsr(
 
 def sweep_to_spectrum(power_time, tau: float, wavelength_interpolate, frequency: float):
     power, time = power_time
-    temp_reference = thermal_simulation(frequency, 50, 100, tau)
+    temp_reference = thermal_simulation(frequency, 50, 1000, tau)
     wavelength, power = generate_wavelength(
         power,
         temp_reference,
@@ -213,7 +208,7 @@ class RaMainWindow(QMainWindow):
             self.__ui.rampSettingDataPathComboBox.addItem(path)
             self.__ui.rampSettingDataPathComboBox.setCurrentText(path)
             if os.path.exists(os.path.join(path, "config.toml")):
-                print("Config file found")
+                logger.info("Config file found")
                 config_dict = toml.load(os.path.join(path, "config.toml"))
                 for k, v in config_dict.items():
                     # update UI parameters
@@ -233,12 +228,12 @@ class RaMainWindow(QMainWindow):
                         # update other parameters not in UI
                         self.__ramp_setting_parameter_dict[k] = v
                     else:
-                        print(f"Unknown key {k}, omit")
+                        logger.info(f"Unknown key {k}, omit")
                 for k, v in self.__ramp_setting_parameter_dict.items():
                     if k not in config_dict.keys():
-                        print(f"Missing {k}. Use default value {k} = {v}")
+                        logger.warning(f"Missing {k}. Use default value {k} = {v}")
             else:
-                print(
+                logger.warning(
                     f"No configuration file. Use default parameters.\n{self.__ramp_setting_parameter_dict}"
                 )
         else:  # cancel
@@ -433,20 +428,22 @@ class RaMainWindow(QMainWindow):
             self.__ui.peakTrackingTrackPeakButton.clearFocus()
             self.__ui.peakTrackingTrackPeakButton.setEnabled(False)
 
-            def get_peaks(powers: NDArray[np.float64]):
+            def get_peaks_fsr_er_q_traces(powers: NDArray[np.float64]):
                 with mp.Pool() as pool:
-                    return peaks_to_traces(
-                        reduce(
-                            lambda x, y: x + [y[0]],
-                            pool.starmap(
-                                get_lorentzian_peaks,
-                                zip(powers, repeat(self.__wavelength_interpolate)),
-                            ),
-                            [],
-                        )
+                    peaks, fsr, er, q = reduce(
+                        lambda acc, x: [
+                            acc[0] + [x[0]],
+                            acc[1] + [x[1]],
+                            acc[2] + [x[2]],
+                            acc[3] + [x[3]],
+                        ],
+                        pool.starmap(get_lorentzian_peaks, zip(powers, repeat(self.__wavelength_interpolate))),  # type: ignore
+                        [[], [], [], []],
                     )
 
-            self.peak_tracking_worker = self.__Worker(get_peaks, self.__spectrogram)  # type: ignore
+                    return peaks_to_traces(peaks), peaks, fsr, er, q
+
+            self.peak_tracking_worker = self.__Worker(get_peaks_fsr_er_q_traces, self.__spectrogram)  # type: ignore
             self.peak_tracking_worker.finished.connect(self.slot_peak_tracking_track_peak_update_plot)  # type: ignore
             self.peak_tracking_worker.start()
 
@@ -454,8 +451,16 @@ class RaMainWindow(QMainWindow):
     def slot_peak_tracking_track_peak_update_plot(self):
         self.peak_tracking_worker.finished.disconnect(self.slot_peak_tracking_track_peak_update_plot)  # type: ignore
 
+        (
+            (traces, fsr),
+            self.__result_peaks,
+            self.__result_fsr,
+            self.__result_er,
+            self.__result_q,
+        ) = self.peak_tracking_worker.result
+
         color_palette = cycle(["light green", "grey"])
-        traces, fsr = self.peak_tracking_worker.result
+
         x0 = 0
         for trace in traces:
             curve_item = RaPlotCurveItem(
@@ -481,34 +486,24 @@ class RaMainWindow(QMainWindow):
         sweep_index, peak_shift = np.hstack(trace_items)
         peak_shift *= 1e9
 
-        with mp.Pool() as pool:
-            peaks, fsr, er, q = reduce(
-                lambda acc, x: [
-                    acc[0] + [x[0]],
-                    acc[1] + [x[1]],
-                    acc[2] + [x[2]],
-                    acc[3] + [x[3]],
-                ],
-                pool.starmap(get_lorentzian_peaks, zip(self.__spectrogram, repeat(self.__wavelength_interpolate))),  # type: ignore
-                [[], [], [], []],
-            )
-            traces = np.array(
-                group_peaks([ps.T[0] for ps in peaks], peak_shift), dtype="object"
-            )
-            savemat(
-                os.path.join(
-                    self.__ui.peakTrackingOutputPathComboBox.currentText(), "result.mat"
-                ),
-                {
-                    "lorentzian_peaks": np.array(peaks, dtype="object"),
-                    "fsr": np.array(fsr, dtype="object"),
-                    "er": np.array(er, dtype="object"),
-                    "q": np.array(q, dtype="object"),
-                    "sweep": sweep_index,
-                    "peak_shift": peak_shift,
-                    "traces": traces,
-                },
-            )
+        peak_wavelengths = [
+            np.array([x[0] for x in sweep]) for sweep in self.__result_peaks
+        ]
+        traces = np.array(group_peaks(peak_wavelengths, peak_shift), dtype="object")
+        savemat(
+            os.path.join(
+                self.__ui.peakTrackingOutputPathComboBox.currentText(), "result.mat"
+            ),
+            {
+                "lorentzian_peaks": np.array(self.__result_peaks, dtype="object"),
+                "fsr": np.array(self.__result_fsr, dtype="object"),
+                "er": np.array(self.__result_er, dtype="object"),
+                "q": np.array(self.__result_q, dtype="object"),
+                "sweep": sweep_index,
+                "peak_shift": peak_shift,
+                "traces": traces,
+            },
+        )
 
         plt.plot(sweep_index, peak_shift)
         plt.show()

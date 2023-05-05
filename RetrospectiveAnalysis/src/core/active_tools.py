@@ -1,15 +1,12 @@
-import re
-import os
-from functools import lru_cache
-
-
 import logging
+import os
+import re
+from functools import lru_cache
 
 import numpy as np
 from numpy.typing import NDArray
-
-from scipy.signal import find_peaks, lsim, sawtooth
 from scipy.ndimage import gaussian_filter1d
+from scipy.signal import find_peaks, lsim, sawtooth
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +36,7 @@ class RampUpSweepCSVReader(object):
 
     def __iter__(self):
         for filepath in self.__filepaths:
-            print(f"Reading \042{os.path.basename(filepath)}\042")
+            logger.info(f"Reading \042{os.path.basename(filepath)}\042")
 
             data = np.loadtxt(filepath, delimiter=",")[:].T
             power, reference = data[0], data[1]
@@ -71,7 +68,10 @@ class RampUpSweepCSVReader(object):
                     + i / self.__freq
                 )
                 yield p, t
-            print(f"end of  \042{os.path.basename(filepath)}\042")
+
+            logger.info(
+                f"end of  \042{os.path.basename(filepath)}\042, found {len(minima)} sweeps"
+            )
 
 
 @lru_cache()
@@ -93,8 +93,7 @@ def thermal_simulation(sweep_freq: float, t_final: int, len_period: int, tau: fl
 def generate_wavelength(
     power: NDArray[np.float64],
     reference_temp_sweep: NDArray[np.float64],
-    wavelength_range=(1309, 1310),
-    **kwargs,
+    wavelength_range: tuple[float, float],
 ):
     reference_temp_sweep = np.interp(  # interpolate to the same length as power
         np.linspace(0, 1, len(power)),
