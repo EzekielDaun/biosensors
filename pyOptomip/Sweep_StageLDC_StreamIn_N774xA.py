@@ -45,7 +45,7 @@ except:
 
 # Connect to Stage motors
 import CorvusEco
-reload(CorvusEco)
+# reload(CorvusEco)
 motors=CorvusEco.CorvusEcoClass()
 motors.connect('ASRL4::INSTR',rm,1,0,3)
 
@@ -62,8 +62,8 @@ laser.connect('GPIB0::20::INSTR', reset=0, forceTrans=1)
 ##################################################
 if(stage_temp):
     # Stage TEC
-    import SRS_LDC501
-    reload(SRS_LDC501)
+    import SRS_LDC501_instr as SRS_LDC501
+    # reload(SRS_LDC501)
     LDC_stage = SRS_LDC501.SRS_LDC501()
     LDC_stage.connect('GPIB0::4::INSTR')#, reset=0, forceTrans=1)
     Vlimit=1.2
@@ -89,7 +89,7 @@ if(stage_temp):
 
 # Open Connection
 import N774xA
-reload(N774xA)
+# reload(N774xA)
 N77instr = N774xA.N774xA();
 N77instr.connect('TCPIP0::100.65.11.185::inst0::INSTR')
 print ("Connected to N7744 detector")

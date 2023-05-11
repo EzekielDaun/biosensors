@@ -31,22 +31,22 @@
 #    http://literature.cdn.keysight.com/litweb/pdf/5990-3710EN.pdf
 
 
-import visa
+import pyvisa as visa
 import time
 import numpy as np
 
 class N774xA():
-    
+
     def __init__(self):
         self.connected = False
 
     def __del__(self):
         if self.connected:
             self.disconnect()
-    def connect(self,visaAddr):    
+    def connect(self,visaAddr):
         self.rm = visa.ResourceManager()
         self.instrument = self.rm.open_resource(visaAddr)
-        print(self.instrument.ask("*IDN?")) #Requests the device for identification
+        print(self.instrument.query("*IDN?")) #Requests the device for identification
         self.connected = True
 
         # Set Timeout - 5 seconds
