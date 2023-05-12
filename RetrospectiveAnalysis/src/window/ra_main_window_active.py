@@ -279,22 +279,19 @@ class RaMainWindow(QMainWindow):
         self.__ui.rampSettingUpdatePushButton.setEnabled(False)
 
         self.ramp_setting_worker = self.__Worker(get_fsr, reader, start, stop, step)  # type: ignore
-        self.ramp_setting_worker.finished.connect(self.slot_ramp_setting_update_plot)  # type: ignore
+        self.ramp_setting_worker.finished.connect(self.slot_ramp_setting_update_plot)
         self.ramp_setting_worker.start()
 
     @Slot()
     def slot_ramp_setting_update_plot(self):
-        self.ramp_setting_worker.finished.disconnect(  # type: ignore
-            self.slot_ramp_setting_update_plot
-        )
-
         scatter_data = np.array(self.ramp_setting_worker.result) * 1e-9  # SI units
+        self.ramp_setting_worker.deleteLater()
+
         self.__ramp_setting_FSR_scatter_plot_item.setData(
             scatter_data[:, 0], scatter_data[:, 1]
         )
         self.__ramp_setting_FSR_plot_widget.autoRange()
 
-        self.ramp_setting_worker.deleteLater()
         self.__ui.rampSettingUpdatePushButton.setEnabled(True)
 
         # save parameters as toml
@@ -398,13 +395,13 @@ class RaMainWindow(QMainWindow):
         self.__ui.peakTrackingTrackPeakButton.setEnabled(False)
         self.__ui.peakTrackingSaveResultsButton.setEnabled(False)
         self.spectrogram_worker = self.__Worker(get_spectrogram, reader, sweep_start, sweep_stop, sweep_step)  # type: ignore
-        self.spectrogram_worker.finished.connect(self.slot_peak_tracking_spectrogram_update_plot)  # type: ignore
+        self.spectrogram_worker.finished.connect(
+            self.slot_peak_tracking_spectrogram_update_plot
+        )
         self.spectrogram_worker.start()
 
     @Slot()
     def slot_peak_tracking_spectrogram_update_plot(self):
-        self.spectrogram_worker.finished.disconnect(self.slot_peak_tracking_spectrogram_update_plot)  # type: ignore
-
         self.__spectrogram, self.__time_stamp = self.spectrogram_worker.result
 
         self.__peak_tracking_spectrogram_image_view.setImage(self.__spectrogram)
@@ -444,13 +441,13 @@ class RaMainWindow(QMainWindow):
                     return peaks_to_traces(peaks), peaks, fsr, er, q
 
             self.peak_tracking_worker = self.__Worker(get_peaks_fsr_er_q_traces, self.__spectrogram)  # type: ignore
-            self.peak_tracking_worker.finished.connect(self.slot_peak_tracking_track_peak_update_plot)  # type: ignore
+            self.peak_tracking_worker.finished.connect(
+                self.slot_peak_tracking_track_peak_update_plot
+            )
             self.peak_tracking_worker.start()
 
     @Slot()
     def slot_peak_tracking_track_peak_update_plot(self):
-        self.peak_tracking_worker.finished.disconnect(self.slot_peak_tracking_track_peak_update_plot)  # type: ignore
-
         (
             (traces, fsr),
             self.__result_peaks,

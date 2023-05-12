@@ -444,7 +444,6 @@ class RaPeakTrackerWidget(QWidget):
 
     @Slot()
     def __slot_work_done(self):
-        self.__worker.finished.disconnect(self.__slot_work_done)  # type: ignore
         try:
             self.__all_traces = self.__worker.all_traces
             self.__all_peaks = self.__worker.all_peaks
@@ -481,8 +480,6 @@ class RaPeakTrackerWidget(QWidget):
 
     @Slot()
     def __slot_fsr_er_q_work_done(self):
-        self.__fsr_er_q_worker.finished.disconnect(self.__slot_fsr_er_q_work_done)  # type: ignore
-
         temp_dir = os.curdir
         os.chdir(self.__path)
 

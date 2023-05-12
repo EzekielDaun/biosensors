@@ -20,57 +20,9 @@ from .ra_figure_widget import RaFigureWidget
 logger = logging.getLogger(__name__)
 
 
-class RaTabPlotterWorkerBase(QThread):
-    """Base class for the tab plotter worker thread to do heavy work
-
-    !!Do not use directly!! Overload this for customizations
-    """
-
-    def __init__(self, *args, **kwargs):
-        """pass necessary parameters to initialize a worker instance"""
-        super().__init__()
-        return
-
-    def run(self):
-        """Actual work function to be implemented by subclass"""
-        raise NotImplementedError
-
-
-class RaTabPlotterBase(QTabWidget):
-    """Base class for the tab plotter
-
-    !!Do not use directly!! Overload this for customizations
-
-    Note: this class is an implicit singleton due to Qt signal mechanism. The derived classes should override the class attribute `__signal_work_start` to avoid getting parent class' signal.
-    """
-
-    __signal_work_start = Signal()
-
-    def __init__(self, parent=None, *args, **kwargs):
-        super().__init__(parent)
-        self.__signal_work_start.connect(self.slot_work_start)
-
-    @Slot()
-    def slot_work_start(self):
-        raise NotImplementedError
-        self.__worker = RaTabPlotterWorkerBase()
-        self.__worker.finished.connect(self.slot_work_done)  # type: ignore
-        self.__worker.start()
-
-    @Slot()
-    def slot_work_done(self):
-        raise NotImplementedError
-        self.__worker.finished.disconnect(self.slot_work_done)  # type: ignore
-        result = self.__worker._sample_result__
-        logger.debug(f"{self.__class__.__name__}: Work done with result: {result}")
-        del self.__worker
-
-
 class RaFilePlotterWidget(QGroupBox):
-    class __Plotter(RaTabPlotterBase):
-        __signal_work_start = Signal(str)
-
-        class __RaFilePlotterWorker(RaTabPlotterWorkerBase):
+    class __Plotter(QTabWidget):
+        class __RaFilePlotterWorker(QThread):
             def __init__(self, path: str):
                 super().__init__()
                 self.__path = path
@@ -89,25 +41,18 @@ class RaFilePlotterWidget(QGroupBox):
 
         def __init__(self, parent=None):
             super().__init__(parent)
-            self.__signal_work_start.connect(self.slot_work_start)
 
             self.__current_tab_index: int = 0
             self.__current_file_basename: str | None = None
 
         def plot_file(self, file_path: str):
             self.__current_file_basename = os.path.basename(file_path)
-            self.__signal_work_start.emit(file_path)
-
-        @Slot(str)
-        def slot_work_start(self, path: str):
-            self.__worker = self.__RaFilePlotterWorker(path)
+            self.__worker = self.__RaFilePlotterWorker(file_path)
             self.__worker.finished.connect(self.slot_work_done)  # type: ignore
             self.__worker.start()
 
         @Slot()
         def slot_work_done(self):
-            self.__worker.finished.disconnect(self.slot_work_done)  # type: ignore
-
             # clear previous plots
             self.__current_tab_index = self.currentIndex()
             for index in range(self.count()):
@@ -157,11 +102,11 @@ class RaFilePlotterWidget(QGroupBox):
         self.__file_plotter.plot_file(file_path)
 
 
-class RaSpectrogramPlotterWidget(RaTabPlotterBase):
+class RaSpectrogramPlotterWidget(QTabWidget):
     __signal_spectrograms_work_start = Signal()
     signal_spectrograms_work_done = Signal(bool)
 
-    class __Worker(RaTabPlotterWorkerBase):
+    class __Worker(QThread):
         def __init__(
             self,
             analyzer: Analyzer,
@@ -241,8 +186,6 @@ class RaSpectrogramPlotterWidget(RaTabPlotterBase):
 
     @Slot()
     def __slot_spectrograms_work_done(self):
-        self.__worker.finished.disconnect(self.__slot_spectrograms_work_done)  # type: ignore
-
         try:
             # make new plots
             x_labels = np.vectorize(lambda x: "{:.5g}".format(x))(
