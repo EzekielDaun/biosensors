@@ -141,7 +141,13 @@ with open(baseFolder + simulationFolderName_MatlabDrive + csvFilename, 'a') as f
 ## Loop to get x Continuous results
 for i in range(measurement_iterations):
     #do_fine_align(laser, motors)  # Running  Fine Alignment
+    for chan in meas_chan:
+        N77instr.stopLogging(chan)
+        N77instr.startLogging(chan)
+    N77instr.trigger(1)
     array = N77instr.measure(meas_chan, N77_measurement_loops)
+    for chan in meas_chan:
+        N77instr.stopLogging(chan)
     ###np.savetxt(baseFolder+simulationFolderName+simulation_name+'_measurement'+str(i) + '.csv', array.T, delimiter=',')
     np.savetxt(baseFolder+simulationFolderName_MatlabDrive+simulation_name+'measurement'+str(i).zfill(4) + '.csv', array.T, delimiter=',')
 
