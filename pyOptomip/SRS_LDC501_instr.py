@@ -96,7 +96,7 @@ class SRS_LDC501():
     def setLDIrange(self,toggle): # range
         if toggle==1:
             self.instrument.write('RNGE HIGH')
-        elif toggl==0:
+        elif toggle==0:
             self.instrument.write('RNGE LOW')
         else:
             print("the range should either be 1 or 0 for high or low")
