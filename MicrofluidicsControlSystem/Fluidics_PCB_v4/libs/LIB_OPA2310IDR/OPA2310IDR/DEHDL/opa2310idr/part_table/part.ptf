@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'OPA2310IDR'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Texas Instruments", "OPA2310IDR" (!) = "", "SOIC127P600X175-8N", "Small Outline Packages", "595-OPA2310IDR", "https://www.mouser.co.uk/ProductDetail/Texas-Instruments/OPA2310IDR?qs=vvQtp7zwQdO7M4WMfM7rQg%3D%3D", "General Purpose Amplifier 2 Circuit Rail-to-Rail 8-SOIC", "https://www.ti.com/lit/ds/symlink/opa2310.pdf?HQS=dis-mous-null-mousermode-dsf-pf-null-wwe&ts=1664810239166&ref_url=https%253A%252F%252Fwww.mouser.co.il%252F", "1.75 mm"
+END_PART
+
+END.

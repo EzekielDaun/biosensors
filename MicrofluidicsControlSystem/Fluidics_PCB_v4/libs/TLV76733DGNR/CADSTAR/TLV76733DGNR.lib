@@ -1,0 +1,20 @@
+.TLV76733DGNR :1 ;LDO Voltage Regulators 1-A, 16-V, high-PSRR, high-accuracy, low-dropout voltage regulator with enable
+SOP65P490X110-9N
+*STM IC
+*NGS
+*PLB 1="OUT" 2="SNS" 3="NC_1" 4="GND_1" 5="EN" 6="GND_2" 7="NC_2" 8="IN" 9="EP"
+*MXP 9
+*DFN TLV76733DGNR
+~!Manufacturer_Name (Texas Instruments)
+~!Manufacturer_Part_Number (TLV76733DGNR)
+~!Mouser Part Number (595-TLV76733DGNR)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Texas-Instruments/TLV76733DGNR?qs=W%2FMpXkg%252BdQ7WCurh%2FfEdlw%3D%3D)
+~!Arrow Part Number (TLV76733DGNR)
+~!Link Arrow Price/Stock (https://www.arrow.com/en/products/tlv76733dgnr/texas-instruments?region=nac)
+~!Mouser Testing Part Number (-)
+~!Mouser Testing Price/Stock (-)
+~!Link Datasheet (https://www.ti.com/lit/ds/symlink/tlv767.pdf?ts=1601893180135&ref_url=https%253A%252F%252Fduckduckgo.com%252F)
+~!Height (1.1mm)
+~!3D_Model (TLV76733DGNR)
+TLV76733DGNR
+1.1!U 2.1!U 3.1!U 4.1!U 9.1!U 8.1!U 7.1!U 6.1!U 5.1!U 

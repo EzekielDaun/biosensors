@@ -1,0 +1,18 @@
+.MIC39101-5.0YM-TR :1 ;LDO Voltage Regulators 1.0A 1.0% Fixed Voltage LDO
+SOIC127P599X173-8N
+*STM IC
+*NGS
+*PLB 1="EN" 2="IN" 3="OUT" 4="FLG" 5="GND_1" 6="GND_2" 7="GND_3" 8="GND_4"
+*MXP 8
+*DFN MIC39101-5.0YM-TR
+~!Manufacturer_Name (Microchip)
+~!Manufacturer_Part_Number (MIC39101-5.0YM-TR)
+~!Mouser Part Number (998-MIC39101-5.0YMTR)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Microchip-Technology-Micrel/MIC39101-50YM-TR?qs=U6T8BxXiZAW4%252Bcnkgk10yA%3D%3D)
+~!Arrow Part Number (-)
+~!Arrow Price/Stock (-)
+~!Link Datasheet (http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en581613)
+~!Height (1.73mm)
+~!3D_Model (MIC39101-5.0YM-TR)
+MIC39101-5.0YM-TR
+1.1!U 2.1!U 3.1!U 4.1!U 8.1!U 7.1!U 6.1!U 5.1!U 

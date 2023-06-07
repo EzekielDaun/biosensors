@@ -1,0 +1,70 @@
+(Japanese_coding: sjis)
+(function "ECS_10958224"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2021-04-29-10:55:30)
+    (utime 2022-07-08-14:47:23)
+    (interface
+        (port "1" (symbPinId 1) (portType INOUT))
+        (port "2" (symbPinId 2) (portType INOUT))
+        (port "3" (symbPinId 3) (portType INOUT))
+    )
+    (property "symbolName" "TN1215-600B-TR")
+)
+
+
+(pinAssign "ECS_10958224"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2021-04-29-10:55:30)
+    (utime 2022-07-08-14:47:23)
+    (interface
+        (port "1" (symbPinId 1) (portName "K") (portType INOUT))
+        (port "2" (symbPinId 2) (portName "A") (portType INOUT))
+        (port "3" (symbPinId 3) (portName "G") (portType INOUT))
+    )
+    (internal
+        (funcInst (functionRef "ECS_10958224")
+                (port "1" (match "1"))
+                (port "2" (match "2"))
+                (port "3" (match "3"))
+        )
+    )
+    (property "usePowerBox" "No")
+    (property "symbolName" "TN1215-600B-TR")
+)
+
+
+(part "TN1215-600B-TR"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2021-04-29-10:55:30)
+    (utime 2022-07-08-14:47:23)
+    (packageRef "TN1215-600B-TR")
+    (pinAssignRef "ECS_10958224")
+    (interface
+        (port "1" (symbPinId 1) (portName "K") (portType INOUT))
+        (port "2" (symbPinId 2) (portName "A") (portType INOUT))
+        (port "3" (symbPinId 3) (portName "G") (portType INOUT))
+    )
+    (partClass UNDEF)
+    (useInSchema Y)
+    (useInLayout Y)
+    (inPartsList Y)
+    (partType NORMAL)
+    (placeRestriction FREE)
+    (property "enetNonSeries" "YES")
+    (property "refDesPrefix" "D")
+    (property "description" "SCR 600V 12A Standard Recovery Surface Mount DPAK")
+    (property "Mouser_Part_Number" "511-TN1215-600B-TR")
+    (property "Mouser_Price/Stock" "https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TN1215-600B-TR?qs=JQs6Bl0TY0oFh73kuIh3ZA%3D%3D")
+    (property "Manufacturer_Name" "STMicroelectronics")
+    (property "Manufacturer_Part_Number" "TN1215-600B-TR")
+    (property "Datasheet_Link" "https://www.st.com/resource/en/datasheet/tyn1012.pdf")
+    (property "compAreaTopHeight" 2.63)
+)
+
+

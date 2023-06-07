@@ -1,0 +1,9 @@
+Manufacturer=STMicroelectronics
+PartNumber=TN1215-600B-TR
+PartCategory=SCR
+PackageCategory=Other
+PinCount=3
+Version=1.7
+Released=2021-04-29 10:55:30
+Downloaded=2022-12-13 22:30:05
+3D=N

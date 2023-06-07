@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'TLV76733DGNR'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "ARROW_PART_NUMBER", "ARROW_PRICE/STOCK", "MOUSER_TESTING_PART_NUMBER", "MOUSER_TESTING_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Texas Instruments", "TLV76733DGNR" (!) = "", "SOP65P490X110-9N", "Small Outline Packages", "595-TLV76733DGNR", "https://www.mouser.co.uk/ProductDetail/Texas-Instruments/TLV76733DGNR?qs=W%2FMpXkg%252BdQ7WCurh%2FfEdlw%3D%3D", "TLV76733DGNR", "https://www.arrow.com/en/products/tlv76733dgnr/texas-instruments?region=nac", "", "", "LDO Voltage Regulators 1-A, 16-V, high-PSRR, high-accuracy, low-dropout voltage regulator with enable", "https://www.ti.com/lit/ds/symlink/tlv767.pdf?ts=1601893180135&ref_url=https%253A%252F%252Fduckduckgo.com%252F", "1.1 mm"
+END_PART
+
+END.

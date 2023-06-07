@@ -1,0 +1,9 @@
+Manufacturer=Microchip
+PartNumber=MIC39101-5.0YM-TR
+PartCategory=Integrated Circuit
+PackageCategory=Small Outline Packages
+PinCount=8
+Version=2.1
+Released=2018-12-10 11:29:33
+Downloaded=2023-06-05 18:57:09
+3D=Y

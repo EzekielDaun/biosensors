@@ -1,0 +1,66 @@
+(Japanese_coding: sjis)
+(function "ECS_2382688"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2021-04-04-16:11:53)
+    (utime 2021-04-05-06:25:35)
+    (interface
+        (port "1" (symbPinId 1) (portType INOUT))
+        (port "2" (symbPinId 2) (portType INOUT))
+    )
+    (property "symbolName" "0494001_NR")
+)
+
+
+(pinAssign "ECS_2382688"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2021-04-04-16:11:53)
+    (utime 2021-04-05-06:25:35)
+    (interface
+        (port "1" (symbPinId 1) (portName "1") (portType INOUT))
+        (port "2" (symbPinId 2) (portName "2") (portType INOUT))
+    )
+    (internal
+        (funcInst (functionRef "ECS_2382688")
+                (port "1" (match "1"))
+                (port "2" (match "2"))
+        )
+    )
+    (property "usePowerBox" "No")
+    (property "symbolName" "0494001_NR")
+)
+
+
+(part "0494001_NR"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2021-04-04-16:11:53)
+    (utime 2021-04-05-06:25:35)
+    (packageRef "0494001_NR")
+    (pinAssignRef "ECS_2382688")
+    (interface
+        (port "1" (symbPinId 1) (portName "1") (portType INOUT))
+        (port "2" (symbPinId 2) (portName "2") (portType INOUT))
+    )
+    (partClass UNDEF)
+    (useInSchema Y)
+    (useInLayout Y)
+    (inPartsList Y)
+    (partType NORMAL)
+    (placeRestriction FREE)
+    (property "enetNonSeries" "YES")
+    (property "refDesPrefix" "F")
+    (property "description" "Surface Mount Fuses 32V 1A Case 0603 Protector Slim")
+    (property "Mouser_Part_Number" "576-0494001.NR")
+    (property "Mouser_Price/Stock" "https://www.mouser.co.uk/ProductDetail/Littelfuse/0494001.NR?qs=zMpzAB%2FftDevS%252BkFabf%252B6Q%3D%3D")
+    (property "Manufacturer_Name" "LITTELFUSE")
+    (property "Manufacturer_Part_Number" "0494001.NR")
+    (property "Datasheet_Link" "https://datasheet.lcsc.com/szlcsc/Littelfuse-0494001-NR_C142652.pdf")
+    (property "compAreaTopHeight" 0.305)
+)
+
+

@@ -1,0 +1,15 @@
+.TN1215-600B-TR :1 ;SCR 600V 12A Standard Recovery Surface Mount DPAK
+TN1215600BTR
+*STM D
+*NGS
+*PLB 1="K" 2="A" 3="G"
+*MXP 3
+*DFN TN1215-600B-TR
+~!Mouser Part Number (511-TN1215-600B-TR)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TN1215-600B-TR?qs=JQs6Bl0TY0oFh73kuIh3ZA%3D%3D)
+~!Manufacturer_Name (STMicroelectronics)
+~!Manufacturer_Part_Number (TN1215-600B-TR)
+~!Link Datasheet (https://www.st.com/resource/en/datasheet/tyn1012.pdf)
+~!Height (2.63mm)
+TN1215-600B-TR
+1.1!U 2.1!U 3.1!U 

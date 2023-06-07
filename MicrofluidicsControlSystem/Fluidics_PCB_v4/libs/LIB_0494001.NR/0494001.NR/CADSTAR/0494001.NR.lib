@@ -1,0 +1,16 @@
+.0494001.NR :1 ;Surface Mount Fuses 32V 1A Case 0603 Protector Slim
+FUSC1608X30N
+*STM F
+*NGS
+*PLB 1="1" 2="2"
+*MXP 2
+*DFN 0494001.NR
+~!Mouser Part Number (576-0494001.NR)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Littelfuse/0494001.NR?qs=zMpzAB%2FftDevS%252BkFabf%252B6Q%3D%3D)
+~!Manufacturer_Name (LITTELFUSE)
+~!Manufacturer_Part_Number (0494001.NR)
+~!Link Datasheet (https://datasheet.lcsc.com/szlcsc/Littelfuse-0494001-NR_C142652.pdf)
+~!Height (0.305mm)
+~!3D_Model (0494001.NR)
+"0494001.NR"
+1.1!U 2.1!U 
