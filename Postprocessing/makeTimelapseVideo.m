@@ -7,6 +7,7 @@
 %**                         Samantha M. Grist                           **%
 %**                                                                     **%
 %*************************************************************************%
+clear;
 
 % find the list of files in the working directory
 filepath = fullfile(uigetdir, filesep);
@@ -14,11 +15,12 @@ fileExtension = '.jpg';
 fileList = dir([filepath, '*', fileExtension]);
 
 % check that we find enough .jpgs and throw an error if not
-if length(fileList < 2)
+if length(fileList) < 2
     error(['Error: Less than two ', fileExtension, ' files were found in ', filepath, '.']);
 end
 % Assume filename format like "Image1.jpg", where "Image" is filenameBase
-% and "1" is the index.  Assume no numbers in the filename base
+% and "1" is the index.  Assume no numbers in the filename base and that
+% all of the files in the folder have the same filename base.
 for fileIdx = 1:length(fileList)
     % split out the text and the numbers from the string
     fileListNum(fileIdx) = str2double(regexp(fileList(fileIdx).name,'[\d.]+','match')); % get the number out of the string
