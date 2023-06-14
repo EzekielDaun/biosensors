@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.1
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -300,6 +300,7 @@ class Ui_RaMainWindow(object):
         self.peakTracingStartSpinBox = QSpinBox(self.peakTracingSettingGroupBox)
         self.peakTracingStartSpinBox.setObjectName(u"peakTracingStartSpinBox")
         self.peakTracingStartSpinBox.setMinimum(1)
+        self.peakTracingStartSpinBox.setMaximum(999999)
 
         self.horizontalLayout_2.addWidget(self.peakTracingStartSpinBox)
 
@@ -312,6 +313,7 @@ class Ui_RaMainWindow(object):
         self.peakTracingStopSpinBox = QSpinBox(self.peakTracingSettingGroupBox)
         self.peakTracingStopSpinBox.setObjectName(u"peakTracingStopSpinBox")
         self.peakTracingStopSpinBox.setMinimum(2)
+        self.peakTracingStopSpinBox.setMaximum(999999)
 
         self.horizontalLayout_2.addWidget(self.peakTracingStopSpinBox)
 
@@ -385,7 +387,7 @@ class Ui_RaMainWindow(object):
         RaMainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(RaMainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1280, 29))
+        self.menubar.setGeometry(QRect(0, 0, 1280, 42))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         RaMainWindow.setMenuBar(self.menubar)

@@ -65,7 +65,7 @@ def get_lorentzian_peaks(
 
         # -100 is a bug value and should be ignored
         indices_fixed = np.argwhere(power_range != float(-100)).flatten()
-        if len(indices_fixed) <= 8 or max(np.diff(indices_fixed) > 10):
+        if len(indices_fixed) <= 4 or max(np.diff(indices_fixed) > 30):
             # skip when total valid points < 8 or too sparse (> 10 apart)
             continue
         wavelength_fixed = wavelength_range[indices_fixed]
@@ -117,7 +117,7 @@ def get_lorentzian_peaks(
                         a,
                     ),
                 )
-                < 0.80
+                < 0.50
             ):
                 logger.debug(
                     f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}. R2 = {r2_score(power_fixed, lorentzian(wavelength_fixed, x0, y0, _i, gamma, a)):.2f}"
