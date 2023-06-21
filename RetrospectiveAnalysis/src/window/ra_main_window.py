@@ -47,8 +47,8 @@ class RaMainWindow(QMainWindow):
 
         # file plotter
         self.__file_plotter_widget = RaFilePlotterWidget()
-        self.__ui.splitter.insertWidget(0, self.__file_plotter_widget)
-        self.__ui.splitter.setStretchFactor(0, 2)
+        self.__ui.splitter.insertWidget(1, self.__file_plotter_widget)
+        self.__ui.splitter.setStretchFactor(1, 2)
 
         # spectrum plotter
         # intended to be popped up so not in any layout
@@ -136,7 +136,11 @@ class RaMainWindow(QMainWindow):
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            self.__file_plotter_widget.update(file_path)
+            self.__file_plotter_widget.update(
+                file_path,
+                r2_threshold=self.__ui.r2ThresholdDoubleSpinBox.value(),
+                max_n100dBm_points=self.__ui.n100dBmToleranceSpinBox.value(),
+            )
 
     def slot_load_analyzer(self):
         # clear power list widget
@@ -261,6 +265,8 @@ class RaMainWindow(QMainWindow):
             self.__ui.timeUnitLineEdit.text(),
             self.__ui.wavelengthUnitLineEdit.text(),
             self.__ui.powerUnitLineEdit.text(),
+            self.__ui.r2ThresholdDoubleSpinBox.value(),
+            self.__ui.n100dBmToleranceSpinBox.value(),
         )
 
     def slot_save_results(self):

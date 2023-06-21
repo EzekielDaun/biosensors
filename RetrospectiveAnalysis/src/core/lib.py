@@ -24,6 +24,8 @@ def lorentzian(x, x0, y0, _i, gamma, a):
 def get_lorentzian_peaks(
     powers: NDArray[np.float64],
     wavelengths: NDArray[np.float64],
+    r2_threshold: float = 0.5,
+    max_n100dBm_points: int = 30,
 ) -> tuple[
     NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
 ]:
@@ -65,8 +67,8 @@ def get_lorentzian_peaks(
 
         # -100 is a bug value and should be ignored
         indices_fixed = np.argwhere(power_range != float(-100)).flatten()
-        if len(indices_fixed) <= 4 or max(np.diff(indices_fixed) > 30):
-            # skip when total valid points < 8 or too sparse (> 10 apart)
+        if len(indices_fixed) <= 4 or max(np.diff(indices_fixed) > max_n100dBm_points):
+            # skip when total valid points < 4 or too sparse (> 30 (default) apart)
             continue
         wavelength_fixed = wavelength_range[indices_fixed]
         power_fixed = power_range[indices_fixed]
@@ -117,7 +119,7 @@ def get_lorentzian_peaks(
                         a,
                     ),
                 )
-                < 0.50
+                < r2_threshold
             ):
                 logger.debug(
                     f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}. R2 = {r2_score(power_fixed, lorentzian(wavelength_fixed, x0, y0, _i, gamma, a)):.2f}"

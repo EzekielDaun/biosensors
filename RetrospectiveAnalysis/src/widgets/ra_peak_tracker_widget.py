@@ -61,16 +61,22 @@ class RaPeakTrackerWidget(QWidget):
             analyzer: Analyzer,
             channels: list[int],
             start_stop_step: tuple[int, Optional[int], int],
+            r2_threshold: float,
+            max_n100dBm_points: int,
         ):
             super().__init__()
             self.__analyzer = analyzer
             self.__channels = channels
             self.__start_stop_step = start_stop_step
+            self.__r2_threshold = r2_threshold
+            self.__max_n100dBm_points = max_n100dBm_points
 
         def run(self):
             self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
                 self.__channels,
                 self.__start_stop_step,
+                self.__r2_threshold,
+                self.__max_n100dBm_points,
             )
 
         @property
@@ -87,16 +93,22 @@ class RaPeakTrackerWidget(QWidget):
             analyzer: Analyzer,
             channels: list[int],
             start_stop_step: tuple[int, Optional[int], int],
+            r2_threshold: float,
+            max_n100dBm_points: int,
         ):
             super().__init__()
             self.__analyzer = analyzer
             self.__channels = channels
             self.__start_stop_step = start_stop_step
+            self.__r2_threshold = r2_threshold
+            self.__max_n100dBm_points = max_n100dBm_points
 
         def run(self):
             self.__fsr_er_q_dict = self.__analyzer.analyze_fsr_er_q(
                 self.__channels,
                 self.__start_stop_step,
+                self.__r2_threshold,
+                self.__max_n100dBm_points,
             )
 
         @property
@@ -371,6 +383,8 @@ class RaPeakTrackerWidget(QWidget):
         time_unit: str,
         wavelength_unit: str,
         power_unit: str,
+        r2_threshold: float,
+        max_n100dBm_points: int,
     ):
         self.__analyzer = analyzer
         self.__channels = channels
@@ -378,6 +392,9 @@ class RaPeakTrackerWidget(QWidget):
         self.__time_unit = time_unit
         self.__wavelength_unit = wavelength_unit
         self.__power_unit = power_unit
+        self.__r2_threshold = r2_threshold
+        self.__max_n100dBm_points = max_n100dBm_points
+
         self.__signal_work_start.emit()
         self.__tab_widget.clear()
 
@@ -477,7 +494,11 @@ class RaPeakTrackerWidget(QWidget):
     @Slot()
     def __slot_work_start(self):
         self.__worker = self.__Worker(
-            self.__analyzer, self.__channels, self.__start_stop_step
+            self.__analyzer,
+            self.__channels,
+            self.__start_stop_step,
+            self.__r2_threshold,
+            self.__max_n100dBm_points,
         )
         self.__worker.finished.connect(self.__slot_work_done)  # type: ignore
         self.__worker.start()
@@ -513,7 +534,11 @@ class RaPeakTrackerWidget(QWidget):
     @Slot()
     def __slot_fsr_er_q_work_start(self):
         self.__fsr_er_q_worker = self.__FSR_ER_Q_Worker(
-            self.__analyzer, self.__channels, self.__start_stop_step
+            self.__analyzer,
+            self.__channels,
+            self.__start_stop_step,
+            self.__r2_threshold,
+            self.__max_n100dBm_points,
         )
         self.__fsr_er_q_worker.finished.connect(self.__slot_fsr_er_q_work_done)  # type: ignore
         self.__fsr_er_q_worker.start()
