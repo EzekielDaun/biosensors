@@ -219,7 +219,7 @@ class RaMainWindow(QMainWindow):
     def slot_plot_spectrogram(self):
         self.__folder_plotter.analyzer = self.__analyzer
         lw = self.__ui.powerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         if len(powers) != 0:
             self.__folder_plotter.plot_spectrograms(
                 powers,
@@ -257,7 +257,7 @@ class RaMainWindow(QMainWindow):
     # Peak tracking slots
     def slot_track_peak(self):
         lw = self.__ui.peakTrackerPowerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         self.__peak_tracker_widget.plot_initial(
             self.__analyzer,
             powers,
@@ -310,7 +310,7 @@ class RaMainWindow(QMainWindow):
     # FSR ER Q slots
     def slot_fsr_er_q(self):
         lw = self.__ui.peakTrackerPowerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         output_path = os.path.join(
             self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
         )

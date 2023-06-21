@@ -120,7 +120,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
         def __init__(
             self,
             analyzer: Analyzer,
-            channels: list[int],
+            channels: set[int],
             step: int,
             start_index: int,
             stop_index: int | None,
@@ -152,7 +152,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
 
     def plot_spectrograms(
         self,
-        channels: list[int],
+        channels: set[int],
         step: int,
         start_index: int,
         stop_index: int | None,

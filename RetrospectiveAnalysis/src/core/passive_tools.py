@@ -83,7 +83,7 @@ class PassiveAnalyzer(object):
 
     def get_spectrograms(
         self,
-        channels: list[int],
+        channels: set[int],
         step: int = 1,
         start_index: int = 0,
         stop_index: int | None = None,
@@ -107,7 +107,7 @@ class PassiveAnalyzer(object):
 
     def analyze(
         self,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
         r2_threshold: float,
         max_n100dBm_points: int,
@@ -166,7 +166,7 @@ class PassiveAnalyzer(object):
 
     def analyze_fsr_er_q(
         self,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
         r2_threshold: float,
         max_n100dBm_points: int,
@@ -222,7 +222,7 @@ def read_mat(
 
 def mat_to_peak_dict(
     path: str,
-    channels: list[int],
+    channels: set[int],
     wavelength_multiplier: float,
     r2_threshold: float,
     max_n100dBm_points: int,
@@ -255,7 +255,7 @@ def mat_to_peak_dict(
 
 def mat_to_fsr_er_q_dict(
     path: str,
-    channels: list[int],
+    channels: set[int],
     wavelength_multiplier: float,
     r2_threshold: float,
     max_n100dBm_points: int,

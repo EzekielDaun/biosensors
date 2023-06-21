@@ -59,7 +59,7 @@ class RaPeakTrackerWidget(QWidget):
         def __init__(
             self,
             analyzer: Analyzer,
-            channels: list[int],
+            channels: set[int],
             start_stop_step: tuple[int, Optional[int], int],
             r2_threshold: float,
             max_n100dBm_points: int,
@@ -91,7 +91,7 @@ class RaPeakTrackerWidget(QWidget):
         def __init__(
             self,
             analyzer: Analyzer,
-            channels: list[int],
+            channels: set[int],
             start_stop_step: tuple[int, Optional[int], int],
             r2_threshold: float,
             max_n100dBm_points: int,
@@ -166,7 +166,7 @@ class RaPeakTrackerWidget(QWidget):
             self.__ui.plotOverlayButton.clicked.connect(self.__slot_plot_overlay)  # type: ignore
             self.__ui.plotOffsetSpectrogramButton.clicked.connect(self.__slot_plot_offset_spectrogram)  # type: ignore
 
-            image = self.__analyzer.get_spectrograms([self.__power_index])[
+            image = self.__analyzer.get_spectrograms({self.__power_index})[
                 self.__power_index
             ].T[:, ::-1]
             self.__image_view.setImage(image)
@@ -254,7 +254,7 @@ class RaPeakTrackerWidget(QWidget):
             plt.close("all")
             fig, ax = plt.subplots()
 
-            spectrogram = self.__analyzer.get_spectrograms([self.__power_index])[
+            spectrogram = self.__analyzer.get_spectrograms({self.__power_index})[
                 self.__power_index
             ][
                 :,
@@ -311,7 +311,7 @@ class RaPeakTrackerWidget(QWidget):
             trace_ax.set_title(f"{self.__name} Peak Offset")
 
             spectrogram_ax = plt.subplot(2, 1, 2)
-            spectrogram = self.__analyzer.get_spectrograms([self.__power_index])[
+            spectrogram = self.__analyzer.get_spectrograms({self.__power_index})[
                 self.__power_index
             ][
                 :,
@@ -378,7 +378,7 @@ class RaPeakTrackerWidget(QWidget):
     def plot_initial(
         self,
         analyzer: Analyzer,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
         time_unit: str,
         wavelength_unit: str,
@@ -521,7 +521,7 @@ class RaPeakTrackerWidget(QWidget):
     def fsr_er_q(
         self,
         analyzer: Analyzer,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
         path: str,
     ):
