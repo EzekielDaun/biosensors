@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QVBoxLayout,
 )
+import pyqtgraph as pg
 
 from ..core.passive_tools import PassiveAnalyzer as Analyzer
 from ..uic.ra_main_window import Ui_RaMainWindow
@@ -32,6 +33,9 @@ class RaMainWindow(QMainWindow):
         super().__init__()
         self.__ui = Ui_RaMainWindow()
         self.__ui.setupUi(self)
+
+        pg.setConfigOption("background", "w")
+        pg.setConfigOption("foreground", "k")
 
         self.__ui.statusbar.showMessage("Retrospective Analysis")
 

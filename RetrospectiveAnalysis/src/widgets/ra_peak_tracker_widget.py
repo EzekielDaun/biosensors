@@ -1,11 +1,14 @@
 import logging
 import os
-from itertools import starmap
+from itertools import cycle
 from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from PySide6.QtCore import QThread, Signal, Slot
+import pyqtgraph as pg
+from pyqtgraph import ImageView, PlotCurveItem, PlotItem
+from PySide6.QtCore import Qt, QThread, Signal, Slot
+from PySide6.QtGui import QTransform
 from PySide6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 from scipy.io import savemat
 
@@ -15,6 +18,40 @@ from ..uic.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWid
 from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)
+
+
+class RaPlotCurveItem(PlotCurveItem):
+    def __init__(self, fsr: float, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__fsr = fsr
+        _, self.__y = self.getData()
+
+    def mouseDragEvent(self, ev):
+        if (
+            ev.button() != Qt.MouseButton.LeftButton
+            and ev.button() != Qt.MouseButton.RightButton
+        ):
+            ev.ignore()
+            return
+
+        if ev.isStart():
+            _, y = self.getData()
+            self.__drag_y_offsets = y - ev.buttonDownPos().y()
+        elif ev.isFinish():
+            return
+
+        x, y = self.getData()
+        if ev.button() == Qt.MouseButton.LeftButton:
+            # left click, free drag
+            self.updateData(x, ev.pos().y() + self.__drag_y_offsets)
+        elif ev.button() == Qt.MouseButton.RightButton:
+            # magnet effect, attach to the nearest fsr
+            y_ideal = ev.pos().y() + self.__drag_y_offsets
+            y_diff = y_ideal - self.__y
+            y_diff = np.round(y_diff / self.__fsr) * self.__fsr
+            y_final = self.__y + y_diff
+            self.updateData(x, y_final)
+        ev.accept()
 
 
 class RaPeakTrackerWidget(QWidget):
@@ -87,8 +124,6 @@ class RaPeakTrackerWidget(QWidget):
             self.__power_index = power_index
             self.__traces = traces
             self.__fsr = fsr
-            self.__fsr_multipliers = [0 for x in traces]
-            self.__offsets = [0.0 for x in traces]
             self.__timestamps = analyzer.timestamps[
                 start_stop_step[0] : start_stop_step[1] : start_stop_step[2]
             ]
@@ -98,44 +133,73 @@ class RaPeakTrackerWidget(QWidget):
             self.__power_unit = power_unit
             self.__wavelength_unit = wavelength_unit
 
-            self.__figure_widget = RaFigureWidget()
-            self.__ui.splitter.addWidget(self.__figure_widget)
-            self.__ui.splitter.setStretchFactor(self.__ui.splitter.count() - 1, 1)
+            self.__plot_item = PlotItem()
+            self.__plot_item.getAxis("bottom").setLabel("Sweep Number")
+            self.__plot_item.getAxis("left").setLabel("Wavelength", units="m")
+            self.__plot_item.getAxis("left").setScale(1e-9)
+            self.__plot_item.setTitle(f"{self.__name} Peak Shift")
 
-            self.__ui.doubleSpinBox.valueChanged.connect(self.__slot_update_offsets)  # type: ignore
-            self.__ui.spinBox.valueChanged.connect(self.__slot_update_offsets)  # type: ignore
-            self.__ui.comboBox.currentIndexChanged.connect(self.__slot_switch_traces)  # type: ignore
+            self.__image_view = ImageView(view=self.__plot_item)
+            self.__image_view.ui.roiBtn.hide()
+            self.__image_view.ui.menuBtn.hide()
+            self.__image_view.getView().invertY(False)
+            self.__image_view.getView().setAspectLocked(False)
+            self.__image_view.setColorMap(pg.colormap.getFromMatplotlib("inferno"))
+
+            self.__figure_widget = RaFigureWidget()
+            self.__ui.splitter.addWidget(self.__image_view)
+            self.__ui.splitter.setStretchFactor(self.__ui.splitter.count() - 1, 1)
 
             self.__ui.plotPeakOffsetButton.clicked.connect(self.__slot_plot_peak_offset)  # type: ignore
             self.__ui.plotOverlayButton.clicked.connect(self.__slot_plot_overlay)  # type: ignore
             self.__ui.plotOffsetSpectrogramButton.clicked.connect(self.__slot_plot_offset_spectrogram)  # type: ignore
 
-            x0 = 0
-            for i, trace in enumerate(self.__traces):
-                self.__ui.comboBox.addItem(
-                    f"Trace{i+1} (Time {self.__timestamps[x0]:.6g}-{self.__timestamps[x0+len(trace)-1]:.6g})"
-                )
-                x0 += len(trace)
+            image = self.__analyzer.get_spectrograms([self.__power_index])[
+                self.__power_index
+            ].T[:, ::-1]
+            self.__image_view.setImage(image)
 
-        def update(self):
-            self.__figure_widget.figure.clear()
+            tr = QTransform()
+            tr.translate(
+                -0.5,
+                -0.5 * max(np.diff(self.__analyzer.wavelengths))
+                + float(np.min(self.__analyzer.wavelengths)),
+            )
+            tr.scale(
+                1,
+                (
+                    float(np.max(self.__analyzer.wavelengths))
+                    - float(np.min(self.__analyzer.wavelengths))
+                )
+                / len(self.__analyzer.wavelengths),
+            )
+
+            self.__image_view.getImageItem().setTransform(tr)
+            self.__image_view.getView().autoRange()
+
             ax = self.__figure_widget.figure.subplots(1, 1)
             ax.set_title(f"{self.__name} Peak Shift")
             ax.set_xlabel(f"Time ({self.__time_unit})")
             ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
 
+            color_palette = cycle(["light green", "grey"])
             x0 = 0
-            for i, trace in enumerate(self.__traces):
-                ax.plot(
-                    self.__timestamps[x0 : x0 + len(trace)],
-                    np.array(trace)
-                    + self.__fsr * self.__fsr_multipliers[i]
-                    + self.__offsets[i],
-                    "o" if len(trace) <= 2 else "-",
-                )
+            for trace in self.__traces:
+                if len(trace) <= 1:
+                    pass
+                else:
+                    item = RaPlotCurveItem(
+                        fsr=self.__fsr,
+                        x=np.linspace(x0, x0 + len(trace) - 1, len(trace)),
+                        y=trace,
+                        pen={
+                            "color": next(color_palette),
+                            "width": 5,
+                            "cosmetic": True,
+                        },
+                    )
+                    self.__plot_item.addItem(item)
                 x0 += len(trace)
-
-            self.__figure_widget.figure_canvas.draw()
 
         @property
         def name(self):
@@ -147,34 +211,13 @@ class RaPeakTrackerWidget(QWidget):
 
         @property
         def full_trace(self):
-            return np.concatenate(
-                tuple(
-                    starmap(
-                        lambda i, x: np.array(x)
-                        + self.__fsr * self.__fsr_multipliers[i]
-                        + self.__offsets[i],
-                        enumerate(self.__traces),
-                    )
-                )
-            )
+            ret = np.array([np.NAN] * sum(map(len, self.__traces)))
+            for item in self.__plot_item.listDataItems():
+                xs, ys = item.getData()
+                for i, x in enumerate(xs):
+                    ret[int(np.round(x))] = ys[i]
 
-        @Slot()
-        def __slot_update_offsets(self):
-            index = self.__ui.comboBox.currentIndex()
-            self.__fsr_multipliers[index] = self.__ui.spinBox.value()
-            self.__offsets[index] = self.__ui.doubleSpinBox.value()
-            self.update()
-
-        @Slot()
-        def __slot_switch_traces(self):
-            index = self.__ui.comboBox.currentIndex()
-            self.__ui.spinBox.blockSignals(True)
-            self.__ui.doubleSpinBox.blockSignals(True)
-            self.__ui.spinBox.setValue(self.__fsr_multipliers[index])
-            self.__ui.spinBox.setSuffix(f"×{self.__fsr:.6g}")
-            self.__ui.doubleSpinBox.setValue(self.__offsets[index])
-            self.__ui.spinBox.blockSignals(False)
-            self.__ui.doubleSpinBox.blockSignals(False)
+            return ret
 
         @Slot()
         def __slot_plot_peak_offset(self):
@@ -430,7 +473,6 @@ class RaPeakTrackerWidget(QWidget):
                 self,
             )
             self.__tab_widget.addTab(tab, f"Power{c+1}")
-            tab.update()
 
     @Slot()
     def __slot_work_start(self):
