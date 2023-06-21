@@ -41,6 +41,9 @@ class RaMainWindow(QMainWindow):
 
         # initialize file treeview
         model = QFileSystemModel()
+        model.setFilter(
+            QDir.Filter.AllEntries | QDir.Filter.NoDot | QDir.Filter.AllDirs
+        )
         model.setRootPath(QDir.rootPath())
         self.__ui.treeView.setModel(model)
         self.__ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
@@ -133,6 +136,7 @@ class RaMainWindow(QMainWindow):
         _, file_ext = os.path.splitext(file_name)
         if model.isDir(model.index(file_path)):
             tree_view.setRootIndex(model.index(file_path))
+            self.__ui.statusbar.showMessage(f"Retrospective Analysis - {file_path}")
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
