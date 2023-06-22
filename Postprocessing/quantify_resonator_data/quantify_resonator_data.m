@@ -27,6 +27,13 @@ restartAnalysis = 1; % set to 0 to resume previous analysis of this folder, or 1
 useWLFilename = 1; % set to 1 to use the wavelength range file instead of interactive input of the wavelength ranges, if the file exists
 figPos = [0 350 1080 450]; % sets the default position of the figure windows [x, y, width, height]
 
+% add the working directory for this script to the path
+mfilepath=fileparts(which('quantify_resonator_data.m'));
+addpath(mfilepath);
+if ~exist(fullfile(mfilepath,'lorentzfit.m'), 'file')
+    error('Lorentzian fit script lorentzfit.m not found.  Please ensure this file is present in the same directory as quantify_resonator_data.m.');
+end
+
 % allow user to select the analysis directory, and generate the file list
 selpath = uigetdir;
 cd(selpath);
@@ -299,9 +306,9 @@ return
 %     peak
 
 function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, ERs, ERs_fit, FWHMs, Qs, fitParams, gofs] = analyze_resonance(wavelength, power)
-    noiseLevel = -60; % set the threshold for noise: if >half the power values are less than this, don't analyze
-    minProminence = 1.5; % min 2 dB ER
-    minDistance = 3; % min 1 nm FSR
+    noiseLevel = -60; % set the threshold for noise in dBm: if >half the power values are less than this, don't analyze the detector data (useful if there are unused detector channels with saved data)
+    minProminence = 1.5; % minimum extinction ratio/peak prominence (in dBm) to call a peak
+    minDistance = 2; % minimum FSR/peak spacing (in nm) to find peaks beside each other. Should be smaller than the actual FSR but increasing this value is one way of suppressing noise peaks from being found.
     useEqualFitWidth = 1; % set to 1 to use a fit window size based on the width of the widest peak in the spectrum.  0 to set per-peak.
     fitWidthMult = 4; % multiplier for the width of the fit window.  E.g., if fitWidthMult is 2, include datapoints encomopassing 2X the estimated peak width on either side of the centre.
     baselineWidthMult = 0.5; % proportion of the peak fitting window to subtract from the spectra for baseline fitting
@@ -533,9 +540,9 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
         if linearizeFit
             yfit = (1+yfit); % convert back to a negative peak in linear normalized scale and plot
             plot(xfit, yfit*ymax, 'm'); 
+            
             figure(4)
             hold on;
-            
             yfit_log = 10*log10(yfit*ymax);
             plot(xfit, yfit_log, 'm'); % plot the dB-scale version of the fit as well
             %ERs_fit(pkIdx) = abs(min(yfit_log)-max(yfit_log));
@@ -589,7 +596,7 @@ function [numPeaks, avg_ER, avg_ER_fit, avg_Q, FSR, FSR_err, finesse, resLocs, E
                 Qs(pkIdx) = resLocs(pkIdx)/FWHMs(pkIdx); % Q is approx. by res wavelength divided by FWHM wavelength diff
                 %temp2 = find(yfit < (min(yfit)+0.75*(max(yfit)-min(yfit)))); % find array indices where yfit (to the normalized data) is < 75% of the way to the baseline
                 %FWHM_indices = find((x > xfit(temp2(1))) & (x < xfit(temp2(end)))); % turn the fit indices into data indices
-                FWHM_indices = find((x_nonan > resLocs(pkIdx)-FWHMs(pkIdx)) & (x_nonan < resLocs(pkIdx)+FWHMs(pkIdx))); % calculate peak R^2 over the region one linewidth on either sideof the FWHM
+                FWHM_indices = find((x_nonan > resLocs(pkIdx)-FWHMs(pkIdx)) & (x_nonan < resLocs(pkIdx)+FWHMs(pkIdx))); % calculate peak R^2 over the region one linewidth on either side of the FWHM
                 gofs(pkIdx).rsq_peak = 1-sum(res(FWHM_indices).^2)/sum((y_nonan(FWHM_indices)-mean(y_nonan(FWHM_indices))).^2); % compute the "peak region R-squared" as the R-squared of the fit in the peak region (one FWHM on either side of the centre)
                 subplot(5, 1, 5); hold on; plot(x_nonan(FWHM_indices), res(FWHM_indices), '.b') % plot the residuals used in the peak region R^2 generation as blue
                 subplot(5, 1, [1 2 3]); hold on; plot(x_nonan(FWHM_indices), yplot(FWHM_indices), '.b') % plot the datapoints used in the peak region R^2 generation as blue

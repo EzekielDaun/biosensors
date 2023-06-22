@@ -1,0 +1,6 @@
+# Postprocessing with quantify_resonator_data.m
+
+`quantify_resonator_data.m` is a MATLAB script intended to be a flexible tool for semi-automated quantification of resonator properties and performance metrics from a set of measured optical spectra.
+The script takes in a set of .mat files containing through-port optical spectra data (e.g., saved from PyOptomip), finds peaks, performs baseline correction, performs Lorentzian fitting on either the dB-scale or linearized data, and saves information in a table format, including the wavelength range analyzed, number of resonances found, average extinction ratio (ER), average quality factor (Q), free spectral range (FSR), FSR error, finesse, average and standard deviation of the R-squared values for the Lorentzian fits, and the resonance wavelengths, ERs, full widths at half max, Qs, fit R<sup>2</sup>s,  fit R<sup>2</sup>s calculated from the peak region only, and ERs calculated from the fits rather than the raw data.
+
+Instructions for how to run the script are available on Google Drive [here](https://docs.google.com/document/d/1cdf5tgV6RlpBXK1XdzAtrW2BH1FvQKfhAnzH6pMVNdM/edit?usp=sharing).
