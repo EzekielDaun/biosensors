@@ -194,7 +194,7 @@ class RaPeakTrackerWidget(QWidget):
             ax.set_xlabel(f"Time ({self.__time_unit})")
             ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
 
-            color_palette = cycle(["light green", "grey"])
+            color_palette = cycle(["light green", "blue"])
             x0 = 0
             for trace in self.__traces:
                 if len(trace) <= 1:
