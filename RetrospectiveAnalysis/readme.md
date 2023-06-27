@@ -2,7 +2,7 @@
 
 ## Setup
 
-Python version >= 3.10
+Python version >= 3.11
 
 ### Windows 10/11
 
