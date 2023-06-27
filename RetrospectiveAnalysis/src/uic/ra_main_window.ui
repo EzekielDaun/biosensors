@@ -20,22 +20,78 @@
    <string>Retrospective Analysis</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_4">
+   <layout class="QHBoxLayout" name="horizontalLayout_5">
     <item>
      <widget class="QSplitter" name="splitter_3">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
       <widget class="QSplitter" name="splitter">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-         <horstretch>1</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
+       <widget class="QGroupBox" name="thresholdSettingsGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Peak Finding/Fitting Settings</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="label_15">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>R2 Threshold:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="r2ThresholdDoubleSpinBox">
+           <property name="maximum">
+            <double>1.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.010000000000000</double>
+           </property>
+           <property name="value">
+            <double>0.700000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_16">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>-100 dBm Tolerance:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="n100dBmToleranceSpinBox">
+           <property name="maximum">
+            <number>999999999</number>
+           </property>
+           <property name="value">
+            <number>20</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QTreeView" name="treeView">
         <property name="enabled">
          <bool>true</bool>
@@ -53,308 +109,306 @@
          <bool>true</bool>
         </property>
        </widget>
-       <widget class="QWidget" name="layoutWidget">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QGroupBox" name="analyzerSettingsGroupBox">
-           <property name="title">
-            <string>1. Analyzer Settings</string>
+       <widget class="QGroupBox" name="analyzerSettingsGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>1. Analyzer Settings</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Timestamp File/Number</string>
            </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>Timestamp File/Number</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1" colspan="2">
-             <widget class="QComboBox" name="timeStampComboBox">
-              <property name="toolTip">
-               <string>csv timestamp file or a fix interval number</string>
-              </property>
-              <property name="editable">
-               <bool>true</bool>
-              </property>
-              <property name="currentText">
-               <string>0.25</string>
-              </property>
-             </widget>
-            </item>
+          </widget>
+         </item>
+         <item row="0" column="1" colspan="2">
+          <widget class="QComboBox" name="timeStampComboBox">
+           <property name="toolTip">
+            <string>csv timestamp file or a fix interval number</string>
+           </property>
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+           <property name="currentText">
+            <string>0.25</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Time Multiplier:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="timeMultiplierLineEdit">
+           <property name="toolTip">
+            <string>1/60 if convert from second to minute</string>
+           </property>
+           <property name="text">
+            <string>1/60</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLineEdit" name="timeUnitLineEdit">
+           <property name="toolTip">
+            <string>unit after conversion</string>
+           </property>
+           <property name="text">
+            <string>min</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Wavelength Multiplier:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="wavelengthMultiplierLineEdit">
+           <property name="toolTip">
+            <string>1e9 if convert from meter to nanometer</string>
+           </property>
+           <property name="text">
+            <string>1e9</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QLineEdit" name="wavelengthUnitLineEdit">
+           <property name="toolTip">
+            <string>unit after conversion</string>
+           </property>
+           <property name="text">
+            <string>nm</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Data File Pattern (RegEx):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1" colspan="2">
+          <widget class="QLineEdit" name="patternLineEdit">
+           <property name="toolTip">
+            <string>regular expression for sweep number matching. (match the number in &quot;()&quot;)</string>
+           </property>
+           <property name="text">
+            <string>r&quot;.*sweep_(\d+)\.mat&quot;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0" colspan="3">
+          <widget class="QPushButton" name="loadAnalyzerButton">
+           <property name="text">
+            <string>Load</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QGroupBox" name="plotSpectrogramsGroupBox">
+        <property name="title">
+         <string>Optional. Plot Spectrograms</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0" rowspan="4">
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="QPushButton" name="spectrogramSelectAllButton">
+               <property name="text">
+                <string>Select All</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="spectrogramUnselectAllButton">
+               <property name="text">
+                <string>Unselect All</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QListWidget" name="powerListWidget"/>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="1">
+          <widget class="QGroupBox" name="spectrogramStyleGroupBox">
+           <property name="title">
+            <string>Style</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_2">
             <item row="1" column="0">
-             <widget class="QLabel" name="label_3">
+             <widget class="QLabel" name="label_5">
               <property name="text">
-               <string>Time Multiplier:</string>
+               <string>X Ticks:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QLineEdit" name="timeMultiplierLineEdit">
+             <widget class="QSpinBox" name="xTicksSpinBox">
               <property name="toolTip">
-               <string>1/60 if convert from second to minute</string>
+               <string>number of ticks in x axis, cannot be smaller than file numbers</string>
               </property>
-              <property name="text">
-               <string>1/60</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QLineEdit" name="timeUnitLineEdit">
-              <property name="toolTip">
-               <string>unit after conversion</string>
-              </property>
-              <property name="text">
-               <string>min</string>
+              <property name="value">
+               <number>20</number>
               </property>
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QLabel" name="label_4">
+             <widget class="QLabel" name="label_7">
               <property name="text">
-               <string>Wavelength Multiplier:</string>
+               <string>Y Ticks:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QLineEdit" name="wavelengthMultiplierLineEdit">
+             <widget class="QSpinBox" name="yTicksSpinBox">
               <property name="toolTip">
-               <string>1e9 if convert from meter to nanometer</string>
+               <string>number of tick in y axis</string>
               </property>
-              <property name="text">
-               <string>1e9</string>
+              <property name="minimum">
+               <number>1</number>
               </property>
-             </widget>
-            </item>
-            <item row="2" column="2">
-             <widget class="QLineEdit" name="wavelengthUnitLineEdit">
-              <property name="toolTip">
-               <string>unit after conversion</string>
-              </property>
-              <property name="text">
-               <string>nm</string>
+              <property name="value">
+               <number>20</number>
               </property>
              </widget>
             </item>
             <item row="3" column="0">
-             <widget class="QLabel" name="label_6">
+             <widget class="QLabel" name="label_8">
               <property name="text">
-               <string>Data File Pattern (RegEx):</string>
+               <string>Power Unit:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
-            <item row="3" column="1" colspan="2">
-             <widget class="QLineEdit" name="patternLineEdit">
+            <item row="3" column="1">
+             <widget class="QLineEdit" name="powerUnitLineEdit">
               <property name="toolTip">
-               <string>regular expression for sweep number matching. (match the number in &quot;()&quot;)</string>
+               <string>the unit to display</string>
               </property>
               <property name="text">
-               <string>r&quot;.*sweep_(\d+)\.mat&quot;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0" colspan="3">
-             <widget class="QPushButton" name="loadAnalyzerButton">
-              <property name="text">
-               <string>Load</string>
+               <string>dBm</string>
               </property>
              </widget>
             </item>
            </layout>
           </widget>
          </item>
-         <item>
-          <widget class="QGroupBox" name="plotSpectrogramsGroupBox">
+         <item row="1" column="1">
+          <widget class="QGroupBox" name="spectrogramSettingsGroupBox">
            <property name="title">
-            <string>Optional. Plot Spectrograms</string>
+            <string>Settings</string>
            </property>
-           <layout class="QGridLayout" name="gridLayout_4">
-            <item row="0" column="0" rowspan="4">
-             <layout class="QVBoxLayout" name="verticalLayout_4">
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_3">
-                <item>
-                 <widget class="QPushButton" name="spectrogramSelectAllButton">
-                  <property name="text">
-                   <string>Select All</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="spectrogramUnselectAllButton">
-                  <property name="text">
-                   <string>Unselect All</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QListWidget" name="powerListWidget"/>
-              </item>
-             </layout>
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>Step:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QGroupBox" name="spectrogramStyleGroupBox">
-              <property name="title">
-               <string>Style</string>
+             <widget class="QSpinBox" name="sampleStepSpinBox">
+              <property name="toolTip">
+               <string>sample once per [step] files</string>
               </property>
-              <layout class="QGridLayout" name="gridLayout_2">
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_5">
-                 <property name="text">
-                  <string>X Ticks:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QSpinBox" name="xTicksSpinBox">
-                 <property name="toolTip">
-                  <string>number of ticks in x axis, cannot be smaller than file numbers</string>
-                 </property>
-                 <property name="value">
-                  <number>20</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>Y Ticks:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QSpinBox" name="yTicksSpinBox">
-                 <property name="toolTip">
-                  <string>number of tick in y axis</string>
-                 </property>
-                 <property name="minimum">
-                  <number>1</number>
-                 </property>
-                 <property name="value">
-                  <number>20</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="0">
-                <widget class="QLabel" name="label_8">
-                 <property name="text">
-                  <string>Power Unit:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="3" column="1">
-                <widget class="QLineEdit" name="powerUnitLineEdit">
-                 <property name="toolTip">
-                  <string>the unit to display</string>
-                 </property>
-                 <property name="text">
-                  <string>dBm</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_9">
+              <property name="text">
+               <string>Start:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QGroupBox" name="spectrogramSettingsGroupBox">
-              <property name="title">
-               <string>Settings</string>
+             <widget class="QSpinBox" name="sampleStartSpinBox">
+              <property name="toolTip">
+               <string>the start number (regardless of actual sweep number)</string>
               </property>
-              <layout class="QGridLayout" name="gridLayout_3">
-               <item row="0" column="0">
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Step:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="0" column="1">
-                <widget class="QSpinBox" name="sampleStepSpinBox">
-                 <property name="toolTip">
-                  <string>sample once per [step] files</string>
-                 </property>
-                 <property name="minimum">
-                  <number>1</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_9">
-                 <property name="text">
-                  <string>Start:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QSpinBox" name="sampleStartSpinBox">
-                 <property name="toolTip">
-                  <string>the start number (regardless of actual sweep number)</string>
-                 </property>
-                 <property name="minimum">
-                  <number>1</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_10">
-                 <property name="text">
-                  <string>Stop:</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QSpinBox" name="sampleStopSpinBox">
-                 <property name="toolTip">
-                  <string>the stop number (regardless of actual sweep number)</string>
-                 </property>
-                 <property name="minimum">
-                  <number>2</number>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_10">
+              <property name="text">
+               <string>Stop:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
              </widget>
             </item>
             <item row="2" column="1">
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
+             <widget class="QSpinBox" name="sampleStopSpinBox">
+              <property name="toolTip">
+               <string>the stop number (regardless of actual sweep number)</string>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>10</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="3" column="1">
-             <widget class="QPushButton" name="spectrogramButton">
-              <property name="text">
-               <string>Spectrogram</string>
+              <property name="minimum">
+               <number>2</number>
               </property>
              </widget>
             </item>
            </layout>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="3" column="1">
+          <widget class="QPushButton" name="spectrogramButton">
+           <property name="text">
+            <string>Spectrogram</string>
+           </property>
           </widget>
          </item>
         </layout>
@@ -657,38 +711,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>loadAnalyzerButton</sender>
-   <signal>clicked()</signal>
-   <receiver>RaMainWindow</receiver>
-   <slot>slot_load_analyzer()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>353</x>
-     <y>374</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>639</x>
-     <y>359</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>spectrogramButton</sender>
-   <signal>clicked()</signal>
-   <receiver>RaMainWindow</receiver>
-   <slot>slot_plot_spectrogram()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>354</x>
-     <y>671</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>639</x>
-     <y>359</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>trackPeakButton</sender>
    <signal>clicked()</signal>
    <receiver>RaMainWindow</receiver>
@@ -753,70 +775,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>spectrogramSelectAllButton</sender>
-   <signal>clicked()</signal>
-   <receiver>RaMainWindow</receiver>
-   <slot>slot_spectrogram_select_all()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>87</x>
-     <y>442</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>639</x>
-     <y>359</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>spectrogramUnselectAllButton</sender>
-   <signal>clicked()</signal>
-   <receiver>RaMainWindow</receiver>
-   <slot>slot_spectrogram_unselect_all()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>206</x>
-     <y>442</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>639</x>
-     <y>359</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>sampleStopSpinBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>RaMainWindow</receiver>
-   <slot>slot_spectrogram_on_stop_spinbox_change(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>325</x>
-     <y>600</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>639</x>
-     <y>359</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>sampleStartSpinBox</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>RaMainWindow</receiver>
-   <slot>slot_spectrogram_on_start_spinbox_change(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>325</x>
-     <y>574</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>639</x>
-     <y>359</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>peakTracingOutputPathPushButton</sender>
    <signal>clicked()</signal>
    <receiver>RaMainWindow</receiver>
@@ -873,6 +831,102 @@
     <hint type="sourcelabel">
      <x>666</x>
      <y>155</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spectrogramSelectAllButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_select_all()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>87</x>
+     <y>442</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sampleStartSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_on_start_spinbox_change(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>325</x>
+     <y>574</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spectrogramUnselectAllButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_unselect_all()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>206</x>
+     <y>442</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>loadAnalyzerButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_load_analyzer()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>353</x>
+     <y>374</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sampleStopSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_spectrogram_on_stop_spinbox_change(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>325</x>
+     <y>600</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>639</x>
+     <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spectrogramButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RaMainWindow</receiver>
+   <slot>slot_plot_spectrogram()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>354</x>
+     <y>671</y>
     </hint>
     <hint type="destinationlabel">
      <x>639</x>
