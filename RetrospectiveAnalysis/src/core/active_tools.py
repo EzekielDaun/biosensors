@@ -1,56 +1,278 @@
+import csv
 import logging
 import os
 import re
-from functools import lru_cache
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Optional, Self
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter1d
-from scipy.signal import find_peaks, lsim, sawtooth
+from scipy.signal import find_peaks
 
 logger = logging.getLogger(__name__)
 
 
-class RampUpSweepCSVReader(object):
-    def __init__(
-        self,
-        base_folder: str,
-        pattern: re.Pattern,
-        freq: float,
-        timestamp_file="timeSteps.csv",
-    ):
-        self.__filepaths = [
-            os.path.join(base_folder, f)
-            for f in sorted(
-                list(filter(lambda x: pattern.match(x), iter(os.listdir(base_folder)))),
-                key=lambda x: int(pattern.match(x).group(1)),  # type: ignore
+@dataclass
+class ConverterConfig:
+    @dataclass(frozen=True)
+    class ConvertMethod1:
+        ai: list[float]
+        xi: list[float]
+
+        def __post_init__(self):
+            if len(self.ai) != len(self.xi):
+                raise ValueError("length of ci and xi mismatch")
+
+        def __call__(self, x: float) -> float:
+            return sum(
+                [c * (x - x0) ** i for i, (c, x0) in enumerate(zip(self.ai, self.xi))]
             )
-        ]
-        self.__freq = freq
-        timestamp_csv = np.loadtxt(
-            os.path.join(base_folder, timestamp_file), delimiter=",", dtype="object"
-        ).T
-        self.__timestamps: dict[str, float] = {
-            k: v for k, v in zip(timestamp_csv[3], timestamp_csv[1])
-        }
+
+    @dataclass(frozen=True)
+    class ConvertMethod2:
+        fsr: float
+        p_fsr: float
+        r_heater: float
+        v_offset: float
+
+        def __call__(self, v: float) -> float:
+            return (
+                (self.fsr / (self.p_fsr * 1e-3))
+                * (v - self.v_offset) ** 2
+                / self.r_heater
+            )
+
+    class KeyTypes(Enum):
+        SKIP_ROW = ("Skip_row", int)
+        SKIP_COLUMN = ("Skip_column", int)
+        RAMP_CHANNEL = ("Ramp_channel", int)
+        RAMP_SIGNAL_SYMMETRY = ("Ramp signal symmetry", float)
+        V_MIN = ("V_min", float)
+        V_MAX = ("V_max", float)
+        LASER_WAVELENGTH = ("Laser Wavelength, lambda_0 [nm]", float)
+        WAVELENGTH_CONVERSION_METHODS = ("Wavelength Conversion Methods:", None)
+        METHOD1 = ("Method1: dlambda = Sigma{Ai*(x-xi)^i}", bool)
+        A_ARRAY = ("A_array", list)
+        X_ARRAY = ("X_array", list)
+        METHOD2 = (
+            "Method2: Thermal Phaseshifter , dlambda = (FSR/P_FSR)*(V-Voffset)^2/R",
+            bool,
+        )
+        FSR = ("FSR", float)
+        P_FSR = ("P_FSR", float)
+        R_HEATER = ("R_heater", float)
+        V_OFFSET = ("Voffset", float)
+        THERMAL_RESPONSE = ("Thermal Response:", None)
+        R_ARRAY = ("R_array", list)
+        C_ARRAY = ("C_array", list)
+        TAU_ARRAY = ("Tau_array", list)
+        GAIN = ("Gain", float)
+
+    skip_row: int
+    skip_column: int
+    ramp_channel: int
+    ramp_signal_symmetry: float
+    v_min: float
+    v_max: float
+    laser_wavelength: float
+    wavelength_conversion_methods: None
+    method1: bool
+    a_array: list[float]
+    x_array: list[float]
+    method2: bool
+    fsr: float
+    p_fsr: float
+    r_heater: float
+    v_offset: float
+    thermal_response: None
+    r_array: list[Optional[float]]
+    c_array: list[Optional[float]]
+    tau_array: list[Optional[float]]
+    gain: float
+
+    def __post_init__(self):
+        for e in self.KeyTypes:
+            match e:
+                case self.KeyTypes.SKIP_ROW:
+                    self.__dict__.update({e.value[0]: self.skip_row})
+                case self.KeyTypes.SKIP_COLUMN:
+                    self.__dict__.update({e.value[0]: self.skip_column})
+                case self.KeyTypes.RAMP_CHANNEL:
+                    self.__dict__.update({e.value[0]: self.ramp_channel})
+                case self.KeyTypes.RAMP_SIGNAL_SYMMETRY:
+                    self.__dict__.update({e.value[0]: self.ramp_signal_symmetry})
+                case self.KeyTypes.V_MIN:
+                    self.__dict__.update({e.value[0]: self.v_min})
+                case self.KeyTypes.V_MAX:
+                    self.__dict__.update({e.value[0]: self.v_max})
+                case self.KeyTypes.LASER_WAVELENGTH:
+                    self.__dict__.update({e.value[0]: self.laser_wavelength})
+                case self.KeyTypes.WAVELENGTH_CONVERSION_METHODS:
+                    self.__dict__.update(
+                        {e.value[0]: self.wavelength_conversion_methods}
+                    )
+                case self.KeyTypes.METHOD1:
+                    self.__dict__.update({e.value[0]: self.method1})
+                case self.KeyTypes.A_ARRAY:
+                    self.__dict__.update({e.value[0]: self.a_array})
+                case self.KeyTypes.X_ARRAY:
+                    self.__dict__.update({e.value[0]: self.x_array})
+                case self.KeyTypes.METHOD2:
+                    self.__dict__.update({e.value[0]: self.method2})
+                case self.KeyTypes.FSR:
+                    self.__dict__.update({e.value[0]: self.fsr})
+                case self.KeyTypes.P_FSR:
+                    self.__dict__.update({e.value[0]: self.p_fsr})
+                case self.KeyTypes.R_HEATER:
+                    self.__dict__.update({e.value[0]: self.r_heater})
+                case self.KeyTypes.V_OFFSET:
+                    self.__dict__.update({e.value[0]: self.v_offset})
+                case self.KeyTypes.THERMAL_RESPONSE:
+                    self.__dict__.update({e.value[0]: self.thermal_response})
+                case self.KeyTypes.R_ARRAY:
+                    self.__dict__.update({e.value[0]: self.r_array})
+                case self.KeyTypes.C_ARRAY:
+                    self.__dict__.update({e.value[0]: self.c_array})
+                case self.KeyTypes.TAU_ARRAY:
+                    self.__dict__.update({e.value[0]: self.tau_array})
+                case self.KeyTypes.GAIN:
+                    self.__dict__.update({e.value[0]: self.gain})
+                case _:
+                    raise ValueError(f"unsupported key {e}")
+
+    @classmethod
+    def from_csv(cls, csv_path: str) -> Self:
+        params: dict[str, Any] = {}
+        with open(csv_path, newline="") as f:
+            reader = csv.reader(f, delimiter=",")
+            for row in reader:
+                for e in cls.KeyTypes:
+                    if (key := row[0]) == e.value[0]:
+                        type = e.value[1]
+                        if type is list:
+                            while row[-1].isspace() or row[-1] == "":
+                                row = row[:-1]
+                            params[key] = [
+                                float(x) if x != "" else None for x in row[1:]
+                            ]
+                        elif type in (int, float, str):
+                            params[key] = type(row[1])
+                        elif type is bool:
+                            params[key] = bool(int(row[1]))
+                        elif type is None:
+                            continue
+                        else:
+                            raise ValueError(f"unsupported type {key}:{type}")
+                        break
+
+        config = cls(
+            skip_row=params[cls.KeyTypes.SKIP_ROW.value[0]],
+            skip_column=params[cls.KeyTypes.SKIP_COLUMN.value[0]],
+            ramp_channel=params[cls.KeyTypes.RAMP_CHANNEL.value[0]],
+            ramp_signal_symmetry=params[cls.KeyTypes.RAMP_SIGNAL_SYMMETRY.value[0]],
+            v_min=params[cls.KeyTypes.V_MIN.value[0]],
+            v_max=params[cls.KeyTypes.V_MAX.value[0]],
+            laser_wavelength=params[cls.KeyTypes.LASER_WAVELENGTH.value[0]],
+            wavelength_conversion_methods=None,
+            method1=params[cls.KeyTypes.METHOD1.value[0]],
+            a_array=params[cls.KeyTypes.A_ARRAY.value[0]],
+            x_array=params[cls.KeyTypes.X_ARRAY.value[0]],
+            method2=params[cls.KeyTypes.METHOD2.value[0]],
+            fsr=params[cls.KeyTypes.FSR.value[0]],
+            p_fsr=params[cls.KeyTypes.P_FSR.value[0]],
+            r_heater=params[cls.KeyTypes.R_HEATER.value[0]],
+            v_offset=params[cls.KeyTypes.V_OFFSET.value[0]],
+            thermal_response=None,
+            r_array=params[cls.KeyTypes.R_ARRAY.value[0]],
+            c_array=params[cls.KeyTypes.C_ARRAY.value[0]],
+            tau_array=params[cls.KeyTypes.TAU_ARRAY.value[0]],
+            gain=params[cls.KeyTypes.GAIN.value[0]],
+        )
+
+        return config
+
+    def to_csv(self, path: str):
+        with open(path, "w", newline="") as f:
+            writer = csv.writer(f, delimiter=",")
+            for e in self.KeyTypes:
+                k, t = e.value
+                if t is None:
+                    writer.writerow([None])
+                    writer.writerow([k])
+                elif t is list:
+                    writer.writerow([k] + self.__dict__[k])
+                elif t is bool:
+                    writer.writerow([k, int(self.__dict__[k])])
+                else:
+                    writer.writerow([k, self.__dict__[k]])
+
+    def wavelength_conversion_method(self):
+        if self.method1:
+            return self.ConvertMethod1(ai=self.a_array, xi=self.x_array)
+        elif self.method2:
+            return self.ConvertMethod2(
+                fsr=self.fsr,
+                p_fsr=self.p_fsr,
+                r_heater=self.r_heater,
+                v_offset=self.v_offset,
+            )
+        else:
+            raise ValueError("No wavelength conversion method selected")
+
+
+@dataclass
+class CSVData:
+    file_path: str
+    skip_rows: int
+    skip_columns: int
+    ramp_channel: int
+    ramp: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
+    data: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
+
+    def __post_init__(self):
+        data = np.loadtxt(self.file_path, delimiter=",", skiprows=self.skip_rows).T
+
+        self.ramp = data[self.ramp_channel]
+        data = np.delete(data, self.ramp_channel, 0)
+
+        self.data = data[self.skip_columns :]
+
+
+@dataclass(frozen=True)
+class RampUpSweepCSVReader2:
+    folder_path: str
+    pattern: re.Pattern
+    skip_rows: int
+    skip_columns: int
+    ramp_channel: int
 
     def __iter__(self):
-        for filepath in self.__filepaths:
-            logger.info(f"Reading \042{os.path.basename(filepath)}\042")
-
-            data = np.loadtxt(filepath, delimiter=",")[:].T
-            power, reference = data[0], data[1]
+        for filepath in [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ]:
+            csv_data = CSVData(
+                filepath, self.skip_rows, self.skip_columns, self.ramp_channel
+            )
 
             maxima, _ = find_peaks(
-                gaussian_filter1d(reference, 1),
-                prominence=(np.max(reference) - np.min(reference)) * 0.9,
+                gaussian_filter1d(csv_data.ramp, 1),
+                prominence=(np.max(csv_data.ramp) - np.min(csv_data.ramp)) * 0.9,
             )
-
             minima, _ = find_peaks(
-                gaussian_filter1d(-reference, 1),
-                prominence=(np.max(reference) - np.min(reference)) * 0.9,
+                gaussian_filter1d(-csv_data.ramp, 1),
+                prominence=(np.max(csv_data.ramp) - np.min(csv_data.ramp)) * 0.9,
             )
-
             if minima[0] > maxima[0]:
                 maxima = maxima[1:]
             if minima[-1] > maxima[-1]:
@@ -60,57 +282,29 @@ class RampUpSweepCSVReader(object):
                 raise ValueError(
                     "number of minima and maxima mismatch in reference signal"
                 )
-
             for i, (start, stop) in enumerate(zip(minima, maxima)):
-                p = power[start:stop]
-                t = (
-                    float(self.__timestamps[os.path.basename(filepath)])
-                    + i / self.__freq
-                )
-                yield p, t
+                yield csv_data.data[:, start:stop], (start, stop)
 
-            logger.info(
-                f"end of  \042{os.path.basename(filepath)}\042, found {len(minima)} sweeps"
+    @property
+    def data_shape(self):
+        filepath = [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
             )
+        ][0]
 
+        csv_data = CSVData(
+            file_path=filepath,
+            skip_rows=self.skip_rows,
+            skip_columns=self.skip_columns,
+            ramp_channel=self.ramp_channel,
+        )
 
-@lru_cache()
-def thermal_simulation(sweep_freq: float, t_final: int, len_period: int, tau: float):
-    pole = 1 / tau
-    t = np.arange(0, t_final, 1 / sweep_freq / len_period)
-
-    v = sawtooth(2 * np.pi * sweep_freq * t)
-    v -= min(v)
-    v *= 0.5  # scale to 0-1
-    u = v**2
-
-    system = ([1.0], [1.0, pole])  # transfer function 1/(s+p)
-    t, y, x = lsim(system, u, t)
-    y = y[-len_period:]
-    return y
-
-
-def generate_wavelength(
-    power: NDArray[np.float64],
-    reference_temp_sweep: NDArray[np.float64],
-    wavelength_range: tuple[float, float],
-):
-    reference_temp_sweep = np.interp(  # interpolate to the same length as power
-        np.linspace(0, 1, len(power)),
-        np.linspace(0, 1, len(reference_temp_sweep)),
-        reference_temp_sweep,
-    )
-    index = np.argmin(reference_temp_sweep)
-    temp = reference_temp_sweep[index:]
-    temp = -temp
-    temp -= temp.min()
-    temp /= temp.max()
-    wavelength = (  # scale to wavelength range
-        wavelength_range[0] + (wavelength_range[1] - wavelength_range[0]) * temp
-    )
-    power = power[index:]
-
-    indices = np.argsort(wavelength)
-    wavelength = wavelength[indices]
-    power = power[indices]
-    return wavelength, power
+        return csv_data.data.shape

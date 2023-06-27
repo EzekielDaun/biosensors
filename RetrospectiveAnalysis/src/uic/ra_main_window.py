@@ -39,6 +39,8 @@ class Ui_RaMainWindow(object):
         self.actionOp1 = QAction(RaMainWindow)
         self.actionOp1.setObjectName(u"actionOp1")
         self.actionOp1.setCheckable(True)
+        self.actionActiveConverter = QAction(RaMainWindow)
+        self.actionActiveConverter.setObjectName(u"actionActiveConverter")
         self.centralwidget = QWidget(RaMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayout_5 = QHBoxLayout(self.centralwidget)
@@ -439,6 +441,7 @@ class Ui_RaMainWindow(object):
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menuFile.addAction(self.actionOpen)
+        self.menuFile.addAction(self.actionActiveConverter)
 
         self.retranslateUi(RaMainWindow)
         self.actionOpen.triggered.connect(RaMainWindow.slot_open_clicked)
@@ -458,6 +461,7 @@ class Ui_RaMainWindow(object):
         self.loadAnalyzerButton.clicked.connect(RaMainWindow.slot_load_analyzer)
         self.sampleStopSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_stop_spinbox_change)
         self.spectrogramButton.clicked.connect(RaMainWindow.slot_plot_spectrogram)
+        self.actionActiveConverter.triggered.connect(RaMainWindow.slot_action_active_converter_clicked)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -477,6 +481,10 @@ class Ui_RaMainWindow(object):
         self.actionSave_as.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+S", None))
 #endif // QT_CONFIG(shortcut)
         self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
+        self.actionActiveConverter.setText(QCoreApplication.translate("RaMainWindow", u"Active Converter", None))
+#if QT_CONFIG(shortcut)
+        self.actionActiveConverter.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+O", None))
+#endif // QT_CONFIG(shortcut)
         self.thresholdSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Peak Finding/Fitting Settings", None))
         self.label_15.setText(QCoreApplication.translate("RaMainWindow", u"R2 Threshold:", None))
         self.label_16.setText(QCoreApplication.translate("RaMainWindow", u"-100 dBm Tolerance:", None))
