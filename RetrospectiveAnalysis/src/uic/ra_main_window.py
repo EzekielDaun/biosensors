@@ -455,13 +455,13 @@ class Ui_RaMainWindow(object):
         self.peakTracingStartSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_start_spinbox_change)
         self.peakTracingStopSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_stop_spinbox_change)
         self.FSRERQButton.clicked.connect(RaMainWindow.slot_fsr_er_q)
-        self.actionActiveConverter.triggered.connect(RaMainWindow.slot_action_active_converter_clicked)
         self.spectrogramSelectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_select_all)
         self.sampleStartSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_start_spinbox_change)
         self.spectrogramUnselectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_unselect_all)
         self.loadAnalyzerButton.clicked.connect(RaMainWindow.slot_load_analyzer)
         self.sampleStopSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_stop_spinbox_change)
         self.spectrogramButton.clicked.connect(RaMainWindow.slot_plot_spectrogram)
+        self.actionActiveConverter.triggered.connect(RaMainWindow.slot_action_active_converter_clicked)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
