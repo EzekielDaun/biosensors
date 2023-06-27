@@ -16,13 +16,18 @@ from PySide6.QtWidgets import (
 
 from ..core.passive_tools import PassiveAnalyzer as Analyzer
 from ..uic.ra_main_window import Ui_RaMainWindow
+from .ra_active_converter_dialog import RaActiveConverterDialog
 from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
 from ..widgets.ra_tab_plotter_widget import (
     RaFilePlotterWidget,
     RaSpectrogramPlotterWidget,
 )
+import pyqtgraph as pg
 
 logger = logging.getLogger(__name__)
+
+pg.setConfigOption("background", "w")
+pg.setConfigOption("foreground", "k")
 
 
 class RaMainWindow(QMainWindow):
@@ -120,6 +125,16 @@ class RaMainWindow(QMainWindow):
             self.__ui.plotSpectrogramsGroupBox.setEnabled(False)
             self.__ui.peakTracingGroupBox.setEnabled(False)
             self.__ui.saveResultsButton.setEnabled(False)
+
+    def slot_action_active_converter_clicked(self):
+        folder_path = QFileDialog.getExistingDirectory(
+            dir=os.path.expanduser("~"),
+        )
+        if folder_path == "":
+            self.__ui.statusbar.showMessage("Retrospective Analysis - Open cancelled")
+        else:
+            dialog = RaActiveConverterDialog(folder_path, self)
+            dialog.show()
 
     def slot_file_changed(self, model_index):
         tree_view = self.__ui.treeView

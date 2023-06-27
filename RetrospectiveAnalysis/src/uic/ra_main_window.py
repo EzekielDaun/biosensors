@@ -39,6 +39,8 @@ class Ui_RaMainWindow(object):
         self.actionOp1 = QAction(RaMainWindow)
         self.actionOp1.setObjectName(u"actionOp1")
         self.actionOp1.setCheckable(True)
+        self.actionActiveConverter = QAction(RaMainWindow)
+        self.actionActiveConverter.setObjectName(u"actionActiveConverter")
         self.centralwidget = QWidget(RaMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayout_4 = QHBoxLayout(self.centralwidget)
@@ -413,6 +415,7 @@ class Ui_RaMainWindow(object):
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menuFile.addAction(self.actionOpen)
+        self.menuFile.addAction(self.actionActiveConverter)
 
         self.retranslateUi(RaMainWindow)
         self.actionOpen.triggered.connect(RaMainWindow.slot_open_clicked)
@@ -432,6 +435,7 @@ class Ui_RaMainWindow(object):
         self.peakTracingStartSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_start_spinbox_change)
         self.peakTracingStopSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_stop_spinbox_change)
         self.FSRERQButton.clicked.connect(RaMainWindow.slot_fsr_er_q)
+        self.actionActiveConverter.triggered.connect(RaMainWindow.slot_action_active_converter_clicked)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -451,6 +455,10 @@ class Ui_RaMainWindow(object):
         self.actionSave_as.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+S", None))
 #endif // QT_CONFIG(shortcut)
         self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
+        self.actionActiveConverter.setText(QCoreApplication.translate("RaMainWindow", u"Active Converter", None))
+#if QT_CONFIG(shortcut)
+        self.actionActiveConverter.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+O", None))
+#endif // QT_CONFIG(shortcut)
         self.analyzerSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"1. Analyzer Settings", None))
         self.label_2.setText(QCoreApplication.translate("RaMainWindow", u"Timestamp File/Number", None))
 #if QT_CONFIG(tooltip)
