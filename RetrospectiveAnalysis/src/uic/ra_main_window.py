@@ -17,12 +17,12 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QComboBox, QDockWidget,
-    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QListWidget, QListWidgetItem,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QSpacerItem, QSpinBox, QSplitter,
-    QStatusBar, QTextBrowser, QTreeView, QVBoxLayout,
-    QWidget)
+    QDoubleSpinBox, QGridLayout, QGroupBox, QHBoxLayout,
+    QHeaderView, QLabel, QLineEdit, QListWidget,
+    QListWidgetItem, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
+    QSplitter, QStatusBar, QTextBrowser, QTreeView,
+    QVBoxLayout, QWidget)
 
 class Ui_RaMainWindow(object):
     def setupUi(self, RaMainWindow):
@@ -41,19 +41,53 @@ class Ui_RaMainWindow(object):
         self.actionOp1.setCheckable(True)
         self.centralwidget = QWidget(RaMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.horizontalLayout_4 = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_5 = QHBoxLayout(self.centralwidget)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.splitter_3 = QSplitter(self.centralwidget)
         self.splitter_3.setObjectName(u"splitter_3")
         self.splitter_3.setOrientation(Qt.Horizontal)
         self.splitter = QSplitter(self.splitter_3)
         self.splitter.setObjectName(u"splitter")
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(1)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.splitter.sizePolicy().hasHeightForWidth())
-        self.splitter.setSizePolicy(sizePolicy)
         self.splitter.setOrientation(Qt.Vertical)
+        self.thresholdSettingsGroupBox = QGroupBox(self.splitter)
+        self.thresholdSettingsGroupBox.setObjectName(u"thresholdSettingsGroupBox")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.thresholdSettingsGroupBox.sizePolicy().hasHeightForWidth())
+        self.thresholdSettingsGroupBox.setSizePolicy(sizePolicy)
+        self.horizontalLayout_4 = QHBoxLayout(self.thresholdSettingsGroupBox)
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.label_15 = QLabel(self.thresholdSettingsGroupBox)
+        self.label_15.setObjectName(u"label_15")
+        sizePolicy.setHeightForWidth(self.label_15.sizePolicy().hasHeightForWidth())
+        self.label_15.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_4.addWidget(self.label_15)
+
+        self.r2ThresholdDoubleSpinBox = QDoubleSpinBox(self.thresholdSettingsGroupBox)
+        self.r2ThresholdDoubleSpinBox.setObjectName(u"r2ThresholdDoubleSpinBox")
+        self.r2ThresholdDoubleSpinBox.setMaximum(1.000000000000000)
+        self.r2ThresholdDoubleSpinBox.setSingleStep(0.010000000000000)
+        self.r2ThresholdDoubleSpinBox.setValue(0.700000000000000)
+
+        self.horizontalLayout_4.addWidget(self.r2ThresholdDoubleSpinBox)
+
+        self.label_16 = QLabel(self.thresholdSettingsGroupBox)
+        self.label_16.setObjectName(u"label_16")
+        sizePolicy.setHeightForWidth(self.label_16.sizePolicy().hasHeightForWidth())
+        self.label_16.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_4.addWidget(self.label_16)
+
+        self.n100dBmToleranceSpinBox = QSpinBox(self.thresholdSettingsGroupBox)
+        self.n100dBmToleranceSpinBox.setObjectName(u"n100dBmToleranceSpinBox")
+        self.n100dBmToleranceSpinBox.setMaximum(999999999)
+        self.n100dBmToleranceSpinBox.setValue(20)
+
+        self.horizontalLayout_4.addWidget(self.n100dBmToleranceSpinBox)
+
+        self.splitter.addWidget(self.thresholdSettingsGroupBox)
         self.treeView = QTreeView(self.splitter)
         self.treeView.setObjectName(u"treeView")
         self.treeView.setEnabled(True)
@@ -65,13 +99,10 @@ class Ui_RaMainWindow(object):
         self.treeView.setEditTriggers(QAbstractItemView.DoubleClicked|QAbstractItemView.SelectedClicked)
         self.treeView.setSortingEnabled(True)
         self.splitter.addWidget(self.treeView)
-        self.layoutWidget = QWidget(self.splitter)
-        self.layoutWidget.setObjectName(u"layoutWidget")
-        self.verticalLayout_2 = QVBoxLayout(self.layoutWidget)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.analyzerSettingsGroupBox = QGroupBox(self.layoutWidget)
+        self.analyzerSettingsGroupBox = QGroupBox(self.splitter)
         self.analyzerSettingsGroupBox.setObjectName(u"analyzerSettingsGroupBox")
+        sizePolicy.setHeightForWidth(self.analyzerSettingsGroupBox.sizePolicy().hasHeightForWidth())
+        self.analyzerSettingsGroupBox.setSizePolicy(sizePolicy)
         self.gridLayout = QGridLayout(self.analyzerSettingsGroupBox)
         self.gridLayout.setObjectName(u"gridLayout")
         self.label_2 = QLabel(self.analyzerSettingsGroupBox)
@@ -130,10 +161,8 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.loadAnalyzerButton, 4, 0, 1, 3)
 
-
-        self.verticalLayout_2.addWidget(self.analyzerSettingsGroupBox)
-
-        self.plotSpectrogramsGroupBox = QGroupBox(self.layoutWidget)
+        self.splitter.addWidget(self.analyzerSettingsGroupBox)
+        self.plotSpectrogramsGroupBox = QGroupBox(self.splitter)
         self.plotSpectrogramsGroupBox.setObjectName(u"plotSpectrogramsGroupBox")
         self.gridLayout_4 = QGridLayout(self.plotSpectrogramsGroupBox)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
@@ -257,10 +286,7 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout_4.addWidget(self.spectrogramButton, 3, 1, 1, 1)
 
-
-        self.verticalLayout_2.addWidget(self.plotSpectrogramsGroupBox)
-
-        self.splitter.addWidget(self.layoutWidget)
+        self.splitter.addWidget(self.plotSpectrogramsGroupBox)
         self.splitter_3.addWidget(self.splitter)
         self.peakTracingGroupBox = QGroupBox(self.splitter_3)
         self.peakTracingGroupBox.setObjectName(u"peakTracingGroupBox")
@@ -382,7 +408,7 @@ class Ui_RaMainWindow(object):
 
         self.splitter_3.addWidget(self.peakTracingGroupBox)
 
-        self.horizontalLayout_4.addWidget(self.splitter_3)
+        self.horizontalLayout_5.addWidget(self.splitter_3)
 
         RaMainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(RaMainWindow)
@@ -418,20 +444,20 @@ class Ui_RaMainWindow(object):
         self.actionOpen.triggered.connect(RaMainWindow.slot_open_clicked)
         self.treeView.clicked.connect(RaMainWindow.slot_file_changed)
         self.treeView.activated.connect(RaMainWindow.slot_file_changed)
-        self.loadAnalyzerButton.clicked.connect(RaMainWindow.slot_load_analyzer)
-        self.spectrogramButton.clicked.connect(RaMainWindow.slot_plot_spectrogram)
         self.trackPeakButton.clicked.connect(RaMainWindow.slot_track_peak)
         self.saveResultsButton.clicked.connect(RaMainWindow.slot_save_results)
         self.peakTrackingSelectAllButton.clicked.connect(RaMainWindow.slot_peak_tracking_select_all)
         self.peakTrackingUnselectAllButton.clicked.connect(RaMainWindow.slot_peak_tracking_unselect_all)
-        self.spectrogramSelectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_select_all)
-        self.spectrogramUnselectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_unselect_all)
-        self.sampleStopSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_stop_spinbox_change)
-        self.sampleStartSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_start_spinbox_change)
         self.peakTracingOutputPathPushButton.clicked.connect(RaMainWindow.slot_peak_tracking_select_output_path)
         self.peakTracingStartSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_start_spinbox_change)
         self.peakTracingStopSpinBox.valueChanged.connect(RaMainWindow.slot_peak_tracking_on_stop_spinbox_change)
         self.FSRERQButton.clicked.connect(RaMainWindow.slot_fsr_er_q)
+        self.spectrogramSelectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_select_all)
+        self.sampleStartSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_start_spinbox_change)
+        self.spectrogramUnselectAllButton.clicked.connect(RaMainWindow.slot_spectrogram_unselect_all)
+        self.loadAnalyzerButton.clicked.connect(RaMainWindow.slot_load_analyzer)
+        self.sampleStopSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_stop_spinbox_change)
+        self.spectrogramButton.clicked.connect(RaMainWindow.slot_plot_spectrogram)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -451,6 +477,9 @@ class Ui_RaMainWindow(object):
         self.actionSave_as.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+S", None))
 #endif // QT_CONFIG(shortcut)
         self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
+        self.thresholdSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Peak Finding/Fitting Settings", None))
+        self.label_15.setText(QCoreApplication.translate("RaMainWindow", u"R2 Threshold:", None))
+        self.label_16.setText(QCoreApplication.translate("RaMainWindow", u"-100 dBm Tolerance:", None))
         self.analyzerSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"1. Analyzer Settings", None))
         self.label_2.setText(QCoreApplication.translate("RaMainWindow", u"Timestamp File/Number", None))
 #if QT_CONFIG(tooltip)

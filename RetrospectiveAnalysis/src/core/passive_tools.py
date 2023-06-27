@@ -83,7 +83,7 @@ class PassiveAnalyzer(object):
 
     def get_spectrograms(
         self,
-        channels: list[int],
+        channels: set[int],
         step: int = 1,
         start_index: int = 0,
         stop_index: int | None = None,
@@ -107,8 +107,10 @@ class PassiveAnalyzer(object):
 
     def analyze(
         self,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
+        r2_threshold: float,
+        max_n100dBm_points: int,
         enable_multi_processing: bool = True,
     ) -> tuple[
         dict[int, tuple[list[list[float]], float]], dict[int, list[NDArray[np.float64]]]
@@ -153,6 +155,8 @@ class PassiveAnalyzer(object):
                     ],
                     repeat(channels),
                     repeat(self.__wavelength_multiplier),
+                    repeat(r2_threshold),
+                    repeat(max_n100dBm_points),
                 ),
             ),
             {},
@@ -162,8 +166,10 @@ class PassiveAnalyzer(object):
 
     def analyze_fsr_er_q(
         self,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
+        r2_threshold: float,
+        max_n100dBm_points: int,
         enable_multi_processing: bool = True,
     ):
         def __starmap(*args, **kwargs):
@@ -193,6 +199,8 @@ class PassiveAnalyzer(object):
                     ],
                     repeat(channels),
                     repeat(self.__wavelength_multiplier),
+                    repeat(r2_threshold),
+                    repeat(max_n100dBm_points),
                 ),
             ),
             {},
@@ -214,8 +222,10 @@ def read_mat(
 
 def mat_to_peak_dict(
     path: str,
-    channels: list[int],
+    channels: set[int],
     wavelength_multiplier: float,
+    r2_threshold: float,
+    max_n100dBm_points: int,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
     """_mat_to_peak_dict
 
@@ -235,6 +245,8 @@ def mat_to_peak_dict(
         temp_peaks = get_lorentzian_peaks(
             powers,
             wavelengths,
+            r2_threshold=r2_threshold,
+            max_n100dBm_points=max_n100dBm_points,
         )[0]
         ret[c] = ret.get(c, []) + [temp_peaks]
 
@@ -243,8 +255,10 @@ def mat_to_peak_dict(
 
 def mat_to_fsr_er_q_dict(
     path: str,
-    channels: list[int],
+    channels: set[int],
     wavelength_multiplier: float,
+    r2_threshold: float,
+    max_n100dBm_points: int,
 ) -> dict[int, list[list[NDArray[np.float64]]]]:
     """_mat_to_fsr_er_q_dict
 
@@ -264,9 +278,9 @@ def mat_to_fsr_er_q_dict(
         __peaks, fsr, er, q = get_lorentzian_peaks(
             powers,
             wavelengths,
+            r2_threshold=r2_threshold,
+            max_n100dBm_points=max_n100dBm_points,
         )
         ret[c] = ret.get(c, []) + [(fsr, er, q)]
 
     return ret
-
-

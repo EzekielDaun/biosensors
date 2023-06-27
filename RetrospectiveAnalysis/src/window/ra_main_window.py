@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QVBoxLayout,
 )
+import pyqtgraph as pg
 
 from ..core.passive_tools import PassiveAnalyzer as Analyzer
 from ..uic.ra_main_window import Ui_RaMainWindow
@@ -33,18 +34,24 @@ class RaMainWindow(QMainWindow):
         self.__ui = Ui_RaMainWindow()
         self.__ui.setupUi(self)
 
+        pg.setConfigOption("background", "w")
+        pg.setConfigOption("foreground", "k")
+
         self.__ui.statusbar.showMessage("Retrospective Analysis")
 
         # initialize file treeview
         model = QFileSystemModel()
+        model.setFilter(
+            QDir.Filter.AllEntries | QDir.Filter.NoDot | QDir.Filter.AllDirs
+        )
         model.setRootPath(QDir.rootPath())
         self.__ui.treeView.setModel(model)
         self.__ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
 
         # file plotter
         self.__file_plotter_widget = RaFilePlotterWidget()
-        self.__ui.splitter.insertWidget(0, self.__file_plotter_widget)
-        self.__ui.splitter.setStretchFactor(0, 2)
+        self.__ui.splitter.insertWidget(1, self.__file_plotter_widget)
+        self.__ui.splitter.setStretchFactor(1, 2)
 
         # spectrum plotter
         # intended to be popped up so not in any layout
@@ -129,10 +136,15 @@ class RaMainWindow(QMainWindow):
         _, file_ext = os.path.splitext(file_name)
         if model.isDir(model.index(file_path)):
             tree_view.setRootIndex(model.index(file_path))
+            self.__ui.statusbar.showMessage(f"Retrospective Analysis - {file_path}")
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
-            self.__file_plotter_widget.update(file_path)
+            self.__file_plotter_widget.update(
+                file_path,
+                r2_threshold=self.__ui.r2ThresholdDoubleSpinBox.value(),
+                max_n100dBm_points=self.__ui.n100dBmToleranceSpinBox.value(),
+            )
 
     def slot_load_analyzer(self):
         # clear power list widget
@@ -207,7 +219,7 @@ class RaMainWindow(QMainWindow):
     def slot_plot_spectrogram(self):
         self.__folder_plotter.analyzer = self.__analyzer
         lw = self.__ui.powerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         if len(powers) != 0:
             self.__folder_plotter.plot_spectrograms(
                 powers,
@@ -245,7 +257,7 @@ class RaMainWindow(QMainWindow):
     # Peak tracking slots
     def slot_track_peak(self):
         lw = self.__ui.peakTrackerPowerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         self.__peak_tracker_widget.plot_initial(
             self.__analyzer,
             powers,
@@ -257,6 +269,8 @@ class RaMainWindow(QMainWindow):
             self.__ui.timeUnitLineEdit.text(),
             self.__ui.wavelengthUnitLineEdit.text(),
             self.__ui.powerUnitLineEdit.text(),
+            self.__ui.r2ThresholdDoubleSpinBox.value(),
+            self.__ui.n100dBmToleranceSpinBox.value(),
         )
 
     def slot_save_results(self):
@@ -296,7 +310,7 @@ class RaMainWindow(QMainWindow):
     # FSR ER Q slots
     def slot_fsr_er_q(self):
         lw = self.__ui.peakTrackerPowerListWidget
-        powers = [i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked]  # type: ignore
+        powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         output_path = os.path.join(
             self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
         )

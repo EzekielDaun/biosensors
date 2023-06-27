@@ -45,8 +45,15 @@ class RaFilePlotterWidget(QGroupBox):
             self.__current_tab_index: int = 0
             self.__current_file_basename: str | None = None
 
-        def plot_file(self, file_path: str):
+        def plot_file(
+            self,
+            file_path: str,
+            r2_threshold: float,
+            max_n100dBm_points: int,
+        ):
             self.__current_file_basename = os.path.basename(file_path)
+            self.__r2_threshold = r2_threshold
+            self.__max_n100dBm_points = max_n100dBm_points
             self.__worker = self.__RaFilePlotterWorker(file_path)
             self.__worker.finished.connect(self.slot_work_done)  # type: ignore
             self.__worker.start()
@@ -65,7 +72,10 @@ class RaFilePlotterWidget(QGroupBox):
                 axes = figure_widget.figure.subplots(1, 1)
                 axes.plot(self.__worker.wavelengths, power)
                 peaks, fsr, er, q = get_lorentzian_peaks(
-                    power, self.__worker.wavelengths
+                    power,
+                    self.__worker.wavelengths,
+                    self.__r2_threshold,
+                    self.__max_n100dBm_points,
                 )
                 for _j, peak in enumerate(peaks):
                     x0, y0, _i, gamma, a = peak
@@ -98,8 +108,8 @@ class RaFilePlotterWidget(QGroupBox):
     def clear(self):
         self.__file_plotter.clear()
 
-    def update(self, file_path: str):
-        self.__file_plotter.plot_file(file_path)
+    def update(self, file_path: str, r2_threshold: float, max_n100dBm_points: int):
+        self.__file_plotter.plot_file(file_path, r2_threshold, max_n100dBm_points)
 
 
 class RaSpectrogramPlotterWidget(QTabWidget):
@@ -110,7 +120,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
         def __init__(
             self,
             analyzer: Analyzer,
-            channels: list[int],
+            channels: set[int],
             step: int,
             start_index: int,
             stop_index: int | None,
@@ -142,7 +152,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
 
     def plot_spectrograms(
         self,
-        channels: list[int],
+        channels: set[int],
         step: int,
         start_index: int,
         stop_index: int | None,
