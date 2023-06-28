@@ -18,6 +18,7 @@ from pyqtgraph import (
 )
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QTransform
+from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDialog,
     QDoubleSpinBox,
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -55,30 +57,60 @@ class RegulationPhaseShifterTab(RegulationTabBase):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QHBoxLayout())
 
-        self.layout().addWidget(QLabel("FSR (nm)"))
+        __equation_web_engine_view = QWebEngineView()
+        __equation_web_engine_view.setHtml(
+            r"""
+             <html><head>
+             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+             </script></head>
+             <body>
+             <p><mathjax style="font-size:1.5em">
+             $$y=\frac{\text{FSR}}{P_{2\pi}} \frac{(x-V_\text{offset})^2}{R}$$
+             </mathjax></p>
+             </body></html>
+             """
+        )
+        self.layout().addWidget(__equation_web_engine_view)
+
+        parameter_layout = QVBoxLayout()
+
         self.__fsr_double_spinbox = QDoubleSpinBox()
         self.__fsr_double_spinbox.setMaximum(1e4)
         self.__fsr_double_spinbox.setMinimum(0)
         self.__fsr_double_spinbox.setValue(1)
-        self.layout().addWidget(self.__fsr_double_spinbox)
+        self.__fsr_double_spinbox.setPrefix("FSR: ")
+        self.__fsr_double_spinbox.setSuffix(" (nm)")
+        self.__fsr_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        parameter_layout.addWidget(self.__fsr_double_spinbox)
 
-        self.layout().addWidget(QLabel("P_FSR (mW)"))
         self.__p_fsr_double_spinbox = QDoubleSpinBox()
         self.__p_fsr_double_spinbox.setMaximum(1e5)
         self.__p_fsr_double_spinbox.setMinimum(0)
         self.__p_fsr_double_spinbox.setValue(1000)
-        self.layout().addWidget(self.__p_fsr_double_spinbox)
+        self.__p_fsr_double_spinbox.setPrefix("P_FSR: ")
+        self.__p_fsr_double_spinbox.setSuffix(" (mW)")
+        self.__p_fsr_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        parameter_layout.addWidget(self.__p_fsr_double_spinbox)
 
-        self.layout().addWidget(QLabel("V_offset (V)"))
         self.__v_offset_double_spinbox = QDoubleSpinBox()
-        self.__v_offset_double_spinbox.setMaximum(10)
-        self.__v_offset_double_spinbox.setMinimum(-10)
-        self.layout().addWidget(self.__v_offset_double_spinbox)
+        self.__v_offset_double_spinbox.setMaximum(1e4)
+        self.__v_offset_double_spinbox.setMinimum(-1e4)
+        self.__v_offset_double_spinbox.setValue(0)
+        self.__v_offset_double_spinbox.setPrefix("V_offset: ")
+        self.__v_offset_double_spinbox.setSuffix(" (V)")
+        self.__v_offset_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        parameter_layout.addWidget(self.__v_offset_double_spinbox)
 
-        self.layout().addWidget(QLabel("R (Ohm)"))
         self.__r_double_spinbox = QDoubleSpinBox()
         self.__r_double_spinbox.setValue(1)
-        self.layout().addWidget(self.__r_double_spinbox)
+        self.__r_double_spinbox.setMaximum(1e6)
+        self.__r_double_spinbox.setMinimum(0)
+        self.__r_double_spinbox.setPrefix("R: ")
+        self.__r_double_spinbox.setSuffix(" (Ohm)")
+        self.__r_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        parameter_layout.addWidget(self.__r_double_spinbox)
+
+        self.layout().addLayout(parameter_layout)  # type: ignore
 
     def to_regulate_function(self) -> Callable[[float], float]:
         return ConverterConfig.ConvertMethod2(
@@ -110,13 +142,36 @@ class RegulationPolynomialTab(RegulationTabBase):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QHBoxLayout())
 
-        self.layout().addWidget(QLabel("Ai Array"))
-        self.__a_array_line_edit = QLineEdit("[]")
-        self.layout().addWidget(self.__a_array_line_edit)
+        equation_web_engine_view = QWebEngineView()
+        equation_web_engine_view.setHtml(
+            r"""
+             <html><head>
+             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+             </script></head>
+             <body>
+             <p><mathjax style="font-size:1.5em">
+             $$y=\sum_{i=0} a_i(x-x_i)^i$$
+             </mathjax></p>
+             </body></html>
+             """
+        )
+        self.layout().addWidget(equation_web_engine_view)
 
-        self.layout().addWidget(QLabel("Xi Array"))
+        parameter_layout = QVBoxLayout()
+
+        label_ai = QLabel("Ai Array")
+        label_ai.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_ai)
+        self.__a_array_line_edit = QLineEdit("[]")
+        parameter_layout.addWidget(self.__a_array_line_edit)
+
+        label_xi = QLabel("Xi Array")
+        label_xi.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_xi)
         self.__x_array_line_edit = QLineEdit("[]")
-        self.layout().addWidget(self.__x_array_line_edit)
+        parameter_layout.addWidget(self.__x_array_line_edit)
+
+        self.layout().addLayout(parameter_layout)  # type: ignore
 
     def to_regulate_function(self) -> Callable[[float], float]:
         return ConverterConfig.ConvertMethod1(
@@ -180,15 +235,38 @@ class ConversionRCTFTab(ConversionTabBase):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QHBoxLayout())
 
-        self.layout().addWidget(QLabel("R"))
+        equation_web_engine_view = QWebEngineView()
+        equation_web_engine_view.setHtml(
+            r"""
+             <html><head>
+             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+             </script></head>
+             <body>
+             <p><mathjax style="font-size:2em">
+             $$\text{TF}=\sum \frac{R}{1+RCs}$$
+             </mathjax></p>
+             </body></html>
+             """
+        )
+        self.layout().addWidget(equation_web_engine_view)
+
+        parameter_layout = QVBoxLayout()
+
+        label_r = QLabel("R Array")
+        label_r.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_r)
         self.__rs_line_edit = QLineEdit("[0.95, 10, 0, 0]")
-        self.layout().addWidget(self.__rs_line_edit)
+        parameter_layout.addWidget(self.__rs_line_edit)
 
-        self.layout().addWidget(QLabel("C"))
+        label_c = QLabel("C Array")
+        label_c.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_c)
         self.__cs_line_edit = QLineEdit("[20e-6, 200e-3, 1, 1]")
-        self.layout().addWidget(self.__cs_line_edit)
+        parameter_layout.addWidget(self.__cs_line_edit)
 
-        self.layout().addWidget(QLabel("Gain"))
+        label_gain = QLabel("Gain")
+        label_gain.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_gain)
         self.__gain_double_spinbox = QDoubleSpinBox()
         self.__gain_double_spinbox.setDecimals(4)
         self.__gain_double_spinbox.setSingleStep(1)
@@ -196,7 +274,9 @@ class ConversionRCTFTab(ConversionTabBase):
             np.iinfo(np.int32).min, np.iinfo(np.int32).max
         )
         self.__gain_double_spinbox.setValue(1)
-        self.layout().addWidget(self.__gain_double_spinbox)
+        parameter_layout.addWidget(self.__gain_double_spinbox)
+
+        self.layout().addLayout(parameter_layout)  # type: ignore
 
     def to_lti(self):
         Rs = np.array(eval(self.__rs_line_edit.text()))
