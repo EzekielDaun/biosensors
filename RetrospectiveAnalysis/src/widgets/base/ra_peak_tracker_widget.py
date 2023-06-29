@@ -12,9 +12,9 @@ from PySide6.QtGui import QTransform
 from PySide6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 from scipy.io import savemat
 
-from ..core.lib import group_peaks
-from ..core.passive_tools import PassiveAnalyzer as Analyzer
-from ..uic.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
+from ...core.lib import group_peaks
+from ...core.passive_tools import PassiveAnalyzer as Analyzer
+from ...uic.base.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
 from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,6 @@ from logging import getLogger
 from multiprocessing import Pool
 from typing import Any, Optional
 
-import control
 import numpy as np
 import pyqtgraph as pg
 from numpy.typing import NDArray
@@ -18,21 +17,16 @@ from pyqtgraph import (
 )
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QTransform
-from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDialog,
-    QDoubleSpinBox,
     QFileDialog,
     QHBoxLayout,
-    QLabel,
-    QLineEdit,
     QPushButton,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 from scipy.io import savemat
-from scipy.signal import impulse2, lsim, lti, sawtooth, step, tf2zpk
+from scipy.signal import impulse2, lsim, sawtooth, step
 
 from ..core.active_tools import (
     ConverterConfig,
@@ -40,284 +34,29 @@ from ..core.active_tools import (
     RampUpSweepCSVReader2,
 )
 from ..core.lib import get_lorentzian_peaks
-from ..uic.ra_active_converter_dialog import Ui_RaActiveConverterDialog
-from ..widgets.ra_active_converter_fsr_tab_widget import RaActiveConverterFSRTabWidget
+from ..uic.active.ra_active_converter_dialog import Ui_RaActiveConverterDialog
+from ..widgets.active.ra_conversion_tabs import (
+    ConversionRCTFTab,
+    ConversionTabBase,
+    ConversionZPGTFTab,
+)
+from ..widgets.active.ra_fsr_tab_widget import (
+    RaActiveConverterFSRTabWidget,
+)
+from ..widgets.active.ra_regulation_tabs import (
+    RegulationPhaseShifterTab,
+    RegulationPolynomialTab,
+    RegulationTabBase,
+)
 
 logger = getLogger(__name__)
 
-
-# Input Regulation Methods
-class RegulationTabBase(QWidget):
-    def to_regulate_function(self) -> Callable[[float], float]:
-        ...
+CONFIG_CSV_DEFAULT_NAME = "ra_config.csv"
+OUTPUT_SUBDIR_DEFAULT_NAME = "passive"
 
 
-class RegulationPhaseShifterTab(RegulationTabBase):
-    def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.setLayout(QHBoxLayout())
-
-        __equation_web_engine_view = QWebEngineView()
-        __equation_web_engine_view.setHtml(
-            r"""
-             <html><head>
-             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-             </script></head>
-             <body>
-             <p><mathjax style="font-size:1.5em">
-             $$y=\frac{\text{FSR}}{P_{2\pi}} \frac{(x-V_\text{offset})^2}{R}$$
-             </mathjax></p>
-             </body></html>
-             """
-        )
-        self.layout().addWidget(__equation_web_engine_view)
-
-        parameter_layout = QVBoxLayout()
-
-        self.__fsr_double_spinbox = QDoubleSpinBox()
-        self.__fsr_double_spinbox.setMaximum(1e4)
-        self.__fsr_double_spinbox.setMinimum(0)
-        self.__fsr_double_spinbox.setValue(1)
-        self.__fsr_double_spinbox.setPrefix("FSR: ")
-        self.__fsr_double_spinbox.setSuffix(" (nm)")
-        self.__fsr_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        parameter_layout.addWidget(self.__fsr_double_spinbox)
-
-        self.__p_fsr_double_spinbox = QDoubleSpinBox()
-        self.__p_fsr_double_spinbox.setMaximum(1e5)
-        self.__p_fsr_double_spinbox.setMinimum(0)
-        self.__p_fsr_double_spinbox.setValue(1000)
-        self.__p_fsr_double_spinbox.setPrefix("P_FSR: ")
-        self.__p_fsr_double_spinbox.setSuffix(" (mW)")
-        self.__p_fsr_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        parameter_layout.addWidget(self.__p_fsr_double_spinbox)
-
-        self.__v_offset_double_spinbox = QDoubleSpinBox()
-        self.__v_offset_double_spinbox.setMaximum(1e4)
-        self.__v_offset_double_spinbox.setMinimum(-1e4)
-        self.__v_offset_double_spinbox.setValue(0)
-        self.__v_offset_double_spinbox.setPrefix("V_offset: ")
-        self.__v_offset_double_spinbox.setSuffix(" (V)")
-        self.__v_offset_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        parameter_layout.addWidget(self.__v_offset_double_spinbox)
-
-        self.__r_double_spinbox = QDoubleSpinBox()
-        self.__r_double_spinbox.setValue(1)
-        self.__r_double_spinbox.setMaximum(1e6)
-        self.__r_double_spinbox.setMinimum(0)
-        self.__r_double_spinbox.setPrefix("R: ")
-        self.__r_double_spinbox.setSuffix(" (Ohm)")
-        self.__r_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        parameter_layout.addWidget(self.__r_double_spinbox)
-
-        self.layout().addLayout(parameter_layout)  # type: ignore
-
-    def to_regulate_function(self) -> Callable[[float], float]:
-        return ConverterConfig.ConvertMethod2(
-            fsr=self.__fsr_double_spinbox.value(),
-            p_fsr=self.__p_fsr_double_spinbox.value(),
-            r_heater=self.__r_double_spinbox.value(),
-            v_offset=self.__v_offset_double_spinbox.value(),
-        )
-
-    @property
-    def fsr_double_spinbox(self):
-        return self.__fsr_double_spinbox
-
-    @property
-    def p_fsr_double_spinbox(self):
-        return self.__p_fsr_double_spinbox
-
-    @property
-    def v_offset_double_spinbox(self):
-        return self.__v_offset_double_spinbox
-
-    @property
-    def r_double_spinbox(self):
-        return self.__r_double_spinbox
-
-
-class RegulationPolynomialTab(RegulationTabBase):
-    def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.setLayout(QHBoxLayout())
-
-        equation_web_engine_view = QWebEngineView()
-        equation_web_engine_view.setHtml(
-            r"""
-             <html><head>
-             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-             </script></head>
-             <body>
-             <p><mathjax style="font-size:1.5em">
-             $$y=\sum_{i=0} a_i(x-x_i)^i$$
-             </mathjax></p>
-             </body></html>
-             """
-        )
-        self.layout().addWidget(equation_web_engine_view)
-
-        parameter_layout = QVBoxLayout()
-
-        label_ai = QLabel("Ai Array")
-        label_ai.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        parameter_layout.addWidget(label_ai)
-        self.__a_array_line_edit = QLineEdit("[]")
-        parameter_layout.addWidget(self.__a_array_line_edit)
-
-        label_xi = QLabel("Xi Array")
-        label_xi.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        parameter_layout.addWidget(label_xi)
-        self.__x_array_line_edit = QLineEdit("[]")
-        parameter_layout.addWidget(self.__x_array_line_edit)
-
-        self.layout().addLayout(parameter_layout)  # type: ignore
-
-    def to_regulate_function(self) -> Callable[[float], float]:
-        return ConverterConfig.ConvertMethod1(
-            list(eval(self.__a_array_line_edit.text())),
-            list(eval(self.__x_array_line_edit.text())),
-        )
-
-    @property
-    def a_array_line_edit(self):
-        return self.__a_array_line_edit
-
-    @property
-    def x_array_line_edit(self):
-        return self.__x_array_line_edit
-
-
-# Wavelength Conversion Methods
-class ConversionTabBase(QWidget):
-    def to_lti(self) -> lti:
-        ...
-
-
-class ConversionZPGTFTab(ConversionTabBase):
-    def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.setLayout(QVBoxLayout())
-
-        self.__first_row_layout = QHBoxLayout()
-
-        self.__first_row_layout.addWidget(QLabel("Zeros"))
-        self.__zeros_line_edit = QLineEdit("[]")
-        self.__first_row_layout.addWidget(self.__zeros_line_edit)
-
-        self.__first_row_layout.addWidget(QLabel("Poles"))
-        self.__poles_line_edit = QLineEdit("[-1]")
-        self.__first_row_layout.addWidget(self.__poles_line_edit)
-
-        self.__first_row_layout.addWidget(QLabel("Gain"))
-        self.__gain_double_spinbox = QDoubleSpinBox()
-        self.__gain_double_spinbox.setValue(1.0)
-        self.__gain_double_spinbox.setDecimals(4)
-        self.__gain_double_spinbox.setSingleStep(1)
-        self.__gain_double_spinbox.setRange(
-            np.iinfo(np.int32).min, np.iinfo(np.int32).max
-        )
-        self.__first_row_layout.addWidget(self.__gain_double_spinbox)
-
-        layout: QVBoxLayout = self.layout()  # type: ignore
-        layout.addLayout(self.__first_row_layout)
-
-    def to_lti(self):
-        return lti(
-            np.array(eval(self.__zeros_line_edit.text())),
-            np.array(eval(self.__poles_line_edit.text())),
-            self.__gain_double_spinbox.value(),
-        )
-
-
-class ConversionRCTFTab(ConversionTabBase):
-    def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.setLayout(QHBoxLayout())
-
-        equation_web_engine_view = QWebEngineView()
-        equation_web_engine_view.setHtml(
-            r"""
-             <html><head>
-             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-             </script></head>
-             <body>
-             <p><mathjax style="font-size:2em">
-             $$\text{TF}=\sum \frac{R}{1+RCs}$$
-             </mathjax></p>
-             </body></html>
-             """
-        )
-        self.layout().addWidget(equation_web_engine_view)
-
-        parameter_layout = QVBoxLayout()
-
-        label_r = QLabel("R Array")
-        label_r.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        parameter_layout.addWidget(label_r)
-        self.__rs_line_edit = QLineEdit("[0.95, 10, 0, 0]")
-        parameter_layout.addWidget(self.__rs_line_edit)
-
-        label_c = QLabel("C Array")
-        label_c.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        parameter_layout.addWidget(label_c)
-        self.__cs_line_edit = QLineEdit("[20e-6, 200e-3, 1, 1]")
-        parameter_layout.addWidget(self.__cs_line_edit)
-
-        label_gain = QLabel("Gain")
-        label_gain.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        parameter_layout.addWidget(label_gain)
-        self.__gain_double_spinbox = QDoubleSpinBox()
-        self.__gain_double_spinbox.setDecimals(4)
-        self.__gain_double_spinbox.setSingleStep(1)
-        self.__gain_double_spinbox.setRange(
-            np.iinfo(np.int32).min, np.iinfo(np.int32).max
-        )
-        self.__gain_double_spinbox.setValue(1)
-        parameter_layout.addWidget(self.__gain_double_spinbox)
-
-        self.layout().addLayout(parameter_layout)  # type: ignore
-
-    def to_lti(self):
-        Rs = np.array(eval(self.__rs_line_edit.text()))
-        Cs = np.array(eval(self.__cs_line_edit.text()))
-
-        if len(Rs) != len(Cs):
-            raise ValueError("The length of R and C must be the same")
-
-        num, den = reduce(  # polynomial fraction addition
-            # TF for each RC layer: R/(RC*s + 1)
-            lambda acc, c_r: [
-                np.polymul(acc[0], np.poly1d([c_r[0] * c_r[1], 1]))
-                + np.polymul(acc[1], np.poly1d([c_r[1]])),
-                np.polymul(acc[1], np.poly1d([c_r[0] * c_r[1], 1])),
-            ],
-            zip(Cs, Rs),
-            [np.poly1d(0), np.poly1d(1)],
-        )
-        z, p, _k = tf2zpk(num, den)
-        return lti(
-            z,
-            p,
-            self.__gain_double_spinbox.value() / control.dcgain(control.zpk(z, p, 1)),
-        )
-
-    @property
-    def rs_line_edit(self):
-        return self.__rs_line_edit
-
-    @property
-    def cs_line_edit(self):
-        return self.__cs_line_edit
-
-    @property
-    def gain_double_spinbox(self):
-        return self.__gain_double_spinbox
-
-
-def _interpolate_2d_spectrogram_data(
-    data_2d: NDArray[np.float64], interp_len: int
-) -> NDArray[np.float64]:
+# internal multiprocessing functions
+def _interpolate_2d_spectrogram_data(data_2d: NDArray, interp_len: int) -> NDArray:
     return np.array(
         [
             np.interp(np.linspace(0, 1, interp_len), np.linspace(0, 1, len(x)), x)
@@ -326,9 +65,7 @@ def _interpolate_2d_spectrogram_data(
     )
 
 
-def sweep_2d_data_to_wl_fsr(
-    data: NDArray[np.float64], ref: NDArray[np.float64], polarity: int
-):
+def _sweep_2d_data_to_wl_fsr(data: NDArray, ref: NDArray, polarity: int):
     ret: list[list[tuple[float, float]]] = [[] for i in range(len(data))]
     for i, channel in enumerate(data):
         ref_interp = np.interp(
@@ -355,7 +92,7 @@ def sweep_2d_data_to_wl_fsr(
     return ret
 
 
-def sweep_2d_data_to_passive_format(
+def _sweep_2d_data_to_passive_format(
     data: NDArray, ref: NDArray, polarity: int, interp_len: int
 ):
     wavelength_interp = np.linspace(np.min(ref), np.max(ref), interp_len)
@@ -403,7 +140,6 @@ class RaActiveConverterDialog(QDialog):
 
     def __init__(self, folder_path: str, parent: Optional[QWidget], *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        # self.setModal(True)
 
         self.__ui = Ui_RaActiveConverterDialog()
         self.__ui.setupUi(self)
@@ -529,13 +265,16 @@ class RaActiveConverterDialog(QDialog):
         self.__ui.outputPathPushButton.clicked.connect(
             self.slot_select_output_path_clicked
         )
-        default_output_path = os.path.join(self.__folder_path, "passive")
+        default_output_path = os.path.join(
+            self.__folder_path, OUTPUT_SUBDIR_DEFAULT_NAME
+        )
         self.__ui.outputPathComboBox.setCurrentText(default_output_path)
         self.__ui.outputPathComboBox.addItem(default_output_path)
 
         # load csv config
-        config_path = os.path.join(self.__folder_path, "ra_config.csv")
-        if os.path.exists(config_path):
+        if os.path.exists(
+            config_path := os.path.join(self.__folder_path, CONFIG_CSV_DEFAULT_NAME)
+        ):
             csv_config = ConverterConfig.from_csv(config_path)
             self.__ui.skipRowsSpinBox.setValue(csv_config.skip_row)
             self.__ui.skipColumnsSpinBox.setValue(csv_config.skip_column)
@@ -571,8 +310,7 @@ class RaActiveConverterDialog(QDialog):
                     csv_config.v_offset
                 )
 
-            # self.__rctf_tab.rs_line_edit.setText(str(csv_config.r_array))
-            # self.__rctf_tab.cs_line_edit.setText(str(csv_config.c_array))
+            # calculate r, c arrays from csv config
             rc_length = max(
                 len(csv_config.r_array),
                 len(csv_config.c_array),
@@ -608,7 +346,7 @@ class RaActiveConverterDialog(QDialog):
 
             self.__rctf_tab.rs_line_edit.setText(str(r_array))
             self.__rctf_tab.cs_line_edit.setText(str(c_array))
-        else:
+        else:  # no config file, use ui default values
             pass
 
     # Custom Slots
@@ -617,6 +355,7 @@ class RaActiveConverterDialog(QDialog):
         self.__ui.rawPreviewFileComboBox.blockSignals(True)
 
         pattern = re.compile(self.__ui.rawRegexLineEdit.text())
+
         # set up csv reader
         self.__csv_reader = RampUpSweepCSVReader2(
             folder_path=self.__folder_path,
@@ -636,6 +375,7 @@ class RaActiveConverterDialog(QDialog):
         self.__ui.rawPreviewFileComboBox.clear()
         self.__ui.rawPreviewFileComboBox.addItems(filenames)
 
+        # set up plot tabs according to the number of channels
         self.__ui.plotTabWidget.clear()
         channel_num = self.__csv_reader.data_shape[0]
         for i in range(channel_num):
@@ -956,7 +696,7 @@ class RaActiveConverterDialog(QDialog):
                             channel + x[i] for i, channel in enumerate(acc)
                         ],
                         pool.starmap(
-                            sweep_2d_data_to_wl_fsr,
+                            _sweep_2d_data_to_wl_fsr,
                             zip(
                                 map(lambda x: x[0], self.__csv_reader),
                                 repeat(ref),
@@ -992,7 +732,7 @@ class RaActiveConverterDialog(QDialog):
                 * 1e-3,
             )
 
-        # trigger this slot to update the plot on the right
+        # trigger this slot to update the equalized stream plot
         self.slot_on_sweep_raw_preview_file_changed()
 
     def slot_select_output_path_clicked(self):
@@ -1047,7 +787,7 @@ class RaActiveConverterDialog(QDialog):
             with Pool() as pool:
                 return list(
                     pool.starmap(
-                        sweep_2d_data_to_passive_format,
+                        _sweep_2d_data_to_passive_format,
                         zip(
                             map(lambda x: x[0], self.__csv_reader),
                             repeat(ref),
@@ -1060,7 +800,7 @@ class RaActiveConverterDialog(QDialog):
         self.__convert_worker = self.__Worker(f)
         self.__convert_worker.finished.connect(self.slot_on_conversion_done)
 
-        csv_config_path = os.path.join(self.__folder_path, "ra_config.csv")
+        csv_config_path = os.path.join(self.__folder_path, CONFIG_CSV_DEFAULT_NAME)
         csv_config = ConverterConfig(
             skip_row=self.__ui.skipRowsSpinBox.value(),
             skip_column=self.__ui.skipColumnsSpinBox.value(),

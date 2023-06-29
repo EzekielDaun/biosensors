@@ -3,6 +3,7 @@ import os
 import re
 import sys
 
+import pyqtgraph as pg
 from PySide6.QtCore import QDir, Qt, Signal, Slot
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import (
@@ -13,17 +14,15 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QVBoxLayout,
 )
-import pyqtgraph as pg
 
 from ..core.passive_tools import PassiveAnalyzer as Analyzer
-from ..uic.ra_main_window import Ui_RaMainWindow
-from .ra_active_converter_dialog import RaActiveConverterDialog
-from ..widgets.ra_peak_tracker_widget import RaPeakTrackerWidget
-from ..widgets.ra_tab_plotter_widget import (
+from ..uic.base.ra_main_window import Ui_RaMainWindow
+from ..widgets.base.ra_peak_tracker_widget import RaPeakTrackerWidget
+from ..widgets.base.ra_tab_plotter_widget import (
     RaFilePlotterWidget,
     RaSpectrogramPlotterWidget,
 )
-import pyqtgraph as pg
+from .ra_active_converter_dialog import RaActiveConverterDialog
 
 logger = logging.getLogger(__name__)
 

@@ -12,9 +12,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from ..core.lib import get_lorentzian_peaks, lorentzian
-from ..core.passive_tools import PassiveAnalyzer as Analyzer
-from ..core.passive_tools import read_mat
+from ...core.lib import get_lorentzian_peaks, lorentzian
+from ...core.passive_tools import PassiveAnalyzer as Analyzer
+from ...core.passive_tools import read_mat
 from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)
