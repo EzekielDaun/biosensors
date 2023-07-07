@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_active_converter_dialog.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.0
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -121,6 +121,7 @@ class Ui_RaActiveConverterDialog(object):
         self.rampSymmetryDoubleSpinBox.setObjectName(u"rampSymmetryDoubleSpinBox")
         self.rampSymmetryDoubleSpinBox.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         self.rampSymmetryDoubleSpinBox.setMaximum(100.000000000000000)
+        self.rampSymmetryDoubleSpinBox.setSingleStep(50.000000000000000)
         self.rampSymmetryDoubleSpinBox.setValue(100.000000000000000)
 
         self.gridLayout_2.addWidget(self.rampSymmetryDoubleSpinBox, 0, 1, 2, 2)

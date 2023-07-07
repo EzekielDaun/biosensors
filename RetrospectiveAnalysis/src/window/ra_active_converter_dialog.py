@@ -31,7 +31,10 @@ from scipy.signal import impulse2, lsim, sawtooth, step
 from ..core.active_tools import (
     ConverterConfig,
     CSVData,
-    RampUpSweepCSVReader2,
+    RampDownSweepCSVReader,
+    RampSweepCSVReaderBase,
+    RampUpDownSweepCSVReader,
+    RampUpSweepCSVReader,
 )
 from ..core.lib import get_lorentzian_peaks
 from ..uic.active.ra_active_converter_dialog import Ui_RaActiveConverterDialog
@@ -74,9 +77,10 @@ def _sweep_2d_data_to_wl_fsr(data: NDArray, ref: NDArray, polarity: int):
             ref,
         )
 
-        index = np.argmin(ref_interp * polarity)
-        power = channel[index:]
-        wavelength = ref_interp[index:]
+        index_min = np.argmin(ref_interp * polarity)
+        index_max = np.argmax(ref_interp * polarity)
+        power = channel[index_min:index_max]
+        wavelength = ref_interp[index_min:index_max]
 
         indices = np.argsort(wavelength)
         wavelength = wavelength[indices]
@@ -104,9 +108,10 @@ def _sweep_2d_data_to_passive_format(
             ref,
         )
 
-        index = np.argmin(ref_interp * polarity)
-        power = channel[index:]
-        wavelength = ref_interp[index:]
+        index_min = np.argmin(ref_interp * polarity)
+        index_max = np.argmax(ref_interp * polarity)
+        power = channel[index_min:index_max]
+        wavelength = ref_interp[index_min:index_max]
 
         indices = np.argsort(wavelength)
         wavelength = wavelength[indices]
@@ -145,7 +150,7 @@ class RaActiveConverterDialog(QDialog):
         self.__ui.setupUi(self)
 
         self.__folder_path = folder_path
-        self.__csv_reader: RampUpSweepCSVReader2 = None  # type: ignore
+        self.__csv_reader: RampUpSweepCSVReader = None  # type: ignore
 
         # sweep raw preview
         self.__sweep_raw_preview_widget = GraphicsLayoutWidget()
@@ -357,7 +362,19 @@ class RaActiveConverterDialog(QDialog):
         pattern = re.compile(self.__ui.rawRegexLineEdit.text())
 
         # set up csv reader
-        self.__csv_reader = RampUpSweepCSVReader2(
+        match int(self.__ui.rampSymmetryDoubleSpinBox.value()):
+            case 100:  # ramp up
+                reader_type = RampUpSweepCSVReader
+            case 0:  # ramp down
+                reader_type = RampDownSweepCSVReader
+            case 50:  # ramp up and down
+                reader_type = RampUpDownSweepCSVReader
+            case _:
+                raise ValueError(
+                    "Only support ramp symmetry of 0 (down), 50 (triangular), 100 (up)"
+                )
+
+        self.__csv_reader: RampSweepCSVReaderBase = reader_type(
             folder_path=self.__folder_path,
             pattern=pattern,
             skip_rows=self.__ui.skipRowsSpinBox.value(),
@@ -437,21 +454,14 @@ class RaActiveConverterDialog(QDialog):
             t, y, x = lsim(system, input, t)
             y = y[-len_period:]
 
-            polarity = (
-                1 if self.__ui.conversionMethodPolarityComboBox.currentIndex() else -1
-            )
-
-            ref = (
-                polarity * y
-                + self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
-            )
+            ref = y + self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
 
             selected_file_basename = self.__ui.rawPreviewFileComboBox.currentText()
             pattern = re.compile(self.__ui.rawRegexLineEdit.text())
             file_index = pattern.match(selected_file_basename).group(1)  # type: ignore
             pattern2 = re.compile(selected_file_basename.replace(file_index, f"({file_index})"))  # type: ignore
 
-            reader = RampUpSweepCSVReader2(
+            reader = type(self.__csv_reader)(
                 self.__folder_path,
                 pattern2,
                 self.__ui.skipRowsSpinBox.value(),
@@ -462,9 +472,8 @@ class RaActiveConverterDialog(QDialog):
             def generate_equalized_number(
                 data_start_stop: tuple[NDArray, tuple[int, int]],
                 ref: NDArray,
-                polarity: int,
             ):
-                data, (start, stop) = data_start_stop
+                data, (start, _stop) = data_start_stop
                 power_number_2d = [[] for i in range(data.shape[0])]
                 for i, channel in enumerate(data):
                     ref_interp = np.interp(
@@ -473,9 +482,16 @@ class RaActiveConverterDialog(QDialog):
                         ref,
                     )
 
-                    index = np.argmin(ref_interp * polarity)
-                    power = channel[index:]
-                    wavelength = ref_interp[index:]
+                    index_min = np.argmin(ref_interp)
+                    index_max = np.argmax(ref_interp)
+                    (index_start, index_stop) = (
+                        (index_min, index_max)
+                        if index_min < index_max
+                        else (index_max, index_min)
+                    )
+
+                    power = channel[index_start:index_stop]
+                    wavelength = ref_interp[index_start:index_stop]
 
                     indices = np.argsort(wavelength)
                     wavelength = wavelength[indices]
@@ -483,8 +499,8 @@ class RaActiveConverterDialog(QDialog):
 
                     wavelength -= np.min(wavelength)
                     wavelength /= np.max(wavelength) - np.min(wavelength)
-                    wavelength *= stop - start
-                    wavelength += start
+                    wavelength *= index_stop - index_start
+                    wavelength += index_start + start
 
                     power_number_2d[i] = [wavelength, power]
 
@@ -496,11 +512,7 @@ class RaActiveConverterDialog(QDialog):
                 ),
                 starmap(
                     generate_equalized_number,
-                    zip(
-                        reader,
-                        repeat(ref),
-                        repeat(polarity),
-                    ),
+                    zip(reader, repeat(ref)),
                 ),
                 np.array(
                     [np.array([[], []]) for _ in range(self.__ui.plotTabWidget.count())]

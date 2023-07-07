@@ -4,6 +4,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from itertools import pairwise
 from typing import Any, Optional, Self
 
 import numpy as np
@@ -240,8 +241,17 @@ class CSVData:
         self.data = data[self.skip_columns :]
 
 
+class RampSweepCSVReaderBase:
+    def __iter__(self):
+        ...
+
+    @property
+    def data_shape(self):
+        ...
+
+
 @dataclass(frozen=True)
-class RampUpSweepCSVReader2:
+class RampUpSweepCSVReader(RampSweepCSVReaderBase):
     folder_path: str
     pattern: re.Pattern
     skip_rows: int
@@ -308,3 +318,69 @@ class RampUpSweepCSVReader2:
         )
 
         return csv_data.data.shape
+
+
+class RampDownSweepCSVReader(RampUpSweepCSVReader):
+    def __iter__(self):
+        for filepath in [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ]:
+            csv_data = CSVData(
+                filepath, self.skip_rows, self.skip_columns, self.ramp_channel
+            )
+
+            maxima, _ = find_peaks(
+                gaussian_filter1d(csv_data.ramp, 1),
+                prominence=(np.max(csv_data.ramp) - np.min(csv_data.ramp)) * 0.9,
+            )
+            minima, _ = find_peaks(
+                gaussian_filter1d(-csv_data.ramp, 1),
+                prominence=(np.max(csv_data.ramp) - np.min(csv_data.ramp)) * 0.9,
+            )
+            if minima[0] > maxima[0]:
+                minima = minima[1:]
+            if minima[-1] < maxima[-1]:
+                maxima = maxima[:-1]
+
+            if len(minima) != len(maxima):
+                raise ValueError(
+                    "number of minima and maxima mismatch in reference signal"
+                )
+            for i, (start, stop) in enumerate(zip(minima, maxima)):
+                yield csv_data.data[:, start:stop], (start, stop)
+
+
+class RampUpDownSweepCSVReader(RampUpSweepCSVReader):
+    def __iter__(self):
+        for filepath in [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ]:
+            csv_data = CSVData(
+                filepath, self.skip_rows, self.skip_columns, self.ramp_channel
+            )
+
+            minima, _ = find_peaks(
+                gaussian_filter1d(-csv_data.ramp, 1),
+                prominence=(np.max(csv_data.ramp) - np.min(csv_data.ramp)) * 0.9,
+            )
+
+            for start, stop in pairwise(minima):
+                yield csv_data.data[:, start:stop], (start, stop)
