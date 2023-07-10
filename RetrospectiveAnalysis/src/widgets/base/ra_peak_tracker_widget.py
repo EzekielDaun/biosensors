@@ -14,7 +14,9 @@ from scipy.io import savemat
 
 from ...core.lib import group_peaks
 from ...core.passive_tools import PassiveAnalyzer as Analyzer
-from ...uic.base.ra_peak_tracker_tab_setting_widget import Ui_PeakTrackerTabSettingWidget
+from ...uic.base.ra_peak_tracker_tab_setting_widget import (
+    Ui_PeakTrackerTabSettingWidget,
+)
 from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)
@@ -166,9 +168,12 @@ class RaPeakTrackerWidget(QWidget):
             self.__ui.plotOverlayButton.clicked.connect(self.__slot_plot_overlay)  # type: ignore
             self.__ui.plotOffsetSpectrogramButton.clicked.connect(self.__slot_plot_offset_spectrogram)  # type: ignore
 
-            image = self.__analyzer.get_spectrograms({self.__power_index})[
-                self.__power_index
-            ].T[:, ::-1]
+            image = self.__analyzer.get_spectrograms(
+                {self.__power_index},
+                step=start_stop_step[2],
+                start_index=start_stop_step[0],
+                stop_index=start_stop_step[1],
+            )[self.__power_index].T[:, ::-1]
             self.__image_view.setImage(image)
 
             tr = QTransform()
