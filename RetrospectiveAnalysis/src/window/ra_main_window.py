@@ -5,13 +5,14 @@ import sys
 
 import pyqtgraph as pg
 from PySide6.QtCore import QDir, Qt, Signal, Slot
-from PySide6.QtGui import QTextCursor
+from PySide6.QtGui import QAction, QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
     QFileSystemModel,
     QListWidgetItem,
     QMainWindow,
+    QMenu,
     QVBoxLayout,
 )
 
@@ -77,6 +78,23 @@ class RaMainWindow(QMainWindow):
         self.__peak_tracker_widget.signal_fsr_er_q_work_done.connect(
             self.__ui.FSRERQButton.setEnabled
         )
+
+        # add a window manager on menu bar
+        menu = QMenu("Window", self)
+        panels = [
+            (self.__ui.peakTracingGroupBox, "Peak Tracking"),
+            (self.__ui.analyzerSettingsGroupBox, "Analyzer Setting"),
+            (self.__ui.plotSpectrogramsGroupBox, "Spectrogram Plotter"),
+            (self.__ui.thresholdSettingsGroupBox, "Threshold Settings"),
+            (self.__ui.peakTracingSettingGroupBox, "Peak Tracing Settings"),
+        ]
+        for widget, string in panels:
+            action = QAction(string, self)
+            action.setCheckable(True)
+            action.setChecked(True)
+            action.toggled.connect(widget.setVisible)
+            menu.addAction(action)
+        self.__ui.menubar.addMenu(menu)
 
         # Redirect stdout and stderr to log panel
         self.__signal_write.connect(self.slot_log_write)
