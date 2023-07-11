@@ -31,6 +31,12 @@ pg.setConfigOption("background", "w")
 pg.setConfigOption("foreground", "k")
 
 
+RESULT_FOLDER_DEFAULT_NAME = "RA_result"
+PEAK_SHIFT_FILE_NAME = "peak_shift.mat"
+PEAKS_FILE_NAME = "peaks.mat"
+FSR_ER_Q_RESULT_FILE_NAME = "fsr_er_q.mat"
+
+
 class RaMainWindow(QMainWindow):
     __signal_write = Signal(str)
 
@@ -307,10 +313,13 @@ class RaMainWindow(QMainWindow):
 
     def slot_save_results(self):
         output_path = os.path.join(
-            self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
+            self.__ui.peakTracingOutputPathComboBox.currentText(),
+            RESULT_FOLDER_DEFAULT_NAME,
         )
         os.makedirs(output_path, exist_ok=True)
-        self.__peak_tracker_widget.save_results(output_path)
+        peak_shift_path = os.path.join(output_path, PEAK_SHIFT_FILE_NAME)
+        peaks_path = os.path.join(output_path, PEAKS_FILE_NAME)
+        self.__peak_tracker_widget.save_results(peak_shift_path, peaks_path)
 
     def slot_peak_tracking_select_all(self):
         lw = self.__ui.peakTrackerPowerListWidget
@@ -344,7 +353,9 @@ class RaMainWindow(QMainWindow):
         lw = self.__ui.peakTrackerPowerListWidget
         powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         output_path = os.path.join(
-            self.__ui.peakTracingOutputPathComboBox.currentText(), "RA_result"
+            self.__ui.peakTracingOutputPathComboBox.currentText(),
+            RESULT_FOLDER_DEFAULT_NAME,
+            FSR_ER_Q_RESULT_FILE_NAME,
         )
         os.makedirs(output_path, exist_ok=True)
         self.__peak_tracker_widget.fsr_er_q(

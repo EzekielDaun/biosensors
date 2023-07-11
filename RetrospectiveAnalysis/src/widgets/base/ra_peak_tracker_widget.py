@@ -1,5 +1,4 @@
 import logging
-import os
 from itertools import cycle
 from typing import Optional
 
@@ -406,16 +405,12 @@ class RaPeakTrackerWidget(QWidget):
     def clear(self):
         self.__tab_widget.clear()
 
-    def save_results(self, path: str):
+    def save_results(self, peak_shift_path: str, peaks_path: str):
         all_tabs: list[RaPeakTrackerWidget.__Tab] = [self.__tab_widget.widget(i) for i in range(self.__tab_widget.count())]  # type: ignore
-
-        # save initial path
-        temp_dir = os.curdir
-        os.chdir(path)
 
         # save peak shifts
         savemat(
-            "peak_shifts.mat",
+            peak_shift_path,
             {
                 (tab.name).replace(" ", "_").lower() + "_peakWL_list": tab.full_trace
                 for tab in all_tabs
@@ -431,7 +426,7 @@ class RaPeakTrackerWidget(QWidget):
 
         # save all fitted peaks and peak trace indices
         savemat(
-            "peaks.mat",
+            peaks_path,
             {
                 "channel" + str(k + 1): np.array(v, dtype="object")
                 for k, v in self.__all_peaks.items()
@@ -456,9 +451,6 @@ class RaPeakTrackerWidget(QWidget):
                 for tab in all_tabs
             },
         )
-
-        # restore initial path
-        os.chdir(temp_dir)
 
         plt.close("all")
         axes = plt.axes()
@@ -534,7 +526,7 @@ class RaPeakTrackerWidget(QWidget):
         self.__channels = channels
         self.__start_stop_step = start_stop_step
         self.__signal_fsr_er_q_work_start.emit()
-        self.__path = path
+        self.__fsr_er_q_result_path = path
 
     @Slot()
     def __slot_fsr_er_q_work_start(self):
@@ -552,9 +544,6 @@ class RaPeakTrackerWidget(QWidget):
 
     @Slot()
     def __slot_fsr_er_q_work_done(self):
-        temp_dir = os.curdir
-        os.chdir(self.__path)
-
         try:
             fsr_er_q_dict = self.__fsr_er_q_worker.fsr_er_q_dict
             fsr = {k: [np.array(vv[0]) for vv in v] for k, v in fsr_er_q_dict.items()}
@@ -562,7 +551,7 @@ class RaPeakTrackerWidget(QWidget):
             q = {k: [np.array(vv[2]) for vv in v] for k, v in fsr_er_q_dict.items()}
 
             savemat(
-                "fsr_er_q.mat",
+                self.__fsr_er_q_result_path,
                 {
                     f"channel{k+1}_fsr": np.array(v, dtype="object")
                     for k, v in fsr.items()
@@ -585,5 +574,4 @@ class RaPeakTrackerWidget(QWidget):
         finally:
             self.__fsr_er_q_worker.deleteLater()
             self.signal_fsr_er_q_work_done.emit(True)
-            os.chdir(temp_dir)
             logger.info("FSR ER Q analysis done!")
