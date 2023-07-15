@@ -1,9 +1,8 @@
 import matplotlib
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+from matplotlib.figure import Figure
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 matplotlib.set_loglevel("info")
 

@@ -12,9 +12,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from ...core.lib import get_lorentzian_peaks, lorentzian
-from ...core.passive_tools import PassiveAnalyzer as Analyzer
-from ...core.passive_tools import read_mat
+from ...core.lib import SweepFitResult, lorentzian
+from ...core.passive_tools import PassiveAnalyzer, read_mat
 from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)
@@ -71,12 +70,24 @@ class RaFilePlotterWidget(QGroupBox):
                 figure_widget = RaFigureWidget()
                 axes = figure_widget.figure.subplots(1, 1)
                 axes.plot(self.__worker.wavelengths, power)
-                peaks, fsr, er, q = get_lorentzian_peaks(
-                    power,
-                    self.__worker.wavelengths,
-                    self.__r2_threshold,
-                    self.__max_n100dBm_points,
+                sweep_fit_result = SweepFitResult.from_data(
+                    power, self.__worker.wavelengths
                 )
+                peaks = sweep_fit_result.get_peaks(
+                    self.__r2_threshold, self.__max_n100dBm_points
+                )
+                er = sweep_fit_result.get_er(
+                    self.__r2_threshold, self.__max_n100dBm_points
+                )
+                q = sweep_fit_result.get_q(
+                    self.__r2_threshold, self.__max_n100dBm_points
+                )
+                # peaks, fsr, er, q = get_lorentzian_peaks(
+                #     power,
+                #     self.__worker.wavelengths,
+                #     self.__r2_threshold,
+                #     self.__max_n100dBm_points,
+                # )
                 for _j, peak in enumerate(peaks):
                     x0, y0, _i, gamma, a = peak
                     xs = np.linspace(x0 - 5 * gamma, x0 + 5 * gamma, 101)
@@ -119,7 +130,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
     class __Worker(QThread):
         def __init__(
             self,
-            analyzer: Analyzer,
+            analyzer: PassiveAnalyzer,
             channels: set[int],
             step: int,
             start_index: int,
@@ -143,12 +154,15 @@ class RaSpectrogramPlotterWidget(QTabWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # if not in a layout, resize to have a larger space
+        if not self.parent():
+            self.resize(800, 600)
         self.__signal_spectrograms_work_start.connect(
             self.__slot_spectrograms_work_start
         )
 
         # an analyzer should be initialized outside and passed into this class
-        self.analyzer: Analyzer = None  # type: ignore
+        self.analyzer: PassiveAnalyzer = None  # type: ignore
 
     def plot_spectrograms(
         self,
@@ -160,7 +174,6 @@ class RaSpectrogramPlotterWidget(QTabWidget):
         y_tick_number: int,
         power_unit: str,
         time_unit: str,
-        wavelength_unit: str,
     ):
         if self.analyzer is None:
             raise RuntimeError("Analyzer is not initialized")
@@ -178,7 +191,6 @@ class RaSpectrogramPlotterWidget(QTabWidget):
             self.__y_tick_step = int(len(self.analyzer.wavelengths) / y_tick_number)
             self.__power_unit = power_unit
             self.__time_unit = time_unit
-            self.__wave_length_unit = wavelength_unit
             self.__signal_spectrograms_work_start.emit()
 
     @Slot()
@@ -232,7 +244,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
                     list(range(len(y_labels)))[:: self.__y_tick_step],
                     y_labels[:: self.__y_tick_step],
                 )
-                ax.set_ylabel(f"Wavelength ({self.__wave_length_unit})")
+                ax.set_ylabel("Wavelength (nm)")
                 ax.yaxis.set_major_formatter(y_formatter)
 
                 ax.set_title(f"Power {k+1} Spectrogram")

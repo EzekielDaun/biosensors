@@ -1,5 +1,7 @@
 import logging
+from dataclasses import dataclass
 from itertools import accumulate, pairwise, product, starmap
+from typing import Self
 
 import numpy as np
 from cv2 import HoughLinesPointSet
@@ -21,113 +23,93 @@ def lorentzian(x, x0, y0, _i, gamma, a):
     )
 
 
-def get_lorentzian_peaks(
-    powers: NDArray[np.float64],
-    wavelengths: NDArray[np.float64],
-    r2_threshold: float = 0.5,
-    max_n100dBm_points: int = 30,
-) -> tuple[
-    NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
-]:
-    """get_lorentzian_peaks
+@dataclass
+class LorentzianPeakFitResult:
+    peak_params: NDArray
+    er: float
+    q: float
+    r2: float
+    n100dbm_points: int
 
-    Args:
-        powers (NDArray[np.float64]): 1D array of power
-        wavelengths (NDArray[np.float64]): 1D array of wavelength
 
-    Returns:
-        tuple[ NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64] ]: [[x0,y0,I,gamma,a]], [FSR], [ER], [Q]
-    """
+@dataclass
+class SweepFitResult:
+    peaks: list[LorentzianPeakFitResult]
 
-    if len(powers) != len(wavelengths):
-        raise RuntimeError("Number of wavelengths and powers do not match")
+    @classmethod
+    def from_data(cls, powers: NDArray, wavelengths: NDArray) -> Self:
+        if len(powers) != len(wavelengths):
+            raise RuntimeError("Number of wavelengths and powers do not match")
 
-    powers_smoothed: NDArray[np.float64] = gaussian_filter1d(
-        powers, sigma=8
-    )  # type: ignore
-    indices, properties = find_peaks(
-        -1 * powers_smoothed,
-        prominence=0.1 * (max(powers_smoothed) - min(powers_smoothed)),
-        width=0,
-        height=min(-1 * powers_smoothed),
-    )
-    __base_indices = [int(np.mean(p)) for p in pairwise(indices)]
-    left_base_indices = [0] + __base_indices
-    right_base_indices = __base_indices + [len(powers_smoothed) - 1]
+        powers_smoothed: NDArray[np.float64] = gaussian_filter1d(
+            powers, sigma=8
+        )  # type: ignore
+        indices, properties = find_peaks(
+            -1 * powers_smoothed,
+            prominence=0.1 * (max(powers_smoothed) - min(powers_smoothed)),
+            width=0,
+            height=min(-1 * powers_smoothed),
+        )
+        __base_indices = [int(np.mean(p)) for p in pairwise(indices)]
+        left_base_indices = [0] + __base_indices
+        right_base_indices = __base_indices + [len(powers_smoothed) - 1]
 
-    ret_peaks: list[tuple[float, float, float, float]] = []
-    ret_er: list[float] = []
-    ret_q: list[float] = []
-    for i, peak_index in enumerate(indices):
-        left_base_index = max(properties["left_bases"][i], left_base_indices[i])
-        right_base_index = min(properties["right_bases"][i], right_base_indices[i])
+        peaks: list[LorentzianPeakFitResult] = []
+        for i, peak_index in enumerate(indices):
+            left_base_index = max(properties["left_bases"][i], left_base_indices[i])
+            right_base_index = min(properties["right_bases"][i], right_base_indices[i])
 
-        wavelength_range = wavelengths[left_base_index:right_base_index]
-        power_range = powers[left_base_index:right_base_index]
+            wavelength_range = wavelengths[left_base_index:right_base_index]
+            power_range = powers[left_base_index:right_base_index]
 
-        # -100 is a bug value and should be ignored
-        indices_fixed = np.argwhere(power_range != float(-100)).flatten()
-        if len(indices_fixed) <= 4 or max(np.diff(indices_fixed) > max_n100dBm_points):
-            # skip when total valid points < 4 or too sparse (> 30 (default) apart)
-            continue
-        wavelength_fixed = wavelength_range[indices_fixed]
-        power_fixed = power_range[indices_fixed]
+            # -100 is a bug value and should be ignored
+            indices_fixed = np.argwhere(power_range != float(-100)).flatten()
+            if len(indices_fixed) <= 8:
+                # nearly all points are -100
+                continue
+            n100dbm_points = max(np.diff(indices_fixed))
+            wavelength_fixed = wavelength_range[indices_fixed]
+            power_fixed = power_range[indices_fixed]
 
-        try:
-            parameters, _ = curve_fit(
-                f=lorentzian,
-                xdata=wavelength_fixed,
-                ydata=power_fixed,
-                p0=[
-                    wavelengths[peak_index],  # x0
-                    np.mean([powers[left_base_index], powers[right_base_index]]),  # y0
-                    -100,  # I
-                    0.01
-                    * (
-                        wavelengths[right_base_index] - wavelengths[left_base_index]
-                    ),  # gamma
-                    0,  # a
-                ],
-                bounds=(
-                    [
-                        wavelengths[left_base_index],
-                        -100,
-                        -100,
-                        0,
-                        -np.inf,
+            try:
+                parameters, _ = curve_fit(
+                    f=lorentzian,
+                    xdata=wavelength_fixed,
+                    ydata=power_fixed,
+                    p0=[
+                        wavelengths[peak_index],  # x0
+                        np.mean(
+                            [powers[left_base_index], powers[right_base_index]]
+                        ),  # y0
+                        -100,  # I
+                        0.01
+                        * (
+                            wavelengths[right_base_index] - wavelengths[left_base_index]
+                        ),  # gamma
+                        0,  # a
                     ],
-                    [
-                        wavelengths[right_base_index],
-                        10,
-                        0,
-                        max(wavelength_fixed) - min(wavelength_fixed),
-                        np.inf,
-                    ],
-                ),
-            )
-
-            x0, y0, _i, gamma, a = parameters
-            if (
-                r2_score(
-                    power_fixed,
-                    lorentzian(
-                        wavelength_fixed,
-                        x0,
-                        y0,
-                        _i,
-                        gamma,
-                        a,
+                    bounds=(
+                        [
+                            wavelengths[left_base_index],
+                            -100,
+                            -100,
+                            0,
+                            -np.inf,
+                        ],
+                        [
+                            wavelengths[right_base_index],
+                            10,
+                            0,
+                            max(wavelength_fixed) - min(wavelength_fixed),
+                            np.inf,
+                        ],
                     ),
                 )
-                < r2_threshold
-            ):
-                logger.debug(
-                    f"R2 score too low for peak at wavelength {wavelengths[peak_index]:.2f}. R2 = {r2_score(power_fixed, lorentzian(wavelength_fixed, x0, y0, _i, gamma, a)):.2f}"
+
+                x0, y0, _i, gamma, a = parameters
+                r2: float = r2_score(  # type: ignore
+                    power_fixed, lorentzian(wavelength_fixed, x0, y0, _i, gamma, a)
                 )
-                continue
-            else:
-                ret_peaks.append(parameters)
-                ret_er.append(-parameters[2])
                 xs = wavelengths[left_base_index:right_base_index]
 
                 # convert to linear scale for Q calculation
@@ -153,15 +135,98 @@ def get_lorentzian_peaks(
                         [np.inf, 1, 0, np.inf, np.inf],
                     ),
                 )
-                ret_q.append(params_linear[0] / params_linear[3])  # Q = x0/gamma
 
-        except RuntimeError as e:
-            logger.debug(
-                f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
+                peaks.append(
+                    LorentzianPeakFitResult(
+                        peak_params=parameters,
+                        er=-parameters[2],
+                        q=params_linear[0] / params_linear[3],  # Q = x0/gamma
+                        r2=r2,
+                        n100dbm_points=n100dbm_points,
+                    )
+                )
+
+            except RuntimeError as e:
+                logger.debug(
+                    f"Curve fitting at wavelength {wavelengths[peak_index]:.2f}: {e}"
+                )
+                continue
+        return SweepFitResult(peaks)
+
+    def get_peaks(self, r2_threshold: float = 0.5, n100dbm_threshold: int = 30):
+        return np.array(
+            [
+                p.peak_params
+                for p in self.peaks
+                if p.r2 > r2_threshold and p.n100dbm_points < n100dbm_threshold
+            ]
+        )
+
+    def get_fsr(self, r2_threshold: float = 0.5, n100dbm_threshold: int = 30):
+        if len(self.peaks) <= 1:
+            return np.array([])
+        else:
+            peaks = np.array(
+                [
+                    p.peak_params
+                    for p in self.peaks
+                    if p.r2 > r2_threshold and p.n100dbm_points < n100dbm_threshold
+                ]
             )
-            continue
-    ret_fsr = np.diff(np.array(ret_peaks).T[0]) if len(ret_peaks) > 1 else np.array([])
-    return np.array(ret_peaks), np.array(ret_fsr), np.array(ret_er), np.array(ret_q)
+            return np.diff(peaks[:, 0])
+
+    def get_er(self, r2_threshold: float = 0.5, n100dbm_threshold: int = 30):
+        return np.array(
+            [
+                p.er
+                for p in self.peaks
+                if p.r2 > r2_threshold and p.n100dbm_points < n100dbm_threshold
+            ]
+        )
+
+    def get_q(self, r2_threshold: float = 0.5, n100dbm_threshold: int = 30):
+        return np.array(
+            [
+                p.q
+                for p in self.peaks
+                if p.r2 > r2_threshold and p.n100dbm_points < n100dbm_threshold
+            ]
+        )
+
+
+def get_lorentzian_peaks(
+    powers: NDArray[np.float64],
+    wavelengths: NDArray[np.float64],
+    r2_threshold: float = 0.5,
+    max_n100dBm_points: int = 30,
+) -> tuple[
+    NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
+]:
+    """get_lorentzian_peaks
+
+    Args:
+        powers (NDArray[np.float64]): 1D array of power
+        wavelengths (NDArray[np.float64]): 1D array of wavelength
+
+    Returns:
+        tuple[ NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64] ]: [[x0,y0,I,gamma,a]], [FSR], [ER], [Q]
+    """
+
+    # This is to mimic the old API
+    sweep_fitted = SweepFitResult.from_data(powers, wavelengths)
+    peaks = sweep_fitted.get_peaks(
+        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
+    )
+    fsr = sweep_fitted.get_fsr(
+        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
+    )
+    er = sweep_fitted.get_er(
+        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
+    )
+    q = sweep_fitted.get_q(
+        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
+    )
+    return peaks, fsr, er, q
 
 
 def group_peaks(

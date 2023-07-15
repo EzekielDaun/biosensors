@@ -1,29 +1,30 @@
 import logging
 import os
+import pathlib
 import re
 import sys
 
 import pyqtgraph as pg
 from PySide6.QtCore import QDir, Qt, Signal, Slot
-from PySide6.QtGui import QAction, QTextCursor
+from PySide6.QtGui import QAction, QCloseEvent, QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
     QFileSystemModel,
+    QHeaderView,
     QListWidgetItem,
     QMainWindow,
     QMenu,
     QVBoxLayout,
 )
 
-from ..core.passive_tools import PassiveAnalyzer as Analyzer
+from ..core.passive_tools import PassiveAnalyzer
 from ..uic.base.ra_main_window import Ui_RaMainWindow
 from ..widgets.base.ra_peak_tracker_widget import RaPeakTrackerWidget
 from ..widgets.base.ra_tab_plotter_widget import (
     RaFilePlotterWidget,
     RaSpectrogramPlotterWidget,
 )
-from .ra_active_converter_dialog import RaActiveConverterDialog
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,9 @@ PEAKS_FILE_NAME = "peaks.mat"
 FSR_ER_Q_RESULT_FILE_NAME = "fsr_er_q.mat"
 
 
-class RaMainWindow(QMainWindow):
+class RaPassiveAnalyzerWindow(QMainWindow):
     __signal_write = Signal(str)
+    signal_close = Signal()
 
     def __init__(self):
         super().__init__()
@@ -58,6 +60,9 @@ class RaMainWindow(QMainWindow):
         model.setRootPath(QDir.rootPath())
         self.__ui.treeView.setModel(model)
         self.__ui.treeView.setRootIndex(model.index(os.path.expanduser("~")))
+        self.__ui.treeView.header().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
 
         # file plotter
         self.__file_plotter_widget = RaFilePlotterWidget()
@@ -102,20 +107,24 @@ class RaMainWindow(QMainWindow):
             menu.addAction(action)
         self.__ui.menubar.addMenu(menu)
 
-        # Redirect stdout and stderr to log panel
-        self.__signal_write.connect(self.slot_log_write)
+        # write to log panel
         sys.stdout = self
         sys.stderr = self
+        self.__logging_handler = logging.StreamHandler(self)
+        self.__logging_handler.setFormatter(logging.getLogger().handlers[0].formatter)
+        self.__logging_handler.setLevel(logging.getLogger().handlers[0].level)
+        logging.getLogger().addHandler(self.__logging_handler)
+        self.__signal_write.connect(self.slot_log_write)
 
         self.__ui.analyzerSettingsGroupBox.setEnabled(False)
         self.__ui.plotSpectrogramsGroupBox.setEnabled(False)
         self.__ui.peakTracingGroupBox.setEnabled(False)
 
-    # stdout redirection requirement
+    # stdout and logger redirection requirement
     def write(self, m):
         self.__signal_write.emit(m)
 
-    # stdout redirection requirement
+    # stdout and logger redirection requirement
     def flush(self):
         pass
 
@@ -124,6 +133,13 @@ class RaMainWindow(QMainWindow):
         self.__ui.textBrowser.moveCursor(QTextCursor.End)  # type: ignore
         self.__ui.textBrowser.insertPlainText(text)
         self.__ui.textBrowser.ensureCursorVisible()
+
+    def closeEvent(self, event: QCloseEvent):
+        self.signal_close.emit()
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        logging.getLogger().removeHandler(self.__logging_handler)
+        return super().closeEvent(event)
 
     # Slots
     def slot_open_clicked(self):
@@ -156,15 +172,15 @@ class RaMainWindow(QMainWindow):
             self.__ui.peakTracingGroupBox.setEnabled(False)
             self.__ui.saveResultsButton.setEnabled(False)
 
-    def slot_action_active_converter_clicked(self):
-        folder_path = QFileDialog.getExistingDirectory(
-            dir=os.path.expanduser("~"),
-        )
-        if folder_path == "":
-            self.__ui.statusbar.showMessage("Retrospective Analysis - Open cancelled")
-        else:
-            dialog = RaActiveConverterDialog(folder_path, self)
-            dialog.show()
+    # def slot_action_active_converter_clicked(self):
+    #     folder_path = QFileDialog.getExistingDirectory(
+    #         dir=os.path.expanduser("~"),
+    #     )
+    #     if folder_path == "":
+    #         self.__ui.statusbar.showMessage("Retrospective Analysis - Open cancelled")
+    #     else:
+    #         dialog = RaActiveConverterDialog(folder_path, self)
+    #         dialog.show()
 
     def slot_file_changed(self, model_index):
         tree_view = self.__ui.treeView
@@ -194,9 +210,6 @@ class RaMainWindow(QMainWindow):
         # load analyzer parameters
         try:
             pattern = eval(self.__ui.patternLineEdit.text())
-            wavelength_multiplier = float(
-                eval(self.__ui.wavelengthMultiplierLineEdit.text())
-            )
             time_multiplier = float(eval(self.__ui.timeMultiplierLineEdit.text()))
         except Exception as e:
             logger.error(f"{e}")
@@ -215,9 +228,7 @@ class RaMainWindow(QMainWindow):
                 logger.error(f"'{timestamp}' is not a number or a csv file")
                 raise e
 
-        self.__analyzer = Analyzer(
-            path, timestamp, pattern, wavelength_multiplier, time_multiplier
-        )
+        self.__analyzer = PassiveAnalyzer(path, timestamp, pattern, time_multiplier)
 
         file_num, power_num = self.__analyzer.info()
         logger.info(f"{path} has {file_num} files with {power_num} power channels")
@@ -268,7 +279,6 @@ class RaMainWindow(QMainWindow):
                 self.__ui.yTicksSpinBox.value(),
                 self.__ui.powerUnitLineEdit.text(),
                 self.__ui.timeUnitLineEdit.text(),
-                self.__ui.wavelengthUnitLineEdit.text(),
             )
             self.__folder_plotter.show()
             logger.info("Spectrogram plotting started!")
@@ -305,7 +315,6 @@ class RaMainWindow(QMainWindow):
                 self.__ui.peakTracingStepSpinBox.value(),
             ),
             self.__ui.timeUnitLineEdit.text(),
-            self.__ui.wavelengthUnitLineEdit.text(),
             self.__ui.powerUnitLineEdit.text(),
             self.__ui.r2ThresholdDoubleSpinBox.value(),
             self.__ui.n100dBmToleranceSpinBox.value(),
@@ -357,7 +366,7 @@ class RaMainWindow(QMainWindow):
             RESULT_FOLDER_DEFAULT_NAME,
             FSR_ER_Q_RESULT_FILE_NAME,
         )
-        os.makedirs(output_path, exist_ok=True)
+        os.makedirs(pathlib.Path(output_path).parent, exist_ok=True)
         self.__peak_tracker_widget.fsr_er_q(
             self.__analyzer,
             powers,
@@ -366,5 +375,7 @@ class RaMainWindow(QMainWindow):
                 self.__ui.peakTracingStopSpinBox.value(),
                 self.__ui.peakTracingStepSpinBox.value(),
             ),
+            self.__ui.r2ThresholdDoubleSpinBox.value(),
+            self.__ui.n100dBmToleranceSpinBox.value(),
             output_path,
         )

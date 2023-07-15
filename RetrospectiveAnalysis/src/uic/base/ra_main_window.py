@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.0
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -32,15 +32,6 @@ class Ui_RaMainWindow(object):
         RaMainWindow.setMinimumSize(QSize(1280, 720))
         self.actionOpen = QAction(RaMainWindow)
         self.actionOpen.setObjectName(u"actionOpen")
-        self.actionSave = QAction(RaMainWindow)
-        self.actionSave.setObjectName(u"actionSave")
-        self.actionSave_as = QAction(RaMainWindow)
-        self.actionSave_as.setObjectName(u"actionSave_as")
-        self.actionOp1 = QAction(RaMainWindow)
-        self.actionOp1.setObjectName(u"actionOp1")
-        self.actionOp1.setCheckable(True)
-        self.actionActiveConverter = QAction(RaMainWindow)
-        self.actionActiveConverter.setObjectName(u"actionActiveConverter")
         self.centralwidget = QWidget(RaMainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayout_5 = QHBoxLayout(self.centralwidget)
@@ -133,35 +124,20 @@ class Ui_RaMainWindow(object):
 
         self.gridLayout.addWidget(self.timeUnitLineEdit, 1, 2, 1, 1)
 
-        self.label_4 = QLabel(self.analyzerSettingsGroupBox)
-        self.label_4.setObjectName(u"label_4")
-
-        self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
-
-        self.wavelengthMultiplierLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
-        self.wavelengthMultiplierLineEdit.setObjectName(u"wavelengthMultiplierLineEdit")
-
-        self.gridLayout.addWidget(self.wavelengthMultiplierLineEdit, 2, 1, 1, 1)
-
-        self.wavelengthUnitLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
-        self.wavelengthUnitLineEdit.setObjectName(u"wavelengthUnitLineEdit")
-
-        self.gridLayout.addWidget(self.wavelengthUnitLineEdit, 2, 2, 1, 1)
-
         self.label_6 = QLabel(self.analyzerSettingsGroupBox)
         self.label_6.setObjectName(u"label_6")
 
-        self.gridLayout.addWidget(self.label_6, 3, 0, 1, 1)
+        self.gridLayout.addWidget(self.label_6, 2, 0, 1, 1)
 
         self.patternLineEdit = QLineEdit(self.analyzerSettingsGroupBox)
         self.patternLineEdit.setObjectName(u"patternLineEdit")
 
-        self.gridLayout.addWidget(self.patternLineEdit, 3, 1, 1, 2)
+        self.gridLayout.addWidget(self.patternLineEdit, 2, 1, 1, 2)
 
         self.loadAnalyzerButton = QPushButton(self.analyzerSettingsGroupBox)
         self.loadAnalyzerButton.setObjectName(u"loadAnalyzerButton")
 
-        self.gridLayout.addWidget(self.loadAnalyzerButton, 4, 0, 1, 3)
+        self.gridLayout.addWidget(self.loadAnalyzerButton, 3, 0, 1, 3)
 
         self.splitter.addWidget(self.analyzerSettingsGroupBox)
         self.plotSpectrogramsGroupBox = QGroupBox(self.splitter)
@@ -441,7 +417,6 @@ class Ui_RaMainWindow(object):
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menuFile.addAction(self.actionOpen)
-        self.menuFile.addAction(self.actionActiveConverter)
 
         self.retranslateUi(RaMainWindow)
         self.actionOpen.triggered.connect(RaMainWindow.slot_open_clicked)
@@ -461,7 +436,6 @@ class Ui_RaMainWindow(object):
         self.loadAnalyzerButton.clicked.connect(RaMainWindow.slot_load_analyzer)
         self.sampleStopSpinBox.valueChanged.connect(RaMainWindow.slot_spectrogram_on_stop_spinbox_change)
         self.spectrogramButton.clicked.connect(RaMainWindow.slot_plot_spectrogram)
-        self.actionActiveConverter.triggered.connect(RaMainWindow.slot_action_active_converter_clicked)
 
         QMetaObject.connectSlotsByName(RaMainWindow)
     # setupUi
@@ -471,19 +445,6 @@ class Ui_RaMainWindow(object):
         self.actionOpen.setText(QCoreApplication.translate("RaMainWindow", u"Open Folder", None))
 #if QT_CONFIG(shortcut)
         self.actionOpen.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+O", None))
-#endif // QT_CONFIG(shortcut)
-        self.actionSave.setText(QCoreApplication.translate("RaMainWindow", u"Save", None))
-#if QT_CONFIG(shortcut)
-        self.actionSave.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+S", None))
-#endif // QT_CONFIG(shortcut)
-        self.actionSave_as.setText(QCoreApplication.translate("RaMainWindow", u"Save as", None))
-#if QT_CONFIG(shortcut)
-        self.actionSave_as.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+S", None))
-#endif // QT_CONFIG(shortcut)
-        self.actionOp1.setText(QCoreApplication.translate("RaMainWindow", u"Op1", None))
-        self.actionActiveConverter.setText(QCoreApplication.translate("RaMainWindow", u"Active Converter", None))
-#if QT_CONFIG(shortcut)
-        self.actionActiveConverter.setShortcut(QCoreApplication.translate("RaMainWindow", u"Ctrl+Shift+O", None))
 #endif // QT_CONFIG(shortcut)
         self.thresholdSettingsGroupBox.setTitle(QCoreApplication.translate("RaMainWindow", u"Peak Finding/Fitting Settings", None))
         self.label_15.setText(QCoreApplication.translate("RaMainWindow", u"R2 Threshold:", None))
@@ -503,15 +464,6 @@ class Ui_RaMainWindow(object):
         self.timeUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
 #endif // QT_CONFIG(tooltip)
         self.timeUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"min", None))
-        self.label_4.setText(QCoreApplication.translate("RaMainWindow", u"Wavelength Multiplier:", None))
-#if QT_CONFIG(tooltip)
-        self.wavelengthMultiplierLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"1e9 if convert from meter to nanometer", None))
-#endif // QT_CONFIG(tooltip)
-        self.wavelengthMultiplierLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"1e9", None))
-#if QT_CONFIG(tooltip)
-        self.wavelengthUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
-#endif // QT_CONFIG(tooltip)
-        self.wavelengthUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"nm", None))
         self.label_6.setText(QCoreApplication.translate("RaMainWindow", u"Data File Pattern (RegEx):", None))
 #if QT_CONFIG(tooltip)
         self.patternLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"regular expression for sweep number matching. (match the number in \"()\")", None))

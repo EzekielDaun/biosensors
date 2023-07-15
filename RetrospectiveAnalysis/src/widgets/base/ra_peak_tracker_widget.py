@@ -5,61 +5,28 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph import ImageView, PlotCurveItem, PlotItem
-from PySide6.QtCore import Qt, QThread, Signal, Slot
+from pyqtgraph import ImageView, PlotItem
+from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtGui import QTransform
 from PySide6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 from scipy.io import savemat
 
 from ...core.lib import group_peaks
-from ...core.passive_tools import PassiveAnalyzer as Analyzer
+from ...core.passive_tools import PassiveAnalyzer
 from ...uic.base.ra_peak_tracker_tab_setting_widget import (
     Ui_PeakTrackerTabSettingWidget,
 )
+from ..lib.ra_plot_curve_item import RaPlotCurveItem
 from .ra_figure_widget import RaFigureWidget
 
 logger = logging.getLogger(__name__)
-
-
-class RaPlotCurveItem(PlotCurveItem):
-    def __init__(self, fsr: float, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__fsr = fsr
-        _, self.__y = self.getData()
-
-    def mouseDragEvent(self, ev):
-        if (
-            ev.button() != Qt.MouseButton.LeftButton
-            and ev.button() != Qt.MouseButton.RightButton
-        ):
-            ev.ignore()
-            return
-
-        if ev.isStart():
-            _, y = self.getData()
-            self.__drag_y_offsets = y - ev.buttonDownPos().y()
-        elif ev.isFinish():
-            return
-
-        x, y = self.getData()
-        if ev.button() == Qt.MouseButton.LeftButton:
-            # left click, free drag
-            self.updateData(x, ev.pos().y() + self.__drag_y_offsets)
-        elif ev.button() == Qt.MouseButton.RightButton:
-            # magnet effect, attach to the nearest fsr
-            y_ideal = ev.pos().y() + self.__drag_y_offsets
-            y_diff = y_ideal - self.__y
-            y_diff = np.round(y_diff / self.__fsr) * self.__fsr
-            y_final = self.__y + y_diff
-            self.updateData(x, y_final)
-        ev.accept()
 
 
 class RaPeakTrackerWidget(QWidget):
     class __Worker(QThread):
         def __init__(
             self,
-            analyzer: Analyzer,
+            analyzer: PassiveAnalyzer,
             channels: set[int],
             start_stop_step: tuple[int, Optional[int], int],
             r2_threshold: float,
@@ -73,12 +40,16 @@ class RaPeakTrackerWidget(QWidget):
             self.__max_n100dBm_points = max_n100dBm_points
 
         def run(self):
-            self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
-                self.__channels,
-                self.__start_stop_step,
-                self.__r2_threshold,
-                self.__max_n100dBm_points,
-            )
+            self.__error_traceback = None
+            try:
+                self.__all_traces, self.__all_peaks = self.__analyzer.analyze(
+                    self.__channels,
+                    self.__start_stop_step,
+                    self.__r2_threshold,
+                    self.__max_n100dBm_points,
+                )
+            except Exception as e:
+                self.__error_traceback = e
 
         @property
         def all_traces(self):
@@ -88,10 +59,14 @@ class RaPeakTrackerWidget(QWidget):
         def all_peaks(self):
             return self.__all_peaks
 
+        @property
+        def error_traceback(self):
+            return self.__error_traceback
+
     class __FSR_ER_Q_Worker(QThread):
         def __init__(
             self,
-            analyzer: Analyzer,
+            analyzer: PassiveAnalyzer,
             channels: set[int],
             start_stop_step: tuple[int, Optional[int], int],
             r2_threshold: float,
@@ -122,10 +97,9 @@ class RaPeakTrackerWidget(QWidget):
             power_index: int,
             traces: list[list[float]],
             fsr: float,
-            analyzer: Analyzer,
+            analyzer: PassiveAnalyzer,
             start_stop_step: tuple[int, Optional[int], int],
             time_unit: str,
-            wavelength_unit: str,
             power_unit: str,
             parent=None,
         ):
@@ -144,7 +118,6 @@ class RaPeakTrackerWidget(QWidget):
             self.__analyzer = analyzer
             self.__time_unit = time_unit
             self.__power_unit = power_unit
-            self.__wavelength_unit = wavelength_unit
 
             self.__plot_item = PlotItem()
             self.__plot_item.getAxis("bottom").setLabel("Sweep Number")
@@ -196,7 +169,7 @@ class RaPeakTrackerWidget(QWidget):
             ax = self.__figure_widget.figure.subplots(1, 1)
             ax.set_title(f"{self.__name} Peak Shift")
             ax.set_xlabel(f"Time ({self.__time_unit})")
-            ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
+            ax.set_ylabel("Wavelength (nm)")
 
             color_palette = cycle(["light green", "blue"])
             x0 = 0
@@ -244,7 +217,7 @@ class RaPeakTrackerWidget(QWidget):
 
             ax.plot(self.__timestamps[: len(ys)], ys)
             ax.set_xlabel(f"Time ({self.__time_unit})")
-            ax.set_ylabel(f"Peak Shift ({self.__wavelength_unit})")
+            ax.set_ylabel("Peak Shift (nm)")
             fig.set_size_inches(8, 5)
             ax.axis("auto")
             title = f"{self.__name} Peak Offset"
@@ -280,7 +253,7 @@ class RaPeakTrackerWidget(QWidget):
             ax.set_xticks(
                 [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
             )
-            ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
+            ax.set_ylabel(f"Wavelength (nm)")
             ax.set_yticks(
                 list(range(len(self.__analyzer.wavelengths)))[
                     :: int(len(self.__analyzer.wavelengths) / 7)
@@ -311,7 +284,7 @@ class RaPeakTrackerWidget(QWidget):
             ys -= ys[0]
             trace_ax.plot(self.__timestamps[: len(ys)], ys)
             trace_ax.set_xlabel(f"Time ({self.__time_unit})")
-            trace_ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
+            trace_ax.set_ylabel(f"Wavelength (nm)")
             trace_ax.set_title(f"{self.__name} Peak Offset")
 
             spectrogram_ax = plt.subplot(2, 1, 2)
@@ -338,7 +311,7 @@ class RaPeakTrackerWidget(QWidget):
             spectrogram_ax.set_xticks(
                 [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
             )
-            spectrogram_ax.set_ylabel(f"Wavelength ({self.__wavelength_unit})")
+            spectrogram_ax.set_ylabel(f"Wavelength (nm)")
             spectrogram_ax.set_yticks(
                 list(range(len(self.__analyzer.wavelengths)))[
                     :: int(len(self.__analyzer.wavelengths) / 7)
@@ -381,11 +354,10 @@ class RaPeakTrackerWidget(QWidget):
 
     def plot_initial(
         self,
-        analyzer: Analyzer,
+        analyzer: PassiveAnalyzer,
         channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
         time_unit: str,
-        wavelength_unit: str,
         power_unit: str,
         r2_threshold: float,
         max_n100dBm_points: int,
@@ -394,7 +366,6 @@ class RaPeakTrackerWidget(QWidget):
         self.__channels = channels
         self.__start_stop_step = start_stop_step
         self.__time_unit = time_unit
-        self.__wavelength_unit = wavelength_unit
         self.__power_unit = power_unit
         self.__r2_threshold = r2_threshold
         self.__max_n100dBm_points = max_n100dBm_points
@@ -466,7 +437,7 @@ class RaPeakTrackerWidget(QWidget):
             )
         axes.set_title("Collated Overlaid Peak Shifts")
         axes.set_xlabel(f"Time ({self.__time_unit})")
-        axes.set_ylabel(f"Resonance Peak Shift ({self.__wavelength_unit})")
+        axes.set_ylabel(f"Resonance Peak Shift (nm)")
         plt.gcf().set_size_inches(8, 5)
         axes.axis("auto")
         axes.legend()
@@ -482,7 +453,6 @@ class RaPeakTrackerWidget(QWidget):
                 self.__analyzer,
                 self.__start_stop_step,
                 self.__time_unit,
-                self.__wavelength_unit,
                 self.__power_unit,
                 self,
             )
@@ -509,7 +479,12 @@ class RaPeakTrackerWidget(QWidget):
             self.__all_peaks = self.__worker.all_peaks
             self.__plot_traces()
         except Exception as e:
-            logger.error(e)
+            logger.error(e.with_traceback(None))
+            if self.__worker.error_traceback is not None:
+                logger.error(self.__worker.error_traceback)
+                raise RuntimeError(self.__worker.error_traceback)
+            else:
+                raise e
         finally:
             self.__worker.deleteLater()
             self.signal_work_done.emit(True)
@@ -517,14 +492,18 @@ class RaPeakTrackerWidget(QWidget):
 
     def fsr_er_q(
         self,
-        analyzer: Analyzer,
+        analyzer: PassiveAnalyzer,
         channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
+        r2_threshold: float,
+        max_n100dBm_points: int,
         path: str,
     ):
         self.__analyzer = analyzer
         self.__channels = channels
         self.__start_stop_step = start_stop_step
+        self.__r2_threshold = r2_threshold
+        self.__max_n100dBm_points = max_n100dBm_points
         self.__signal_fsr_er_q_work_start.emit()
         self.__fsr_er_q_result_path = path
 
@@ -570,7 +549,7 @@ class RaPeakTrackerWidget(QWidget):
                 },
             )
         except Exception as e:
-            logger.error(e)
+            logger.error(e.with_traceback(None))
         finally:
             self.__fsr_er_q_worker.deleteLater()
             self.signal_fsr_er_q_work_done.emit(True)
