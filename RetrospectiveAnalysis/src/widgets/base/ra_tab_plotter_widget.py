@@ -7,9 +7,12 @@ import numpy as np
 from matplotlib.ticker import FuncFormatter
 from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtWidgets import (
+    QFileDialog,
     QGroupBox,
+    QPushButton,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from ...core.lib import SweepFitResult, lorentzian
@@ -123,7 +126,7 @@ class RaFilePlotterWidget(QGroupBox):
         self.__file_plotter.plot_file(file_path, r2_threshold, max_n100dBm_points)
 
 
-class RaSpectrogramPlotterWidget(QTabWidget):
+class RaSpectrogramPlotterWidget(QWidget):
     __signal_spectrograms_work_start = Signal()
     signal_spectrograms_work_done = Signal(bool)
 
@@ -157,9 +160,19 @@ class RaSpectrogramPlotterWidget(QTabWidget):
         # if not in a layout, resize to have a larger space
         if not self.parent():
             self.resize(800, 600)
+
+        self.__tab_widget = QTabWidget()
+        self.__save_all_button = QPushButton("Save All")
+
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.__tab_widget)
+        self.layout().addWidget(self.__save_all_button)
+
+        # connections
         self.__signal_spectrograms_work_start.connect(
             self.__slot_spectrograms_work_start
         )
+        self.__save_all_button.clicked.connect(self.__slot_save_all)
 
         # an analyzer should be initialized outside and passed into this class
         self.analyzer: PassiveAnalyzer = None  # type: ignore
@@ -179,9 +192,9 @@ class RaSpectrogramPlotterWidget(QTabWidget):
             raise RuntimeError("Analyzer is not initialized")
         else:
             # clear previous plots
-            for index in range(self.count()):
-                self.widget(index).deleteLater()
-            self.clear()
+            for index in range(self.__tab_widget.count()):
+                self.__tab_widget.widget(index).deleteLater()
+            self.__tab_widget.clear()
 
             self.__channels = channels
             self.__step = step
@@ -257,7 +270,7 @@ class RaSpectrogramPlotterWidget(QTabWidget):
 
                 figure_widget.figure.set_tight_layout(True)
                 figure_widget.figure_canvas.show()
-                self.addTab(figure_widget, f"Power {k+1}")
+                self.__tab_widget.addTab(figure_widget, f"Power {k+1}")
         except IndexError | ValueError as e:
             raise IndexError(
                 "Could not plot spectrograms. Please check range and tick settings"
@@ -266,3 +279,15 @@ class RaSpectrogramPlotterWidget(QTabWidget):
         del self.__worker
         logger.info("Spectrogram plotting done!")
         self.signal_spectrograms_work_done.emit(True)
+
+    @Slot()
+    def __slot_save_all(self):
+        if self.__tab_widget.count() == 0:
+            raise RuntimeError("No spectrogram to save")
+
+        dir = QFileDialog.getExistingDirectory()
+        for index in range(self.__tab_widget.count()):
+            file_name = f"Power {index+1} Spectrogram.png"
+            widget: RaFigureWidget = self.__tab_widget.widget(index)  # type: ignore
+            widget.figure.savefig(os.path.join(dir, file_name))
+            logger.info(f"{file_name} saved")

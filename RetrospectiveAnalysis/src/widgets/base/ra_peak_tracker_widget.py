@@ -253,7 +253,7 @@ class RaPeakTrackerWidget(QWidget):
             ax.set_xticks(
                 [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
             )
-            ax.set_ylabel(f"Wavelength (nm)")
+            ax.set_ylabel("Wavelength (nm)")
             ax.set_yticks(
                 list(range(len(self.__analyzer.wavelengths)))[
                     :: int(len(self.__analyzer.wavelengths) / 7)
@@ -284,7 +284,7 @@ class RaPeakTrackerWidget(QWidget):
             ys -= ys[0]
             trace_ax.plot(self.__timestamps[: len(ys)], ys)
             trace_ax.set_xlabel(f"Time ({self.__time_unit})")
-            trace_ax.set_ylabel(f"Wavelength (nm)")
+            trace_ax.set_ylabel("Wavelength (nm)")
             trace_ax.set_title(f"{self.__name} Peak Offset")
 
             spectrogram_ax = plt.subplot(2, 1, 2)
@@ -311,7 +311,7 @@ class RaPeakTrackerWidget(QWidget):
             spectrogram_ax.set_xticks(
                 [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
             )
-            spectrogram_ax.set_ylabel(f"Wavelength (nm)")
+            spectrogram_ax.set_ylabel("Wavelength (nm)")
             spectrogram_ax.set_yticks(
                 list(range(len(self.__analyzer.wavelengths)))[
                     :: int(len(self.__analyzer.wavelengths) / 7)
@@ -437,7 +437,7 @@ class RaPeakTrackerWidget(QWidget):
             )
         axes.set_title("Collated Overlaid Peak Shifts")
         axes.set_xlabel(f"Time ({self.__time_unit})")
-        axes.set_ylabel(f"Resonance Peak Shift (nm)")
+        axes.set_ylabel("Resonance Peak Shift (nm)")
         plt.gcf().set_size_inches(8, 5)
         axes.axis("auto")
         axes.legend()
