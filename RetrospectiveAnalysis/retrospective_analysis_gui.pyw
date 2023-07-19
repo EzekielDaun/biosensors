@@ -7,6 +7,7 @@ import time
 import darkdetect
 import pyqtgraph as pg
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import qt_set_sequence_auto_mnemonic
 
 from src.window.ra_startup_window import RaStartupWindow
 
@@ -53,6 +54,8 @@ if __name__ == "__main__":
     logging.getLogger().addHandler(file_handler)
 
     app = QApplication(sys.argv)
+
+    qt_set_sequence_auto_mnemonic(True)
 
     startup_window = RaStartupWindow()
     startup_window.show()

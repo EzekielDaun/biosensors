@@ -4,8 +4,10 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QMainWindow,
     QPushButton,
+    QStatusBar,
     QVBoxLayout,
     QWidget,
 )
@@ -24,6 +26,11 @@ class RaStartupWindow(QMainWindow):
 
         self.__central_widget = self.RaStartupWindowCentralWidget()
         self.setCentralWidget(self.__central_widget)
+
+        self.__status_bar = QStatusBar()
+        self.setStatusBar(self.__status_bar)
+        self.__status_bar.addWidget(QLabel("Retrospective Analysis - Start Page"))
+        self.__status_bar.addPermanentWidget(QLabel("UBC Biosensor"))
 
         self.__central_widget.passive_button.clicked.connect(self.slot_passive_analyzer)
         self.__central_widget.active_button.clicked.connect(self.slot_active_converter)
@@ -68,10 +75,11 @@ class RaStartupWindow(QMainWindow):
             active_group_box = QGroupBox("Active Converter")
             watch_mode_group_box = QGroupBox("Watch Mode and Quick Analyzer")
 
-            self.__passive_button = QPushButton("Passive Analyzer")
-            self.__active_button = QPushButton("Active Converter")
-            self.__watch_mode_button = QPushButton("Watch Mode")
-            self.__quick_analyzer_button = QPushButton("Quick Analyzer")
+            # &[*] to make alt + * the shortcut for that button
+            self.__passive_button = QPushButton("&Passive Analyzer")
+            self.__active_button = QPushButton("&Active Converter")
+            self.__watch_mode_button = QPushButton("&Watch Mode")
+            self.__quick_analyzer_button = QPushButton("&Quick Analyzer")
 
             passive_group_box.setLayout(QVBoxLayout())
             passive_group_box.layout().addWidget(self.__passive_button)
