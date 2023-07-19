@@ -242,7 +242,7 @@ class CSVData:
 
 
 class RampSweepCSVReaderBase:
-    def __iter__(self):
+    def __iter__(self) -> Any:
         ...
 
     @property

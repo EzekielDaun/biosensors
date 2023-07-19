@@ -415,9 +415,9 @@ class RaActiveConverterDialog(QDialog):
             file_path=os.path.join(
                 self.__folder_path, self.__ui.rawPreviewFileComboBox.currentText()
             ),
-            skip_rows=self.__csv_reader.skip_rows,
-            skip_columns=self.__csv_reader.skip_columns,
-            ramp_channel=self.__csv_reader.ramp_channel,
+            skip_rows=self.__csv_reader.skip_rows,  # type: ignore
+            skip_columns=self.__csv_reader.skip_columns,  # type: ignore
+            ramp_channel=self.__csv_reader.ramp_channel,  # type: ignore
         )
 
         # plot sweep data and ramp data
@@ -461,7 +461,7 @@ class RaActiveConverterDialog(QDialog):
             file_index = pattern.match(selected_file_basename).group(1)  # type: ignore
             pattern2 = re.compile(selected_file_basename.replace(file_index, f"({file_index})"))  # type: ignore
 
-            reader = type(self.__csv_reader)(
+            reader = type(self.__csv_reader)(  # type: ignore
                 self.__folder_path,
                 pattern2,
                 self.__ui.skipRowsSpinBox.value(),

@@ -1,13 +1,39 @@
+import argparse
 import logging
 import os
 import sys
 import time
 
+import darkdetect
+import pyqtgraph as pg
 from PySide6.QtWidgets import QApplication
 
 from src.window.ra_startup_window import RaStartupWindow
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-t",
+        "--theme",
+        nargs="?",
+        required=False,
+        choices=["light", "dark", "auto"],
+        default="auto",
+        help="set the theme of pyqtgraph plotting widgets",
+    )
+    match parser.parse_args().theme:
+        case "light":
+            pg.setConfigOption("background", "w")
+            pg.setConfigOption("foreground", "k")
+        case "dark":
+            pass
+        case "auto":
+            if darkdetect.isLight():
+                pg.setConfigOption("background", "w")
+                pg.setConfigOption("foreground", "k")
+        case _:
+            pass
+
     logging.basicConfig(
         level=logging.INFO,
         format="{levelname:^7s}::{asctime}::{name}::{message}",
@@ -15,6 +41,7 @@ if __name__ == "__main__":
         datefmt="%H:%M:%S",
         force=True,
     )
+
     log_folder_name = ".log"
     os.makedirs(f"{log_folder_name}", exist_ok=True)
     t = time.strftime("%Y%m%d-%H%M%S", time.localtime())

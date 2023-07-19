@@ -28,10 +28,6 @@ from ..widgets.base.ra_tab_plotter_widget import (
 
 logger = logging.getLogger(__name__)
 
-pg.setConfigOption("background", "w")
-pg.setConfigOption("foreground", "k")
-
-
 RESULT_FOLDER_DEFAULT_NAME = "RA_result"
 PEAK_SHIFT_FILE_NAME = "peak_shift.mat"
 PEAKS_FILE_NAME = "peaks.mat"
@@ -171,16 +167,6 @@ class RaPassiveAnalyzerWindow(QMainWindow):
             self.__ui.plotSpectrogramsGroupBox.setEnabled(False)
             self.__ui.peakTracingGroupBox.setEnabled(False)
             self.__ui.saveResultsButton.setEnabled(False)
-
-    # def slot_action_active_converter_clicked(self):
-    #     folder_path = QFileDialog.getExistingDirectory(
-    #         dir=os.path.expanduser("~"),
-    #     )
-    #     if folder_path == "":
-    #         self.__ui.statusbar.showMessage("Retrospective Analysis - Open cancelled")
-    #     else:
-    #         dialog = RaActiveConverterDialog(folder_path, self)
-    #         dialog.show()
 
     def slot_file_changed(self, model_index):
         tree_view = self.__ui.treeView

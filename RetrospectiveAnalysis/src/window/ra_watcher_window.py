@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
-    QLineEdit,
     QMainWindow,
     QPushButton,
     QSplitter,
@@ -31,6 +30,7 @@ from PySide6.QtWidgets import (
 
 from ..core.lib import SweepFitResult
 from ..core.passive_tools import read_mat
+from ..widgets.lib.ra_drop_widgets import RaDropLineEdit, RaDropPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -152,12 +152,13 @@ class RaWatcherWindow(QMainWindow):
         while not self.__queue.empty():
             path = self.__queue.get()
 
-            self.__central_widget.table_widget.insertRow(0)
+            row_index = self.__central_widget.table_widget.rowCount()
+            self.__central_widget.table_widget.insertRow(row_index)
             self.__central_widget.table_widget.setItem(
-                0, 0, QTableWidgetItem(str(datetime.now()))
+                row_index, 0, QTableWidgetItem(str(datetime.now()))
             )
             self.__central_widget.table_widget.setItem(
-                0, 1, QTableWidgetItem(os.path.basename(path))
+                row_index, 1, QTableWidgetItem(os.path.basename(path))
             )
 
             power, wavelength = read_mat(path)
@@ -229,9 +230,15 @@ class RaWatcherWindow(QMainWindow):
         def __init__(self):
             super().__init__()
 
-            self.path_line_edit = QLineEdit()
+            self.path_line_edit = RaDropLineEdit()
+            self.path_line_edit.signal_drop.connect(  # type: ignore
+                self.path_line_edit.setText
+            )
 
-            self.path_select_button = QPushButton("Select")
+            self.path_select_button = RaDropPushButton("Select")
+            self.path_select_button.signal_drop.connect(  # type: ignore
+                self.path_line_edit.setText
+            )
 
             self.watch_button = QPushButton("Watch")
             self.watch_button.setCheckable(True)

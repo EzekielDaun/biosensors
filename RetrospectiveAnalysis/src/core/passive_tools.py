@@ -40,6 +40,11 @@ class PassiveAnalyzer(object):
                     for row in csv.reader(csv_file, delimiter=",")
                     if len(row) >= 3 and row[2] != ""
                 }
+                self.__filenames = [
+                    f
+                    for f in self.__filenames
+                    if int(pat.match(f).group(1)) in time_dict  # type: ignore
+                ]
                 self.__timestamps = (
                     np.array(
                         [
