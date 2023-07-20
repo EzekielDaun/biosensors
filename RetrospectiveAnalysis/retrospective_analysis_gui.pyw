@@ -6,10 +6,10 @@ import time
 
 import darkdetect
 import pyqtgraph as pg
-from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import qt_set_sequence_auto_mnemonic
+from PySide6.QtWidgets import QApplication
 
-from src.window.ra_startup_window import RaStartupWindow
+from src.window.ra_start_window import RaStartWindow
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     qt_set_sequence_auto_mnemonic(True)
 
-    startup_window = RaStartupWindow()
+    startup_window = RaStartWindow()
     startup_window.show()
 
     sys.exit(app.exec())

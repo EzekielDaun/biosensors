@@ -20,7 +20,7 @@ from .ra_watcher_window import RaWatcherWindow
 logger = logging.getLogger(__name__)
 
 
-class RaStartupWindow(QMainWindow):
+class RaStartWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
