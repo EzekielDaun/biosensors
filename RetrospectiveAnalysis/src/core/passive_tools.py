@@ -3,13 +3,13 @@ import logging
 import multiprocessing as mp
 import os
 import re
-from functools import reduce
-from itertools import repeat, starmap
+from functools import partial, reduce
 from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.io import loadmat
+from tqdm import tqdm
 
 from .lib import SweepFitResult, peaks_to_traces
 
@@ -132,14 +132,14 @@ class PassiveAnalyzer(object):
                 - peaks: list of sweep matrix, indexes are sweep number and values are rows of sweep vectors.
         """
 
-        def __starmap(*args, **kwargs):
+        def __map(*args, **kwargs):
             if enable_multi_processing:
                 process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                return mp.Pool(processes=max(1, process_num - 2)).imap(
                     *args, **kwargs
                 )  # reserve one for GUI and one for other programs
             else:
-                return starmap(*args, **kwargs)
+                return map(*args, **kwargs)
 
         start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
 
@@ -147,9 +147,12 @@ class PassiveAnalyzer(object):
             lambda acc, b: {
                 x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
             },
-            __starmap(
-                mat_to_sweep_fit_results,
-                zip(self.__filenames[start:stop:step], repeat(channels)),
+            tqdm(
+                __map(
+                    partial(mat_to_sweep_fit_results, channels=channels),
+                    self.__filenames[start:stop:step],
+                ),
+                total=len(self.__filenames[start:stop:step]),
             ),
             {},
         )
@@ -169,14 +172,14 @@ class PassiveAnalyzer(object):
         max_n100dBm_points: int,
         enable_multi_processing: bool = True,
     ):
-        def __starmap(*args, **kwargs):
+        def __map(*args, **kwargs):
             if enable_multi_processing:
                 process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                return mp.Pool(processes=max(1, process_num - 2)).imap(
                     *args, **kwargs
                 )  # reserve one for GUI and one for other programs
             else:
-                return starmap(*args, **kwargs)
+                return map(*args, **kwargs)
 
         start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
 
@@ -184,9 +187,12 @@ class PassiveAnalyzer(object):
             lambda acc, b: {
                 x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
             },
-            __starmap(
-                mat_to_sweep_fit_results,
-                zip(self.__filenames[start:stop:step], repeat(channels)),
+            tqdm(
+                __map(
+                    partial(mat_to_sweep_fit_results, channels=channels),
+                    self.__filenames[start:stop:step],
+                ),
+                total=len(self.__filenames[start:stop:step]),
             ),
             {},
         )
