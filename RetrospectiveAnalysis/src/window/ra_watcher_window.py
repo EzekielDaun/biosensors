@@ -8,7 +8,7 @@ from queue import Queue
 import numpy as np
 import pyqtgraph as pg
 from numpy.typing import NDArray
-from pyqtgraph import ImageView, PlotItem, ScatterPlotItem
+from pyqtgraph import ImageView, PlotItem, PlotWidget, ScatterPlotItem
 from PySide6.QtCore import QFileSystemWatcher, Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QTextCursor, QTransform
 from PySide6.QtWidgets import (
@@ -53,8 +53,11 @@ class RaWatcherWindow(QMainWindow):
         self.resize(1440, 810)
 
         self.__central_widget = self.RaWatcherWindowCentralWidget()
-        self.__central_widget.signal_start_watch.connect(self.slot_start_watch)
-        self.__central_widget.signal_stop_watch.connect(self.slot_stop_watch)
+        self.__central_widget.signal_start_watch.connect(self.__slot_start_watch)
+        self.__central_widget.signal_stop_watch.connect(self.__slot_stop_watch)
+        self.__central_widget.signal_table_widget_cell_double_clicked.connect(
+            self.__slot_plot_single_file
+        )
         self.setCentralWidget(self.__central_widget)
 
         self.__text_browser = QTextBrowser()
@@ -86,14 +89,14 @@ class RaWatcherWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent):
         self.signal_close.emit()
         if self.__central_widget.watch_button.isChecked():
-            self.slot_stop_watch(self.__central_widget.path_line_edit.text())
+            self.__slot_stop_watch(self.__central_widget.path_line_edit.text())
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
         logging.getLogger().removeHandler(self.__log_handler)
         return super().closeEvent(event)
 
     # slots
-    def slot_start_watch(self, dir: str):
+    def __slot_start_watch(self, dir: str):
         # remove np temp file if exists
         if os.path.exists(np_tmp_path := os.path.join(dir, DEFAULT_TEMP_FILENAME)):
             os.remove(np_tmp_path)
@@ -115,10 +118,10 @@ class RaWatcherWindow(QMainWindow):
         # start a watcher
         self.__watcher = QFileSystemWatcher()
         self.__watcher.addPath(dir)
-        self.__watcher.directoryChanged.connect(self.slot_dir_changed)
+        self.__watcher.directoryChanged.connect(self.__slot_dir_changed)
 
-    def slot_stop_watch(self, dir: str):
-        self.__watcher.directoryChanged.disconnect(self.slot_dir_changed)
+    def __slot_stop_watch(self, dir: str):
+        self.__watcher.directoryChanged.disconnect(self.__slot_dir_changed)
         self.__watcher.deleteLater()
         self.__queue.join()
 
@@ -137,7 +140,7 @@ class RaWatcherWindow(QMainWindow):
         if os.path.exists(np_tmp_path := os.path.join(dir, DEFAULT_TEMP_FILENAME)):
             os.remove(np_tmp_path)
 
-    def slot_dir_changed(self, dir: str):
+    def __slot_dir_changed(self, dir: str):
         files_now = {p for p in os.listdir(dir) if pathlib.Path(p).suffix == ".mat"}
         for f in sorted(
             files_now.difference(self.__files_temp),
@@ -145,10 +148,10 @@ class RaWatcherWindow(QMainWindow):
         ):
             logger.info(f"{f}")
             self.__queue.put(os.path.join(dir, f))
-        self.update_new_files_in_queue()
+        self.__update_new_files_in_queue()
         self.__files_temp.update(files_now)
 
-    def update_new_files_in_queue(self):
+    def __update_new_files_in_queue(self):
         while not self.__queue.empty():
             path = self.__queue.get()
 
@@ -223,9 +226,25 @@ class RaWatcherWindow(QMainWindow):
 
             self.__queue.task_done()
 
+    def __slot_plot_single_file(self, row: int, _col: int):
+        file_name = self.__central_widget.table_widget.item(row, 1).text()
+        self.__central_widget.spectrum_tab_widget.clear()
+        for i in range(self.__spectrograms.shape[0]):
+            plot_widget = PlotWidget()
+            plot_widget.setTitle(f"{file_name} Channel {i+1}")
+            plot_widget.plot(
+                x=self.__wavelength,
+                y=self.__spectrograms[i][row],
+            )
+            self.__central_widget.spectrum_tab_widget.addTab(
+                plot_widget, f"Channel {i+1}"
+            )
+        self.__central_widget.spectrum_tab_widget.show()
+
     class RaWatcherWindowCentralWidget(QWidget):
         signal_start_watch = Signal(str)
         signal_stop_watch = Signal(str)
+        signal_table_widget_cell_double_clicked = Signal(int, int)
 
         def __init__(self):
             super().__init__()
@@ -253,6 +272,8 @@ class RaWatcherWindow(QMainWindow):
                 QAbstractItemView.EditTrigger.NoEditTriggers
             )
 
+            self.spectrum_tab_widget = QTabWidget()
+
             self.spectrogram_tab_widget = QTabWidget()
 
             # layout widgets
@@ -279,6 +300,9 @@ class RaWatcherWindow(QMainWindow):
             # connect signals
             self.path_select_button.clicked.connect(self.slot_select_path)
             self.watch_button.toggled.connect(self.slot_watch_toggled)
+            self.table_widget.cellDoubleClicked.connect(
+                self.signal_table_widget_cell_double_clicked
+            )
 
         def slot_select_path(self):
             path = QFileDialog.getExistingDirectory(self, "Select Directory")
