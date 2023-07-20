@@ -1,0 +1,9 @@
+Manufacturer=Microchip
+PartNumber=MIC29300-12WU-TR
+PartCategory=Integrated Circuit
+PackageCategory=Other
+PinCount=4
+Version=1.2
+Released=2018-11-12 16:52:42
+Downloaded=2023-06-05 18:53:28
+3D=N

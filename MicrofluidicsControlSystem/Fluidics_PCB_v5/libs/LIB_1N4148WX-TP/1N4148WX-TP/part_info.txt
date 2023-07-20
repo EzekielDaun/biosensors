@@ -1,0 +1,9 @@
+Manufacturer=Micro Commercial Components (MCC)
+PartNumber=1N4148WX-TP
+PartCategory=Diode
+PackageCategory=Small Outline Diode
+PinCount=2
+Version=2.1
+Released=2016-12-14 11:30:17
+Downloaded=2022-12-14 12:34:01
+3D=Y

@@ -1,0 +1,16 @@
+.8SS1012-Z :1 ;NIDEC COPAL ELECTRONICS - 8SS1012-Z - SLIDE SWITCH, SPDT, 6A, 125VAC, TH
+"8SS1012Z"
+*STM S
+*NGS
+*PLB 1="1" 2="2" 3="3"
+*MXP 3
+*DFN 8SS1012-Z
+~!Mouser Part Number (-)
+~!Mouser Price/Stock (-)
+~!Manufacturer_Name (Copal Electronics)
+~!Manufacturer_Part_Number (8SS1012-Z)
+~!Link Datasheet (https://www.nidec-copal-electronics.com/e/catalog/switch/8ss.pdf)
+~!Height (14.75mm)
+~!3D_Model (8SS1012-Z)
+"8SS1012-Z"
+1.1!U 2.1!U 3.1!U 

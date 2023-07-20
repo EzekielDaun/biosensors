@@ -1,0 +1,9 @@
+Manufacturer=onsemi
+PartNumber=BSS138-G
+PartCategory=MOSFET (N-Channel)
+PackageCategory=SOT23 (3-Pin)
+PinCount=3
+Version=1.1
+Released=2023-03-02 09:19:38
+Downloaded=2023-06-06 08:25:31
+3D=Y

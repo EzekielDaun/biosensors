@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART '8SS1012_Z'
+CLASS = DISCRETE
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Copal Electronics", "8SS1012-Z" (!) = "", "8SS1012Z", "Other", "", "", "NIDEC COPAL ELECTRONICS - 8SS1012-Z - SLIDE SWITCH, SPDT, 6A, 125VAC, TH", "https://www.nidec-copal-electronics.com/e/catalog/switch/8ss.pdf", "14.75 mm"
+END_PART
+
+END.

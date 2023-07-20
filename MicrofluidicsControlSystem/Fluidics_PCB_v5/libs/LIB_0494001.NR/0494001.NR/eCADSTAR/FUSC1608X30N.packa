@@ -1,0 +1,13 @@
+(unit MM)
+
+(package "0494001_NR"
+    (type UNDEF)
+    (uver 2)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (utime 2020-12-04-04:39:23)
+    (mountForm default
+        (footprintRef "FUSC1608X30N")
+        (spec "System")
+    )
+)

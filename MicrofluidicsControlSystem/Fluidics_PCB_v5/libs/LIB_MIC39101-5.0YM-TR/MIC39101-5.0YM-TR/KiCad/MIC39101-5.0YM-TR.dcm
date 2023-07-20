@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP MIC39101-5.0YM-TR
+D LDO Voltage Regulators 1.0A 1.0% Fixed Voltage LDO
+K
+F http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en581613
+$ENDCMP
+#
+#End Doc Library

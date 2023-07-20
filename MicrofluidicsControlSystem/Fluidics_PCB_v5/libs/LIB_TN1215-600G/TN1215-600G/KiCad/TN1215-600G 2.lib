@@ -1,0 +1,29 @@
+EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#SamacSys ECAD Model TN1215-600G
+#/922851/162453/2.49/3/2/SCR
+DEF TN1215-600G D 0 30 Y Y 1 F N
+F0 "D" 550 -100 50 H V L CNN
+F1 "TN1215-600G" 550 -200 50 H V L CNN
+F2 "TN1215600G" 550 -300 50 H I L CNN
+F3 "https://www.st.com/resource/en/datasheet/tyn1012.pdf" 550 -400 50 H I L CNN
+F4 "12A standard SCRs" 550 -500 50 H I L CNN "Description"
+F5 "4.83" 550 -600 50 H I L CNN "Height"
+F6 "511-TN1215-600G" 550 -700 50 H I L CNN "Mouser Part Number"
+F7 "https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TN1215-600G?qs=lDh9v96ogBZTCD0WccrzTw%3D%3D" 550 -800 50 H I L CNN "Mouser Price/Stock"
+F8 "STMicroelectronics" 550 -900 50 H I L CNN "Manufacturer_Name"
+F9 "TN1215-600G" 550 -1000 50 H I L CNN "Manufacturer_Part_Number"
+DRAW
+X ~ 2 0 0 100 R 50 50 0 0 P
+X ~ 1 600 0 100 L 50 50 0 0 P
+X ~ 3 500 -250 100 U 50 50 0 0 P
+P 2 0 1 6 350 0 500 0 N
+P 2 0 1 6 350 -50 500 -150 N
+P 2 0 1 6 350 -100 350 100 N
+P 2 0 1 6 100 0 200 0 N
+C 300 0 180 0 1 10 N
+P 4 0 1 10 350 0 200 100 200 -100 350 0 F
+ENDDRAW
+ENDDEF
+#
+#End Library

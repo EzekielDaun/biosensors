@@ -1,0 +1,15 @@
+.MIC29300-12WU-TR :1 ;LDO Voltage Regulators
+MIC2930012WUTR
+*STM IC
+*NGS
+*PLB 1="IN" 2="GND" 3="OUT" 4="TAB"
+*MXP 4
+*DFN MIC29300-12WU-TR
+~!Mouser Part Number (998-MIC29300-12WUTR)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Microchip-Technology/MIC29300-12WU-TR?qs=U6T8BxXiZAUm3rpKH4l03A%3D%3D)
+~!Manufacturer_Name (Microchip)
+~!Manufacturer_Part_Number (MIC29300-12WU-TR)
+~!Link Datasheet (http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en580805)
+~!Height (4.597mm)
+MIC29300-12WU-TR
+1.1!U 2.1!U 3.1!U 4.1!U 

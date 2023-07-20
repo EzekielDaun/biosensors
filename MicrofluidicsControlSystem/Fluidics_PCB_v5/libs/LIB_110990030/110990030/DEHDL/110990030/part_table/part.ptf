@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART '110990030'
+CLASS = IO
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Seeed Studio", "110990030" (!) = "", "110990030", "Other", "713-110990030", "https://www.mouser.co.uk/ProductDetail/Seeed-Studio/110990030?qs=1%252B9yuXKSi8Dw9fpnq%252BdNzQ%3D%3D", "GROVE 2MM 4PIN VERT CONN 10PCS", "https://statics3.seeedstudio.com/images/opl/datasheet/3470130P1.pdf", "8.6 mm"
+END_PART
+
+END.

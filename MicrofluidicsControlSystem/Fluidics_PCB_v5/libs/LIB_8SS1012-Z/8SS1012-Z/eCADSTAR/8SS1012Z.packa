@@ -1,0 +1,13 @@
+(unit MM)
+
+(package "8SS1012-Z"
+    (type UNDEF)
+    (uver 2)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (utime 2019-05-03-10:26:07)
+    (mountForm default
+        (footprintRef "8SS1012Z")
+        (spec "System")
+    )
+)
