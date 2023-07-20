@@ -4,13 +4,12 @@ import re
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from src.core.lib import get_lorentzian_peaks
 from scipy.io import loadmat
 
+from src.core.lib import get_lorentzian_peaks
+
 if __name__ == "__main__":
-    base_folder = os.path.expanduser(
-        "~/path/to/folder"
-    )
+    base_folder = os.path.expanduser("~/path/to/folder")
     pat = re.compile(r"laser_sweep_(\d+)\.mat")
     filenames = sorted(
         list(filter(lambda x: pat.match(x), iter(os.listdir(base_folder)))),

@@ -4,17 +4,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter
+
 from src.core.passive_tools import PassiveAnalyzer
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    channels = [0, 1, 2, 3, 4, 5]
-    analyzer = PassiveAnalyzer(
-        os.path.expanduser("~/path/to/folder"),
-        0.25,
-        wavelength_multiplier=1e9,
-    )
+    channels = {0, 1, 2, 3, 4, 5}
+    analyzer = PassiveAnalyzer(os.path.expanduser("~/path/to/folder"), 0.25)
 
     # Plot spectrogram
 
@@ -38,7 +35,7 @@ if __name__ == "__main__":
 
     # Plot traces
 
-    all_traces, all_peaks = analyzer.analyze(channels, (0, None, 1))
+    all_traces, all_peaks = analyzer.analyze(channels, (0, None, 1), 0.5, 30)
     for c in channels:
         fig = plt.figure()
         ax = fig.add_subplot(111)
