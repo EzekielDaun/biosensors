@@ -4,7 +4,6 @@ import pathlib
 import re
 import sys
 
-import pyqtgraph as pg
 from PySide6.QtCore import QDir, Qt, Signal, Slot
 from PySide6.QtGui import QAction, QCloseEvent, QTextCursor
 from PySide6.QtWidgets import (
@@ -42,9 +41,6 @@ class RaPassiveAnalyzerWindow(QMainWindow):
         super().__init__()
         self.__ui = Ui_RaMainWindow()
         self.__ui.setupUi(self)
-
-        pg.setConfigOption("background", "w")
-        pg.setConfigOption("foreground", "k")
 
         self.__ui.statusbar.showMessage("Retrospective Analysis")
 
