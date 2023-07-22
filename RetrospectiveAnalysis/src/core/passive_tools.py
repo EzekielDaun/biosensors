@@ -16,6 +16,21 @@ from .lib import SweepFitResult, peaks_to_traces
 logger = logging.getLogger(__name__)
 
 
+class tqdm_qt(tqdm):
+    """
+    hack tqdm to send a qt signal, instead of printing to stderr
+    """
+
+    def __init__(self, *args, qt_signal=None, **kwargs):
+        self.__qt_signal = qt_signal
+        super().__init__(*args, **kwargs)
+
+    def display(self, msg: str | None = None, pos: int | None = None) -> None:
+        if self.__qt_signal:
+            self.__qt_signal.emit(self.format_dict)
+        # super().display(msg, pos) # ban the original display to stderr
+
+
 class PassiveAnalyzer(object):
     def __init__(
         self,
@@ -115,6 +130,7 @@ class PassiveAnalyzer(object):
         r2_threshold: float,
         max_n100dBm_points: int,
         enable_multi_processing: bool = True,
+        qt_signal=None,
     ):
         """analyze
 
@@ -147,12 +163,13 @@ class PassiveAnalyzer(object):
             lambda acc, b: {
                 x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
             },
-            tqdm(
+            tqdm_qt(
                 __map(
                     partial(mat_to_sweep_fit_results, channels=channels),
                     self.__filenames[start:stop:step],
                 ),
                 total=len(self.__filenames[start:stop:step]),
+                qt_signal=qt_signal,
             ),
             {},
         )

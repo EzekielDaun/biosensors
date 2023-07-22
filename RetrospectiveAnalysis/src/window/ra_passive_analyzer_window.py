@@ -11,15 +11,18 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFileSystemModel,
     QHeaderView,
+    QLabel,
     QListWidgetItem,
     QMainWindow,
     QMenu,
     QVBoxLayout,
 )
+from tqdm import tqdm
 
 from ..core.passive_tools import PassiveAnalyzer
 from ..uic.base.ra_main_window import Ui_RaMainWindow
 from ..widgets.base.ra_peak_tracker_widget import RaPeakTrackerWidget
+from ..widgets.base.ra_progress_bar import RaProgressBar
 from ..widgets.base.ra_tab_plotter_widget import (
     RaFilePlotterWidget,
     RaSpectrogramPlotterWidget,
@@ -32,17 +35,25 @@ PEAK_SHIFT_FILE_NAME = "peak_shift.mat"
 PEAKS_FILE_NAME = "peaks.mat"
 FSR_ER_Q_RESULT_FILE_NAME = "fsr_er_q.mat"
 
+TEMPORARY_MESSAGE_TIMEOUT = 5000
+
 
 class RaPassiveAnalyzerWindow(QMainWindow):
     __signal_write = Signal(str)
     signal_close = Signal()
+    signal_progress = Signal(dict)
 
     def __init__(self):
         super().__init__()
         self.__ui = Ui_RaMainWindow()
         self.__ui.setupUi(self)
 
-        self.__ui.statusbar.showMessage("Retrospective Analysis")
+        # status bar
+        self.__ui.statusbar.addPermanentWidget(QLabel("RA Passive Analyzer"))
+        self.__progress_bar = RaProgressBar()
+        self.__progress_bar.hide()
+        self.__ui.statusbar.addWidget(self.__progress_bar)
+        self.signal_progress.connect(self.slot_signal_progress)
 
         # initialize file treeview
         model = QFileSystemModel()
@@ -139,12 +150,12 @@ class RaPassiveAnalyzerWindow(QMainWindow):
             dir=os.path.expanduser("~"),
         )
         if folder_path == "":
-            self.__ui.statusbar.showMessage("Retrospective Analysis - Open cancelled")
+            self.__ui.statusbar.showMessage("Open cancelled", TEMPORARY_MESSAGE_TIMEOUT)
         else:
             tree_view = self.__ui.treeView
             model: QFileSystemModel = tree_view.model()  # type: ignore
             tree_view.setRootIndex(model.index(folder_path))
-            self.__ui.statusbar.showMessage(f"Retrospective Analysis - {folder_path}")
+            self.__ui.statusbar.showMessage(f"{folder_path}", TEMPORARY_MESSAGE_TIMEOUT)
             os.chdir(folder_path)
 
             # clear
@@ -172,7 +183,7 @@ class RaPassiveAnalyzerWindow(QMainWindow):
         _, file_ext = os.path.splitext(file_name)
         if model.isDir(model.index(file_path)):
             tree_view.setRootIndex(model.index(file_path))
-            self.__ui.statusbar.showMessage(f"Retrospective Analysis - {file_path}")
+            self.__ui.statusbar.showMessage(f"{file_path}", TEMPORARY_MESSAGE_TIMEOUT)
         elif file_ext != ".mat":
             logger.error(f"{file_name} is not a matlab workspace file")
         else:
@@ -286,6 +297,8 @@ class RaPassiveAnalyzerWindow(QMainWindow):
 
     # Peak tracking slots
     def slot_track_peak(self):
+        self.__ui.statusbar.clearMessage()
+        self.__progress_bar.reset()
         lw = self.__ui.peakTrackerPowerListWidget
         powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         self.__peak_tracker_widget.plot_initial(
@@ -300,6 +313,7 @@ class RaPassiveAnalyzerWindow(QMainWindow):
             self.__ui.powerUnitLineEdit.text(),
             self.__ui.r2ThresholdDoubleSpinBox.value(),
             self.__ui.n100dBmToleranceSpinBox.value(),
+            self.signal_progress,
         )
 
     def slot_save_results(self):
@@ -341,6 +355,8 @@ class RaPassiveAnalyzerWindow(QMainWindow):
 
     # FSR ER Q slots
     def slot_fsr_er_q(self):
+        self.__progress_bar.reset()
+        self.__ui.statusbar.clearMessage()
         lw = self.__ui.peakTrackerPowerListWidget
         powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         output_path = os.path.join(
@@ -361,3 +377,24 @@ class RaPassiveAnalyzerWindow(QMainWindow):
             self.__ui.n100dBmToleranceSpinBox.value(),
             output_path,
         )
+
+    def slot_signal_progress(self, format_dict: dict):
+        n = format_dict["n"]
+        total = format_dict["total"]
+        elapsed = format_dict["elapsed"]
+        rate = format_dict["rate"]
+        if all([n, total, elapsed, rate]):
+            elapsed_time = tqdm.format_interval(elapsed)
+            remaining_time = tqdm.format_interval((total - n) / rate)
+            rate_str = f"{rate:.2f}/s"
+
+            text1 = f"{n}/{total}({n/total*100:.2f}%) {rate_str} {elapsed_time}"
+            text2 = f"{remaining_time}"
+            self.__progress_bar.update(n, total, text1, text2)
+        else:
+            self.__progress_bar.update(
+                format_dict["n"],
+                format_dict["total"],
+                text1="",
+                text2="" if format_dict["n"] != format_dict["total"] else "Done",
+            )

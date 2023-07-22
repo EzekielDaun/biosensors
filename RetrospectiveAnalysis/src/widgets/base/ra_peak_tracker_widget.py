@@ -31,6 +31,7 @@ class RaPeakTrackerWidget(QWidget):
             start_stop_step: tuple[int, Optional[int], int],
             r2_threshold: float,
             max_n100dBm_points: int,
+            qt_signal,
         ):
             super().__init__()
             self.__analyzer = analyzer
@@ -38,6 +39,7 @@ class RaPeakTrackerWidget(QWidget):
             self.__start_stop_step = start_stop_step
             self.__r2_threshold = r2_threshold
             self.__max_n100dBm_points = max_n100dBm_points
+            self.__signal = qt_signal
 
         def run(self):
             self.__error_traceback = None
@@ -47,6 +49,7 @@ class RaPeakTrackerWidget(QWidget):
                     self.__start_stop_step,
                     self.__r2_threshold,
                     self.__max_n100dBm_points,
+                    qt_signal=self.__signal,
                 )
             except Exception as e:
                 self.__error_traceback = e
@@ -361,6 +364,7 @@ class RaPeakTrackerWidget(QWidget):
         power_unit: str,
         r2_threshold: float,
         max_n100dBm_points: int,
+        qt_signal,
     ):
         self.__analyzer = analyzer
         self.__channels = channels
@@ -369,6 +373,7 @@ class RaPeakTrackerWidget(QWidget):
         self.__power_unit = power_unit
         self.__r2_threshold = r2_threshold
         self.__max_n100dBm_points = max_n100dBm_points
+        self.__qt_signal = qt_signal
 
         self.__signal_work_start.emit()
         self.__tab_widget.clear()
@@ -466,6 +471,7 @@ class RaPeakTrackerWidget(QWidget):
             self.__start_stop_step,
             self.__r2_threshold,
             self.__max_n100dBm_points,
+            self.__qt_signal,
         )
         self.__worker.finished.connect(self.__slot_work_done)  # type: ignore
         self.__worker.start()
