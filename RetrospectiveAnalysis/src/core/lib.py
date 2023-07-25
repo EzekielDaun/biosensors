@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from itertools import accumulate, pairwise, product, starmap
+from itertools import accumulate, pairwise, product
 from typing import Self
 
 import numpy as np
@@ -313,6 +313,7 @@ def peaks_to_traces(
         last_peak = peaks[0][0]
     except IndexError as e:
         raise IndexError("No peaks found in the first sweep.") from e
+
     for i, (p1s, p2s) in pair_iter:
         ps = sorted(  # possible peaks in p2s to pair with the last peak
             [p for p in p2s if abs(p[0] - last_peak[0]) < 0.3 * FSR],
@@ -374,36 +375,17 @@ def peaks_to_traces(
                 logger.debug(f"Peak index {i+1}: {pairs[0][1]}")
                 logger.debug(f"Peak shift: {pairs[0][1][0] - pairs[0][0][0]}")
 
-                is_swapped: bool = False
-                if len(p1s) >= len(p2s):
-                    pass
-                else:
-                    p1s, p2s = p2s, p1s
-                    is_swapped = True
+                # degrade to the nearest peak
+                pair = sorted(  # do not match the last on-track peak in case that the corresponding peak is missing in the next sweep
+                    product([p for p in p1s if p[0] != last_peak[0]], p2s),
+                    key=lambda x: abs(x[1][0] - x[0][0]),
+                )[
+                    0
+                ]
+                shifts.append(pair[1][0] - pair[0][0])
+                last_peak = pair[1]
 
-                temp = sorted(
-                    [p1s[ii : ii + len(p2s)] for ii in range(len(p1s) - len(p2s) + 1)],
-                    key=lambda ps: sum(
-                        starmap(
-                            lambda a, b: float(cdist([a], [b], "cosine")), zip(p2s, ps)
-                        )
-                    ),
-                )
-
-                (p1s, p2s) = (p2s, p1s) if is_swapped else (p1s, p2s)
-                if not is_swapped:
-                    wl_shift = float(np.mean(p2s.T[0]) - np.mean(temp[0].T[0]))
-                else:
-                    wl_shift = float(np.mean(temp[0].T[0]) - np.mean(p1s.T[0]))
-
-                if abs(wl_shift) < pairs[0][1][0] - pairs[0][0][0]:
-                    logger.debug(f"Shift fixed by {wl_shift}")
-                    shifts.append(wl_shift)
-                    last_peak = p2s[0]
-                else:
-                    shifts.append(pairs[0][1][0] - pairs[0][0][0])
-                    last_peak = pairs[0][1]
-
+                # append the current trace and start a new trace
                 _, (_, temp) = next(pair_iter, (None, (None, None)))
                 if temp is not None:
                     ret.append(list(accumulate([start_wavelength] + shifts)))
