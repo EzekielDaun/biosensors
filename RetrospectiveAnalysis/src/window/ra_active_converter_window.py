@@ -1,5 +1,7 @@
+import logging
 import os
 import re
+import sys
 from collections.abc import Callable
 from functools import reduce
 from itertools import cycle, islice, repeat, starmap
@@ -15,12 +17,12 @@ from pyqtgraph import (
     ImageView,
     PlotItem,
 )
-from PySide6.QtCore import Qt, QThread
-from PySide6.QtGui import QTransform
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QCloseEvent, QTextCursor, QTransform
 from PySide6.QtWidgets import (
-    QDialog,
     QFileDialog,
     QHBoxLayout,
+    QMainWindow,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -37,7 +39,7 @@ from ..core.active_tools import (
     RampUpSweepCSVReader,
 )
 from ..core.lib import get_lorentzian_peaks
-from ..uic.active.ra_active_converter_dialog import Ui_RaActiveConverterDialog
+from ..uic.active.ra_active_converter_window import Ui_MainWindow
 from ..widgets.active.ra_conversion_tabs import (
     ConversionRCTFTab,
     ConversionTabBase,
@@ -128,7 +130,10 @@ def _sweep_2d_data_to_passive_format(
     return ret
 
 
-class RaActiveConverterDialog(QDialog):
+class RaActiveConverterWindow(QMainWindow):
+    __signal_write = Signal(str)
+    signal_close = Signal()
+
     class __Worker(QThread):
         def __init__(self, f: Callable[[], Any], *args, **kwargs):
             super().__init__()
@@ -146,7 +151,7 @@ class RaActiveConverterDialog(QDialog):
     def __init__(self, folder_path: str, parent: Optional[QWidget], *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
-        self.__ui = Ui_RaActiveConverterDialog()
+        self.__ui = Ui_MainWindow()
         self.__ui.setupUi(self)
 
         self.__folder_path = folder_path
@@ -197,7 +202,7 @@ class RaActiveConverterDialog(QDialog):
         self.__raw_spectrogram_widget = QWidget()
         self.__raw_spectrogram_widget.setLayout(QVBoxLayout())
 
-        self.__spectrogram_worker: Optional[RaActiveConverterDialog.__Worker] = None
+        self.__spectrogram_worker: Optional[RaActiveConverterWindow.__Worker] = None
 
         # input regulation
         self.__ui.inputRegulationComboBox.currentIndexChanged.connect(
@@ -353,6 +358,35 @@ class RaActiveConverterDialog(QDialog):
             self.__rctf_tab.cs_line_edit.setText(str(c_array))
         else:  # no config file, use ui default values
             pass
+
+        # write to log panel
+        sys.stdout = self
+        sys.stderr = self
+        self.__logging_handler = logging.StreamHandler(self)
+        self.__logging_handler.setFormatter(logging.getLogger().handlers[0].formatter)
+        self.__logging_handler.setLevel(logging.getLogger().handlers[0].level)
+        logging.getLogger().addHandler(self.__logging_handler)
+        self.__signal_write.connect(self.slot_log_write)
+
+    # stdout and logger redirection requirement
+    def write(self, m):
+        self.__signal_write.emit(m)
+
+    # stdout and logger redirection requirement
+    def flush(self):
+        pass
+
+    def slot_log_write(self, text):
+        self.__ui.textBrowser.moveCursor(QTextCursor.End)  # type: ignore
+        self.__ui.textBrowser.insertPlainText(text)
+        self.__ui.textBrowser.ensureCursorVisible()
+
+    def closeEvent(self, event: QCloseEvent):
+        self.signal_close.emit()
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+        logging.getLogger().removeHandler(self.__logging_handler)
+        return super().closeEvent(event)
 
     # Custom Slots
     def slot_on_sweep_raw_preview_setting_load(self):
@@ -758,7 +792,7 @@ class RaActiveConverterDialog(QDialog):
             self.__ui.outputPathComboBox.setCurrentText(path)
 
     # Dialog Slots
-    def accept(self):
+    def slot_accept(self):
         if self.__csv_reader is None:
             logger.info("Conversion failed with no CSV rules loaded.")
             return
@@ -857,4 +891,7 @@ class RaActiveConverterDialog(QDialog):
             os.makedirs(output_dir)
         for i, d in enumerate(result):
             savemat(os.path.join(output_dir, f"laser_sweep_{i}.mat"), d)
-        super().accept()
+        self.close()
+
+    def slot_reject(self):
+        self.close()

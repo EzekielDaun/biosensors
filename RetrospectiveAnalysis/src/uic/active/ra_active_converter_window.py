@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ra_active_converter_dialog.ui'
+## Form generated from reading UI file 'ra_active_converter_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.4.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,20 +16,23 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QCheckBox, QComboBox,
-    QDialog, QDialogButtonBox, QDoubleSpinBox, QGridLayout,
+    QDialogButtonBox, QDockWidget, QDoubleSpinBox, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
-    QSplitter, QStackedWidget, QTabWidget, QVBoxLayout,
+    QMainWindow, QMenuBar, QPushButton, QSizePolicy,
+    QSpacerItem, QSpinBox, QSplitter, QStackedWidget,
+    QStatusBar, QTabWidget, QTextBrowser, QVBoxLayout,
     QWidget)
 
-class Ui_RaActiveConverterDialog(object):
-    def setupUi(self, RaActiveConverterDialog):
-        if not RaActiveConverterDialog.objectName():
-            RaActiveConverterDialog.setObjectName(u"RaActiveConverterDialog")
-        RaActiveConverterDialog.resize(1127, 662)
-        self.verticalLayout_5 = QVBoxLayout(RaActiveConverterDialog)
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        if not MainWindow.objectName():
+            MainWindow.setObjectName(u"MainWindow")
+        MainWindow.resize(897, 600)
+        self.centralwidget = QWidget(MainWindow)
+        self.centralwidget.setObjectName(u"centralwidget")
+        self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.splitter_3 = QSplitter(RaActiveConverterDialog)
+        self.splitter_3 = QSplitter(self.centralwidget)
         self.splitter_3.setObjectName(u"splitter_3")
         self.splitter_3.setOrientation(Qt.Horizontal)
         self.splitter_2 = QSplitter(self.splitter_3)
@@ -353,56 +356,77 @@ class Ui_RaActiveConverterDialog(object):
 
         self.verticalLayout_5.addWidget(self.splitter_3)
 
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QMenuBar(MainWindow)
+        self.menubar.setObjectName(u"menubar")
+        self.menubar.setGeometry(QRect(0, 0, 897, 29))
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QStatusBar(MainWindow)
+        self.statusbar.setObjectName(u"statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+        self.dockWidget = QDockWidget(MainWindow)
+        self.dockWidget.setObjectName(u"dockWidget")
+        self.dockWidgetContents_2 = QWidget()
+        self.dockWidgetContents_2.setObjectName(u"dockWidgetContents_2")
+        self.verticalLayout_7 = QVBoxLayout(self.dockWidgetContents_2)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.textBrowser = QTextBrowser(self.dockWidgetContents_2)
+        self.textBrowser.setObjectName(u"textBrowser")
 
-        self.retranslateUi(RaActiveConverterDialog)
-        self.buttonBox.accepted.connect(RaActiveConverterDialog.accept)
-        self.buttonBox.rejected.connect(RaActiveConverterDialog.reject)
+        self.verticalLayout_7.addWidget(self.textBrowser)
+
+        self.dockWidget.setWidget(self.dockWidgetContents_2)
+        MainWindow.addDockWidget(Qt.RightDockWidgetArea, self.dockWidget)
+
+        self.retranslateUi(MainWindow)
+        self.buttonBox.accepted.connect(MainWindow.slot_accept)
+        self.buttonBox.rejected.connect(MainWindow.slot_reject)
 
         self.conversionMethodStackedWidget.setCurrentIndex(-1)
 
 
-        QMetaObject.connectSlotsByName(RaActiveConverterDialog)
+        QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
-    def retranslateUi(self, RaActiveConverterDialog):
-        RaActiveConverterDialog.setWindowTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Dialog", None))
-        self.groupBox.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Sweep Raw Preview Setting", None))
-        self.rawLoadPushButton.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Load", None))
-        self.label_2.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Ramp Channel:", None))
-        self.skipRowsSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" rows", None))
-        self.skipRowsSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"skip ", None))
-        self.rawRegexLineEdit.setText(QCoreApplication.translate("RaActiveConverterDialog", u".*measurement(\\d+).csv", None))
-        self.label_3.setText(QCoreApplication.translate("RaActiveConverterDialog", u"[RegEx](https://saasbase.dev/tools/regex-generator): ", None))
-        self.skipColumnsSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" columns", None))
-        self.skipColumnsSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"skip ", None))
-        self.groupBox_2.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Sweep Raw Preview", None))
-        self.groupBox_4.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Ramp Signal Config", None))
-        self.label_4.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Symmetry:", None))
-        self.rampSymmetryDoubleSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" %", None))
-        self.label_5.setText(QCoreApplication.translate("RaActiveConverterDialog", u"V_min:", None))
-        self.rampVMinDoubleSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" V", None))
-        self.label_6.setText(QCoreApplication.translate("RaActiveConverterDialog", u"V_max:", None))
-        self.rampVMaxDoubleSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" V", None))
-        self.label_10.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Frequency:", None))
-        self.rampFrequencyDoubleSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" Hz", None))
-        self.groupBox_3.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Spectrogram Raw Preview", None))
-        self.label_7.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Interpolate:", None))
-        self.rawSpectrogramPlotPushButton.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Spectrogram", None))
-        self.groupBox_5.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Wavelength Conversion", None))
-        self.groupBox_9.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Input Regulation", None))
-        self.conversionMethodGroupBox.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Convsersion Method", None))
-        self.conversionMethodPolarityComboBox.setItemText(0, QCoreApplication.translate("RaActiveConverterDialog", u"Output Polarity: -", None))
-        self.conversionMethodPolarityComboBox.setItemText(1, QCoreApplication.translate("RaActiveConverterDialog", u"Output Polarity: +", None))
+    def retranslateUi(self, MainWindow):
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"Sweep Raw Preview Setting", None))
+        self.rawLoadPushButton.setText(QCoreApplication.translate("MainWindow", u"Load", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Ramp Channel:", None))
+        self.skipRowsSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" rows", None))
+        self.skipRowsSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"skip ", None))
+        self.rawRegexLineEdit.setText(QCoreApplication.translate("MainWindow", u".*measurement(\\d+).csv", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"[RegEx](https://saasbase.dev/tools/regex-generator): ", None))
+        self.skipColumnsSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" columns", None))
+        self.skipColumnsSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"skip ", None))
+        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"Sweep Raw Preview", None))
+        self.groupBox_4.setTitle(QCoreApplication.translate("MainWindow", u"Ramp Signal Config", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"Symmetry:", None))
+        self.rampSymmetryDoubleSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" %", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"V_min:", None))
+        self.rampVMinDoubleSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" V", None))
+        self.label_6.setText(QCoreApplication.translate("MainWindow", u"V_max:", None))
+        self.rampVMaxDoubleSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" V", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Frequency:", None))
+        self.rampFrequencyDoubleSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" Hz", None))
+        self.groupBox_3.setTitle(QCoreApplication.translate("MainWindow", u"Spectrogram Raw Preview", None))
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"Interpolate:", None))
+        self.rawSpectrogramPlotPushButton.setText(QCoreApplication.translate("MainWindow", u"Spectrogram", None))
+        self.groupBox_5.setTitle(QCoreApplication.translate("MainWindow", u"Wavelength Conversion", None))
+        self.groupBox_9.setTitle(QCoreApplication.translate("MainWindow", u"Input Regulation", None))
+        self.conversionMethodGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"Convsersion Method", None))
+        self.conversionMethodPolarityComboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Output Polarity: -", None))
+        self.conversionMethodPolarityComboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Output Polarity: +", None))
 
-        self.conversionMethodOutputOffsetDoubleSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"Output Offset: ", None))
-        self.groupBox_8.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Plot", None))
-        self.groupBox_7.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Plot Setting", None))
-        self.plotTrendlineCheckBox.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Trendline", None))
-        self.plotTrendlineOrderSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"Order: ", None))
-        self.plotTrendlineOutlierRangeDoubleSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"Outlier Range: ", None))
-        self.plotTrendlineOutlierRangeDoubleSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" pm", None))
-        self.plotPushButton.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Plot FSR", None))
-        self.label.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Output Path:", None))
-        self.outputPathPushButton.setText(QCoreApplication.translate("RaActiveConverterDialog", u"Select", None))
+        self.conversionMethodOutputOffsetDoubleSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"Output Offset: ", None))
+        self.groupBox_8.setTitle(QCoreApplication.translate("MainWindow", u"Plot", None))
+        self.groupBox_7.setTitle(QCoreApplication.translate("MainWindow", u"Plot Setting", None))
+        self.plotTrendlineCheckBox.setText(QCoreApplication.translate("MainWindow", u"Trendline", None))
+        self.plotTrendlineOrderSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"Order: ", None))
+        self.plotTrendlineOutlierRangeDoubleSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"Outlier Range: ", None))
+        self.plotTrendlineOutlierRangeDoubleSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" pm", None))
+        self.plotPushButton.setText(QCoreApplication.translate("MainWindow", u"Plot FSR", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Output Path:", None))
+        self.outputPathPushButton.setText(QCoreApplication.translate("MainWindow", u"Select", None))
     # retranslateUi
 

@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .ra_active_converter_dialog import RaActiveConverterDialog
+from .ra_active_converter_window import RaActiveConverterWindow
 from .ra_passive_analyzer_window import RaPassiveAnalyzerWindow
 from .ra_quick_analyzer_window import RaQuickAnalyzerWindow
 from .ra_watcher_window import RaWatcherWindow
@@ -50,9 +50,8 @@ class RaStartWindow(QMainWindow):
     def slot_active_converter(self):
         dir = QFileDialog.getExistingDirectory()
         if dir:
-            active_converter_dialog = RaActiveConverterDialog(dir, self)
-            active_converter_dialog.accepted.connect(self.show)
-            active_converter_dialog.rejected.connect(self.show)
+            active_converter_dialog = RaActiveConverterWindow(dir, self)
+            active_converter_dialog.signal_close.connect(self.show)
             self.hide()
             active_converter_dialog.show()
 
