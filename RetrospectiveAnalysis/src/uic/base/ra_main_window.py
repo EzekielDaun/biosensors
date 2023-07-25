@@ -126,6 +126,9 @@ class Ui_RaMainWindow(object):
 
         self.label_6 = QLabel(self.analyzerSettingsGroupBox)
         self.label_6.setObjectName(u"label_6")
+        self.label_6.setTextFormat(Qt.MarkdownText)
+        self.label_6.setOpenExternalLinks(True)
+        self.label_6.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
         self.gridLayout.addWidget(self.label_6, 2, 0, 1, 1)
 
@@ -464,7 +467,7 @@ class Ui_RaMainWindow(object):
         self.timeUnitLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"unit after conversion", None))
 #endif // QT_CONFIG(tooltip)
         self.timeUnitLineEdit.setText(QCoreApplication.translate("RaMainWindow", u"min", None))
-        self.label_6.setText(QCoreApplication.translate("RaMainWindow", u"Data File Pattern (RegEx):", None))
+        self.label_6.setText(QCoreApplication.translate("RaMainWindow", u"Data File Pattern ([RegEx](https://saasbase.dev/tools/regex-generator)):", None))
 #if QT_CONFIG(tooltip)
         self.patternLineEdit.setToolTip(QCoreApplication.translate("RaMainWindow", u"regular expression for sweep number matching. (match the number in \"()\")", None))
 #endif // QT_CONFIG(tooltip)

@@ -67,6 +67,9 @@ class Ui_RaActiveConverterDialog(object):
 
         self.label_3 = QLabel(self.groupBox)
         self.label_3.setObjectName(u"label_3")
+        self.label_3.setTextFormat(Qt.MarkdownText)
+        self.label_3.setOpenExternalLinks(True)
+        self.label_3.setTextInteractionFlags(Qt.TextBrowserInteraction)
 
         self.gridLayout.addWidget(self.label_3, 2, 0, 1, 1)
 
@@ -369,7 +372,7 @@ class Ui_RaActiveConverterDialog(object):
         self.skipRowsSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" rows", None))
         self.skipRowsSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"skip ", None))
         self.rawRegexLineEdit.setText(QCoreApplication.translate("RaActiveConverterDialog", u".*measurement(\\d+).csv", None))
-        self.label_3.setText(QCoreApplication.translate("RaActiveConverterDialog", u"RegEx: ", None))
+        self.label_3.setText(QCoreApplication.translate("RaActiveConverterDialog", u"[RegEx](https://saasbase.dev/tools/regex-generator): ", None))
         self.skipColumnsSpinBox.setSuffix(QCoreApplication.translate("RaActiveConverterDialog", u" columns", None))
         self.skipColumnsSpinBox.setPrefix(QCoreApplication.translate("RaActiveConverterDialog", u"skip ", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("RaActiveConverterDialog", u"Sweep Raw Preview", None))
