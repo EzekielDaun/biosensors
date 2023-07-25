@@ -34,7 +34,9 @@ class RaStartWindow(QMainWindow):
 
         self.__central_widget.passive_button.clicked.connect(self.slot_passive_analyzer)
         self.__central_widget.active_button.clicked.connect(self.slot_active_converter)
-        self.__central_widget.watch_mode_button.clicked.connect(self.slot_watch_mode)
+        self.__central_widget.passive_watch_mode_button.clicked.connect(
+            self.slot_watch_mode
+        )
         self.__central_widget.quick_analyzer_button.clicked.connect(
             self.slot_quick_analyzer
         )
@@ -71,29 +73,34 @@ class RaStartWindow(QMainWindow):
             super().__init__(*args, **kwargs)
             self.setLayout(QVBoxLayout())
 
-            passive_group_box = QGroupBox("Passive Analyzer")
-            active_group_box = QGroupBox("Active Converter")
-            watch_mode_group_box = QGroupBox("Watch Mode and Quick Analyzer")
+            passive_group_box = QGroupBox("Passive")
+            active_group_box = QGroupBox("Active")
 
             # &[*] to make alt + * the shortcut for that button
             self.__passive_button = QPushButton("&Passive Analyzer")
-            self.__active_button = QPushButton("&Active Converter")
-            self.__watch_mode_button = QPushButton("&Watch Mode")
+            self.__active_button = QPushButton("Active &Converter")
+            self.__passive_watch_mode_button = QPushButton("&Watch Mode")
             self.__quick_analyzer_button = QPushButton("&Quick Analyzer")
+            self.__active_watch_mode_button = QPushButton("&Active Watch Mode")
+            self.__active_watch_mode_button.setDisabled(True)
 
             passive_group_box.setLayout(QVBoxLayout())
             passive_group_box.layout().addWidget(self.__passive_button)
 
+            passive_watch_mode_widget = QWidget()
+            passive_watch_mode_widget.setLayout(QHBoxLayout())
+            passive_watch_mode_widget.layout().addWidget(
+                self.__passive_watch_mode_button
+            )
+            passive_watch_mode_widget.layout().addWidget(self.__quick_analyzer_button)
+            passive_group_box.layout().addWidget(passive_watch_mode_widget)
+
             active_group_box.setLayout(QVBoxLayout())
             active_group_box.layout().addWidget(self.__active_button)
-
-            watch_mode_group_box.setLayout(QHBoxLayout())
-            watch_mode_group_box.layout().addWidget(self.__watch_mode_button)
-            watch_mode_group_box.layout().addWidget(self.__quick_analyzer_button)
+            active_group_box.layout().addWidget(self.__active_watch_mode_button)
 
             self.layout().addWidget(passive_group_box)
             self.layout().addWidget(active_group_box)
-            self.layout().addWidget(watch_mode_group_box)
 
         @property
         def passive_button(self):
@@ -104,9 +111,13 @@ class RaStartWindow(QMainWindow):
             return self.__active_button
 
         @property
-        def watch_mode_button(self):
-            return self.__watch_mode_button
+        def passive_watch_mode_button(self):
+            return self.__passive_watch_mode_button
 
         @property
         def quick_analyzer_button(self):
             return self.__quick_analyzer_button
+
+        @property
+        def active_watch_mode_button(self):
+            return self.__active_watch_mode_button
