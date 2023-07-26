@@ -23,4 +23,15 @@ __pycache__/
 *.onefile-build/
 */Info.plist
 
+# RA Resource Build
+RetrospectiveAnalysis/**/*.log
+RetrospectiveAnalysis/**/*.aux
+RetrospectiveAnalysis/**/*.dvi
+RetrospectiveAnalysis/**/*.dvi
+RetrospectiveAnalysis/**/*.fdb_latexmk
+RetrospectiveAnalysis/**/*.fls
+RetrospectiveAnalysis/**/*.pdf
+RetrospectiveAnalysis/**/*.ps
+RetrospectiveAnalysis/**/*.synctex.gz
+
 .DS_Store

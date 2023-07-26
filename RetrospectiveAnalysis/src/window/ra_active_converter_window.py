@@ -18,11 +18,13 @@ from pyqtgraph import (
     PlotItem,
 )
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QCloseEvent, QTextCursor, QTransform
+from PySide6.QtGui import QAction, QCloseEvent, QTextCursor, QTransform
+from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QMainWindow,
+    QMenu,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -39,6 +41,7 @@ from ..core.active_tools import (
     RampUpSweepCSVReader,
 )
 from ..core.lib import get_lorentzian_peaks
+from ..uic.active import active_rc
 from ..uic.active.ra_active_converter_window import Ui_MainWindow
 from ..widgets.active.ra_conversion_tabs import (
     ConversionRCTFTab,
@@ -204,6 +207,19 @@ class RaActiveConverterWindow(QMainWindow):
 
         self.__spectrogram_worker: Optional[RaActiveConverterWindow.__Worker] = None
 
+        # wavelength conversion block diagram
+        self.__wavelength_conversion_block_diagram_widget = QSvgWidget(
+            ":/diagrams/resources/block_diagram/block_diagram.svg"
+        )
+        self.__wavelength_conversion_block_diagram_widget.renderer().setAspectRatioMode(
+            Qt.AspectRatioMode.KeepAspectRatio
+        )
+        self.__wavelength_conversion_block_diagram_widget.setMinimumHeight(60)
+
+        self.__ui.splitter.insertWidget(
+            0, self.__wavelength_conversion_block_diagram_widget
+        )
+
         # input regulation
         self.__ui.inputRegulationComboBox.currentIndexChanged.connect(
             self.__ui.inputRegulationStackedWidget.setCurrentIndex
@@ -358,6 +374,26 @@ class RaActiveConverterWindow(QMainWindow):
             self.__rctf_tab.cs_line_edit.setText(str(c_array))
         else:  # no config file, use ui default values
             pass
+
+        # add a window manager on menu bar
+        menu = QMenu("Window", self)
+        panels = [
+            (self.__ui.sweepRawPreviewSettingGroupBox, "Sweep Raw Preview Setting"),
+            (self.__ui.sweepRawPreviewGroupBox, "Sweep Raw Preview"),
+            (self.__ui.rampSignalConfigGroupBox, "Ramp Signal Config"),
+            (self.__ui.spectrogramRawPreviewGroupBox, "Spectrogram Raw Preview"),
+            (self.__ui.inputRegulationGroupBox, "Input Regulation"),
+            (self.__ui.conversionMethodGroupBox, "Conversion Method"),
+            (self.__ui.fsrPlotGroupBox, "FSR Plot"),
+            (self.__ui.fsrPlotSettingGroupBox, "FSR Plot Setting"),
+        ]
+        for widget, string in panels:
+            action = QAction(string, self)
+            action.setCheckable(True)
+            action.setChecked(True)
+            action.toggled.connect(widget.setVisible)
+            menu.addAction(action)
+        self.__ui.menubar.addMenu(menu)
 
         # write to log panel
         sys.stdout = self
