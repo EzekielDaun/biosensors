@@ -5,12 +5,12 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 from itertools import pairwise
-from typing import Any, Optional, Self
+from typing import Any, Callable, Optional, Self
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter1d
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, lsim, lti, sawtooth
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +241,7 @@ class CSVData:
         self.data = data[self.skip_columns :]
 
 
-class RampSweepCSVReaderBase:
+class SimpleRampCSVReaderBase:
     def __iter__(self) -> Any:
         ...
 
@@ -251,7 +251,7 @@ class RampSweepCSVReaderBase:
 
 
 @dataclass(frozen=True)
-class RampUpSweepCSVReader(RampSweepCSVReaderBase):
+class SimpleRampUpCSVReader(SimpleRampCSVReaderBase):
     folder_path: str
     pattern: re.Pattern
     skip_rows: int
@@ -320,7 +320,7 @@ class RampUpSweepCSVReader(RampSweepCSVReaderBase):
         return csv_data.data.shape
 
 
-class RampDownSweepCSVReader(RampUpSweepCSVReader):
+class SimpleRampDownCSVReader(SimpleRampUpCSVReader):
     def __iter__(self):
         for filepath in [
             os.path.join(self.folder_path, f)
@@ -359,7 +359,7 @@ class RampDownSweepCSVReader(RampUpSweepCSVReader):
                 yield csv_data.data[:, start:stop], (start, stop)
 
 
-class RampUpDownSweepCSVReader(RampUpSweepCSVReader):
+class SimpleRampUpDownCSVReader(SimpleRampUpCSVReader):
     def __iter__(self):
         for filepath in [
             os.path.join(self.folder_path, f)
@@ -384,3 +384,280 @@ class RampUpDownSweepCSVReader(RampUpSweepCSVReader):
 
             for start, stop in pairwise(minima):
                 yield csv_data.data[:, start:stop], (start, stop)
+
+
+class RampType(Enum):
+    UP = 1
+    DOWN = 0
+    TRIANGLE = 0.5
+
+    @classmethod
+    def from_float(cls, value: float):
+        if value == 1:
+            return cls.UP
+        elif value == 0:
+            return cls.DOWN
+        elif value == 0.5:
+            return cls.TRIANGLE
+        else:
+            raise ValueError("unsupported value")
+
+
+@dataclass(frozen=True)
+class AdvancedCSVReaderBase:
+    folder_path: str
+    pattern: re.Pattern
+    skip_rows: int
+    skip_columns: int
+    ramp_channel: int
+    lti_sys: lti
+    frequency: float
+    x_min: float
+    x_max: float
+    regulation_func: Callable[[float], float]
+
+    def __iter__(self) -> Any:
+        ...
+
+    @property
+    def data_shape(self):
+        filepath = [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ][0]
+
+        csv_data = CSVData(
+            file_path=filepath,
+            skip_rows=self.skip_rows,
+            skip_columns=self.skip_columns,
+            ramp_channel=self.ramp_channel,
+        )
+
+        return csv_data.data.shape
+
+
+class AdvancedRampUpCSVReader(AdvancedCSVReaderBase):
+    def __iter__(self):
+        for filepath in [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ]:
+            csv_data = CSVData(
+                filepath, self.skip_rows, self.skip_columns, self.ramp_channel
+            )
+
+            (
+                _,
+                offset,
+                offset_end,
+                num_period,
+                len_period,
+            ) = generate_sawtooth_from_data(csv_data.ramp, RampType.UP)
+
+            input = sawtooth(
+                np.linspace(0, 2 * np.pi * 500, len_period * 500),
+                RampType.UP.value,  # type: ignore
+            )
+            input += 1
+            input *= 0.5
+            input -= self.x_min
+            input *= self.x_max - self.x_min
+            input += self.x_min
+            input = self.regulation_func(input)  # type: ignore
+            t, y, _ = lsim(
+                self.lti_sys,
+                input,
+                np.linspace(0, 500 / self.frequency, len(input)),
+            )
+            period = y[-len_period:]
+
+            out = np.concatenate([period for _ in range(num_period)])[offset:offset_end]
+
+            maxima, _ = find_peaks(out)
+            minima, _ = find_peaks(-out)
+
+            if minima[0] > maxima[0]:
+                maxima = maxima[1:]
+
+            if minima[-1] > maxima[-1]:
+                minima = minima[:-1]
+
+            if len(maxima) != len(minima):
+                raise ValueError(
+                    "number of minima and maxima mismatch in reference signal"
+                )
+
+            for start, stop in zip(minima, maxima):
+                yield out[start:stop], csv_data.data[:, start:stop], start, stop
+
+
+class AdvancedRampDownCSVReader(AdvancedCSVReaderBase):
+    def __iter__(self):
+        for filepath in [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ]:
+            csv_data = CSVData(
+                filepath, self.skip_rows, self.skip_columns, self.ramp_channel
+            )
+
+            (
+                _,
+                offset,
+                offset_end,
+                num_period,
+                len_period,
+            ) = generate_sawtooth_from_data(csv_data.ramp, RampType.UP)
+
+            input = sawtooth(
+                np.linspace(0, 2 * np.pi * 500, len_period * 500),
+                RampType.UP.value,  # type: ignore
+            )
+            input += 1
+            input *= 0.5
+            input -= self.x_min
+            input *= self.x_max - self.x_min
+            input += self.x_min
+            input = self.regulation_func(input)  # type: ignore
+            t, y, _ = lsim(
+                self.lti_sys,
+                input,
+                np.linspace(0, 500 / self.frequency, len(input)),
+            )
+            period = y[-len_period:]
+
+            out = np.concatenate([period for _ in range(num_period)])[offset:offset_end]
+
+            maxima, _ = find_peaks(out)
+            minima, _ = find_peaks(-out)
+
+            if minima[0] > maxima[0]:
+                minima = minima[1:]
+
+            if maxima[-1] > minima[-1]:
+                maxima = maxima[:-1]
+
+            if len(maxima) != len(minima):
+                raise ValueError(
+                    "number of minima and maxima mismatch in reference signal"
+                )
+
+            for start, stop in zip(maxima, minima):
+                yield out[stop:start:-1], csv_data.data[:, stop:start:-1], start, stop
+
+
+class AdvancedRampUpDownCSVReader(AdvancedCSVReaderBase):
+    def __iter__(self):
+        for filepath in [
+            os.path.join(self.folder_path, f)
+            for f in sorted(
+                list(
+                    filter(
+                        lambda x: self.pattern.match(x),
+                        iter(os.listdir(self.folder_path)),
+                    )
+                ),
+                key=lambda x: int(self.pattern.match(x).group(1)),  # type: ignore
+            )
+        ]:
+            csv_data = CSVData(
+                filepath, self.skip_rows, self.skip_columns, self.ramp_channel
+            )
+
+            (
+                _,
+                offset,
+                offset_end,
+                num_period,
+                len_period,
+            ) = generate_sawtooth_from_data(csv_data.ramp, RampType.TRIANGLE)
+
+            input = sawtooth(
+                np.linspace(0, 2 * np.pi * 500, len_period * 500),
+                RampType.TRIANGLE.value,  # type: ignore
+            )
+            input += 1
+            input *= 0.5
+            input -= self.x_min
+            input *= self.x_max - self.x_min
+            input += self.x_min
+            input = self.regulation_func(input)  # type: ignore
+            t, y, _ = lsim(
+                self.lti_sys,
+                input,
+                np.linspace(0, 500 / self.frequency, len(input)),
+            )
+            period = y[-len_period:]
+
+            out = np.concatenate([period for _ in range(num_period)])[offset:offset_end]
+
+            maxima, _ = find_peaks(out)
+            minima, _ = find_peaks(-out)
+
+            is_rising = True if minima[0] < maxima[0] else False
+
+            if is_rising:
+                indices = [i for pair in zip(minima, maxima) for i in pair]
+            else:
+                indices = [i for pair in zip(maxima, minima) for i in pair]
+
+            for start, stop in pairwise(indices):
+                if is_rising:
+                    yield out[start:stop], csv_data.data[:, start:stop], start, stop
+                else:
+                    yield out[stop:start:-1], csv_data.data[
+                        :, stop:start:-1
+                    ], start, stop
+                is_rising = not is_rising
+
+
+def generate_sawtooth_from_data(data: NDArray, ramp_type: RampType):
+    maxima, _ = find_peaks(
+        gaussian_filter1d(data, 1), prominence=(np.max(data) - np.min(data)) * 0.9
+    )
+    minima, _ = find_peaks(
+        gaussian_filter1d(-data, 1), prominence=(np.max(data) - np.min(data)) * 0.9
+    )
+
+    length_period = int(
+        np.round(np.mean(np.concatenate((np.diff(minima), np.diff(maxima)))))
+    )
+    num_period = int(np.ceil(len(data) / length_period)) + 1
+
+    make_up = sawtooth(
+        np.linspace(
+            0,
+            2 * np.pi * (num_period),
+            length_period * (num_period),
+        ),
+        ramp_type.value,  # type: ignore
+    )
+    offset: int = length_period - minima[0]
+    offset_end: int = -(len(make_up) - len(data) - offset)
+    make_up: NDArray = make_up[offset:offset_end]
+
+    return make_up, offset, offset_end, num_period, length_period

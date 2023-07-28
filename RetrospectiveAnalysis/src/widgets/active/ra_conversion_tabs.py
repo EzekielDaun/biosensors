@@ -5,7 +5,6 @@ import control
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtSvgWidgets import QSvgWidget
-from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,

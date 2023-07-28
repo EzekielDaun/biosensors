@@ -3,8 +3,8 @@ import os
 import re
 import sys
 from collections.abc import Callable
-from functools import reduce
-from itertools import cycle, islice, repeat, starmap
+from functools import partial, reduce
+from itertools import cycle, islice, repeat
 from logging import getLogger
 from multiprocessing import Pool
 from typing import Any, Optional
@@ -33,15 +33,20 @@ from scipy.io import savemat
 from scipy.signal import impulse2, lsim, sawtooth, step
 
 from ..core.active_tools import (
+    AdvancedCSVReaderBase,
+    AdvancedRampDownCSVReader,
+    AdvancedRampUpCSVReader,
+    AdvancedRampUpDownCSVReader,
     ConverterConfig,
     CSVData,
-    RampDownSweepCSVReader,
-    RampSweepCSVReaderBase,
-    RampUpDownSweepCSVReader,
-    RampUpSweepCSVReader,
+    RampType,
+    SimpleRampCSVReaderBase,
+    SimpleRampDownCSVReader,
+    SimpleRampUpCSVReader,
+    SimpleRampUpDownCSVReader,
 )
-from ..core.lib import get_lorentzian_peaks
-from ..uic.active import active_rc
+from ..core.lib import SweepFitResult
+from ..uic.active import active_rc  # noqa: F401
 from ..uic.active.ra_active_converter_window import Ui_MainWindow
 from ..widgets.active.ra_conversion_tabs import (
     ConversionRCTFTab,
@@ -73,62 +78,51 @@ def _interpolate_2d_spectrogram_data(data_2d: NDArray, interp_len: int) -> NDArr
     )
 
 
-def _sweep_2d_data_to_wl_fsr(data: NDArray, ref: NDArray, polarity: int):
-    ret: list[list[tuple[float, float]]] = [[] for i in range(len(data))]
-    for i, channel in enumerate(data):
-        ref_interp = np.interp(
-            np.linspace(0, 1, len(channel)),
-            np.linspace(0, 1, len(ref)),
-            ref,
-        )
-
-        index_min = np.argmin(ref_interp * polarity)
-        index_max = np.argmax(ref_interp * polarity)
-        power = channel[index_min:index_max]
-        wavelength = ref_interp[index_min:index_max]
-
-        indices = np.argsort(wavelength)
-        wavelength = wavelength[indices]
-        power = power[indices]
-
-        peaks, fsr, er, q = get_lorentzian_peaks(power, wavelength)
-
-        if len(fsr) > 0:
-            ret[i] += list(zip(peaks[:, 0], fsr))  # type: ignore
-        else:
-            pass
-
-    return ret
-
-
-def _sweep_2d_data_to_passive_format(
-    data: NDArray, ref: NDArray, polarity: int, interp_len: int
+def _advanced_reader_to_scatter(
+    ref_data_start_stop: tuple[NDArray, NDArray, int, int],
+    polarity: int,
+    central_wavelength: float,
 ):
-    wavelength_interp = np.linspace(np.min(ref), np.max(ref), interp_len)
+    ref, data, start, stop = ref_data_start_stop
+    scatters = [[] for i in range(data.shape[0])]
+    wls = ref * polarity + central_wavelength
+    indices = np.argsort(wls)
+    wls = wls[indices]
+    for i, channel in enumerate(data):
+        channel = channel[indices]
+        sweep = SweepFitResult.from_data(channel, wls)
+        fsr = sweep.get_fsr()
+        if len(fsr) >= 1:
+            wl = sweep.get_peaks().T[0]
+            for w, f in zip(wl, fsr):
+                scatters[i].append([w, f])
+    return scatters
+
+
+def _advanced_reader_to_passive_format(
+    ref_data_start_stop: tuple[NDArray, NDArray, int, int],
+    polarity: int,
+    central_wavelength: float,
+    interp_len: int,
+):
+    ref, data, start, stop = ref_data_start_stop
+    wls = ref * polarity + central_wavelength
+    indices = np.argsort(wls)
+    wls = wls[indices]
+    wls_interp = np.interp(
+        np.linspace(0, 1, interp_len), np.linspace(0, 1, len(wls)), wls
+    )
     power_2d = [[] for i in range(data.shape[0])]
     for i, channel in enumerate(data):
-        ref_interp = np.interp(
-            np.linspace(0, 1, len(channel)),
-            np.linspace(0, 1, len(ref)),
-            ref,
+        channel = channel[indices]
+        channel_interp = np.interp(
+            np.linspace(0, 1, interp_len), np.linspace(0, 1, len(channel)), channel
         )
-
-        index_min = np.argmin(ref_interp * polarity)
-        index_max = np.argmax(ref_interp * polarity)
-        power = channel[index_min:index_max]
-        wavelength = ref_interp[index_min:index_max]
-
-        indices = np.argsort(wavelength)
-        wavelength = wavelength[indices]
-        power = power[indices]
-
-        power_interp = np.interp(wavelength_interp, wavelength, power)
-
-        power_2d[i] = power_interp
+        power_2d[i] = channel_interp
 
     ret: dict[str, NDArray] = {
         "power": np.array(power_2d).T,
-        "wavelength": 1e-9 * wavelength_interp,
+        "wavelength": 1e-9 * wls_interp,
     }
     return ret
 
@@ -158,7 +152,8 @@ class RaActiveConverterWindow(QMainWindow):
         self.__ui.setupUi(self)
 
         self.__folder_path = folder_path
-        self.__csv_reader: RampUpSweepCSVReader = None  # type: ignore
+        self.__csv_reader: SimpleRampUpCSVReader = None  # type: ignore
+        self.__advanced_csv_reader: AdvancedCSVReaderBase = None  # type: ignore
 
         # sweep raw preview
         self.__sweep_raw_preview_widget = GraphicsLayoutWidget()
@@ -432,19 +427,21 @@ class RaActiveConverterWindow(QMainWindow):
         pattern = re.compile(self.__ui.rawRegexLineEdit.text())
 
         # set up csv reader
-        match int(self.__ui.rampSymmetryDoubleSpinBox.value()):
-            case 100:  # ramp up
-                reader_type = RampUpSweepCSVReader
-            case 0:  # ramp down
-                reader_type = RampDownSweepCSVReader
-            case 50:  # ramp up and down
-                reader_type = RampUpDownSweepCSVReader
+        match RampType.from_float(
+            int(self.__ui.rampSymmetryDoubleSpinBox.value()) / 100
+        ):
+            case RampType.UP:
+                reader_type = SimpleRampUpCSVReader
+            case RampType.DOWN:
+                reader_type = SimpleRampDownCSVReader
+            case RampType.TRIANGLE:
+                reader_type = SimpleRampUpDownCSVReader
             case _:
                 raise ValueError(
                     "Only support ramp symmetry of 0 (down), 50 (triangular), 100 (up)"
                 )
 
-        self.__csv_reader: RampSweepCSVReaderBase = reader_type(
+        self.__csv_reader: SimpleRampCSVReaderBase = reader_type(
             folder_path=self.__folder_path,
             pattern=pattern,
             skip_rows=self.__ui.skipRowsSpinBox.value(),
@@ -500,98 +497,57 @@ class RaActiveConverterWindow(QMainWindow):
 
         # if plot tab widget is enabled, update converted sweep stream data
         if self.__ui.plotTabWidget.isEnabled():
-            conversion_tab: ConversionTabBase = self.__ui.conversionMethodStackedWidget.currentWidget()  # type: ignore
-            system = conversion_tab.to_lti()
-
-            v_min = self.__ui.rampVMinDoubleSpinBox.value()
-            v_max = self.__ui.rampVMaxDoubleSpinBox.value()
-            width = self.__ui.rampSymmetryDoubleSpinBox.value() / 100
-            freq = self.__ui.rampFrequencyDoubleSpinBox.value()
-
-            t_final = 500 / freq
-            len_period = 400
-            t = np.arange(0, t_final, 1 / freq / len_period)
-
-            voltage = (sawtooth(2 * np.pi * freq * t, width) + 1) / 2  # type: ignore
-            voltage *= v_max - v_min
-            voltage += v_min
-
-            regulation_tab: RegulationTabBase = self.__ui.inputRegulationStackedWidget.currentWidget()  # type: ignore
-            regulation_function = regulation_tab.to_regulate_function()
-
-            input = regulation_function(voltage)  # type: ignore
-
-            t, y, x = lsim(system, input, t)
-            y = y[-len_period:]
-
-            ref = y + self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
-
             selected_file_basename = self.__ui.rawPreviewFileComboBox.currentText()
-            pattern = re.compile(self.__ui.rawRegexLineEdit.text())
-            file_index = pattern.match(selected_file_basename).group(1)  # type: ignore
-            pattern2 = re.compile(selected_file_basename.replace(file_index, f"({file_index})"))  # type: ignore
+            file_index = re.compile(self.__ui.rawRegexLineEdit.text()).match(selected_file_basename).group(1)  # type: ignore
+            pattern = re.compile(selected_file_basename.replace(file_index, f"({file_index})"))  # type: ignore
 
-            reader = type(self.__csv_reader)(  # type: ignore
-                self.__folder_path,
-                pattern2,
-                self.__ui.skipRowsSpinBox.value(),
-                self.__ui.skipColumnsSpinBox.value(),
-                self.__ui.rawRampChannelSpinBox.value() - 1,
-            )
+            if self.__advanced_csv_reader is not None:
+                reader = type(self.__advanced_csv_reader)(
+                    folder_path=self.__advanced_csv_reader.folder_path,
+                    pattern=pattern,
+                    skip_rows=self.__advanced_csv_reader.skip_rows,
+                    skip_columns=self.__advanced_csv_reader.skip_columns,
+                    ramp_channel=self.__advanced_csv_reader.ramp_channel,
+                    lti_sys=self.__advanced_csv_reader.lti_sys,
+                    frequency=self.__advanced_csv_reader.frequency,
+                    x_min=self.__advanced_csv_reader.x_min,
+                    x_max=self.__advanced_csv_reader.x_max,
+                    regulation_func=self.__advanced_csv_reader.regulation_func,
+                )
 
-            def generate_equalized_number(
-                data_start_stop: tuple[NDArray, tuple[int, int]],
-                ref: NDArray,
-            ):
-                data, (start, _stop) = data_start_stop
-                power_number_2d = [[] for i in range(data.shape[0])]
-                for i, channel in enumerate(data):
-                    ref_interp = np.interp(
-                        np.linspace(0, 1, len(channel)),
-                        np.linspace(0, 1, len(ref)),
-                        ref,
-                    )
+                def generate_equalized_number(
+                    ref_data_start_stop: tuple[NDArray, NDArray, int, int],
+                ):
+                    ref, data, start, stop = ref_data_start_stop
+                    num = ref.copy()
+                    num -= np.min(ref)
+                    num /= np.max(ref) - np.min(ref)
+                    num *= stop - start
+                    num += start
+                    power_number_2d = [[] for i in range(data.shape[0])]
+                    for i, channel in enumerate(data):
+                        power_number_2d[i] = [num, channel]
+                    return power_number_2d
 
-                    index_min = np.argmin(ref_interp)
-                    index_max = np.argmax(ref_interp)
-                    (index_start, index_stop) = (
-                        (index_min, index_max)
-                        if index_min < index_max
-                        else (index_max, index_min)
-                    )
+                y_2d = reduce(
+                    lambda acc, x: np.array(
+                        [np.hstack((a, x[i])) for i, a in enumerate(acc)]
+                    ),
+                    map(
+                        generate_equalized_number,
+                        reader,
+                    ),
+                    np.array(
+                        [
+                            np.array([[], []])
+                            for _ in range(self.__ui.plotTabWidget.count())
+                        ]
+                    ),
+                )
 
-                    power = channel[index_start:index_stop]
-                    wavelength = ref_interp[index_start:index_stop]
-
-                    indices = np.argsort(wavelength)
-                    wavelength = wavelength[indices]
-                    power = power[indices]
-
-                    wavelength -= np.min(wavelength)
-                    wavelength /= np.max(wavelength) - np.min(wavelength)
-                    wavelength *= index_stop - index_start
-                    wavelength += index_start + start
-
-                    power_number_2d[i] = [wavelength, power]
-
-                return power_number_2d
-
-            y_2d = reduce(
-                lambda acc, x: np.array(
-                    [np.hstack((a, x[i])) for i, a in enumerate(acc)]
-                ),
-                starmap(
-                    generate_equalized_number,
-                    zip(reader, repeat(ref)),
-                ),
-                np.array(
-                    [np.array([[], []]) for _ in range(self.__ui.plotTabWidget.count())]
-                ),
-            )
-
-            for i in range(self.__ui.plotTabWidget.count()):
-                tab: RaActiveConverterFSRTabWidget = self.__ui.plotTabWidget.widget(i)  # type: ignore
-                tab.set_stream_plot(y_2d[i].T)
+                for i in range(self.__ui.plotTabWidget.count()):
+                    tab: RaActiveConverterFSRTabWidget = self.__ui.plotTabWidget.widget(i)  # type: ignore
+                    tab.set_stream_plot(y_2d[i].T)
 
     def slot_on_plot_spectrogram_clicked(self):
         interp_len = self.__ui.rawSpectrogramInterpolateSpinBox.value()
@@ -747,64 +703,89 @@ class RaActiveConverterWindow(QMainWindow):
         width = self.__ui.rampSymmetryDoubleSpinBox.value() / 100
         freq = self.__ui.rampFrequencyDoubleSpinBox.value()
 
-        t_final = 500 / freq
-        len_period = 400
-        t = np.arange(0, t_final, 1 / freq / len_period)
-
-        voltage = (sawtooth(2 * np.pi * freq * t, width) + 1) / 2  # type: ignore
-        voltage *= v_max - v_min
-        voltage += v_min
-
         regulation_tab: RegulationTabBase = self.__ui.inputRegulationStackedWidget.currentWidget()  # type: ignore
         regulation_function = regulation_tab.to_regulate_function()
 
-        input = regulation_function(voltage)  # type: ignore
-
-        t, y, x = lsim(system, input, t)
-        y = y[-len_period:]
+        match RampType.from_float(width):
+            case RampType.UP:
+                self.__advanced_csv_reader = AdvancedRampUpCSVReader(
+                    self.__folder_path,
+                    re.compile(self.__ui.rawRegexLineEdit.text()),
+                    self.__ui.skipRowsSpinBox.value(),
+                    self.__ui.skipColumnsSpinBox.value(),
+                    self.__ui.rawRampChannelSpinBox.value() - 1,
+                    system,
+                    freq,
+                    v_min,
+                    v_max,
+                    regulation_function,
+                )
+            case RampType.DOWN:
+                self.__advanced_csv_reader = AdvancedRampDownCSVReader(
+                    self.__folder_path,
+                    re.compile(self.__ui.rawRegexLineEdit.text()),
+                    self.__ui.skipRowsSpinBox.value(),
+                    self.__ui.skipColumnsSpinBox.value(),
+                    self.__ui.rawRampChannelSpinBox.value() - 1,
+                    system,
+                    freq,
+                    v_min,
+                    v_max,
+                    regulation_function,
+                )
+            case RampType.TRIANGLE:
+                self.__advanced_csv_reader = AdvancedRampUpDownCSVReader(
+                    self.__folder_path,
+                    re.compile(self.__ui.rawRegexLineEdit.text()),
+                    self.__ui.skipRowsSpinBox.value(),
+                    self.__ui.skipColumnsSpinBox.value(),
+                    self.__ui.rawRampChannelSpinBox.value() - 1,
+                    system,
+                    freq,
+                    v_min,
+                    v_max,
+                    regulation_function,
+                )
+            case _:
+                raise ValueError(
+                    "Only support ramp symmetry of 0% (down), 50% (triangular), 100% (up)"
+                )
 
         polarity = (
             1 if self.__ui.conversionMethodPolarityComboBox.currentIndex() else -1
         )
+        central_wavelength = self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
 
-        ref = polarity * y + self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
+        def acc_func(acc: list, x: Any):
+            for i, channel in enumerate(x):
+                acc[i].extend(channel)
+            return acc
 
         def f():
-            channel_num = self.__csv_reader.data_shape[0]  # type: ignore
             with Pool() as pool:
-                return list(
-                    reduce(
-                        lambda acc, x: [
-                            channel + x[i] for i, channel in enumerate(acc)
-                        ],
-                        pool.starmap(
-                            _sweep_2d_data_to_wl_fsr,
-                            zip(
-                                map(lambda x: x[0], self.__csv_reader),
-                                repeat(ref),
-                                repeat(polarity),
-                            ),
+                return reduce(
+                    acc_func,
+                    pool.map(
+                        partial(
+                            _advanced_reader_to_scatter,
+                            polarity=polarity,
+                            central_wavelength=central_wavelength,
                         ),
-                        [[] for i in range(channel_num)],
-                    )
+                        self.__advanced_csv_reader,
+                    ),
+                    [[] for i in range(self.__advanced_csv_reader.data_shape[0])],
                 )
-
-        self.__ui.plotPushButton.setEnabled(False)
-        for i in range(self.__ui.plotTabWidget.count()):
-            tab: RaActiveConverterFSRTabWidget = self.__ui.plotTabWidget.widget(i)  # type: ignore
-            tab.clear()
 
         self.__fsr_worker = self.__Worker(f)
         self.__fsr_worker.finished.connect(self.slot_on_plot_FSR_finished)
+        self.__ui.plotPushButton.setDisabled(True)
         self.__fsr_worker.start()
 
     def slot_on_plot_FSR_finished(self):
-        self.__ui.plotPushButton.setEnabled(True)
-        self.__ui.plotTabWidget.setEnabled(True)
-        data = self.__fsr_worker.result
-        for i, channel in enumerate(data):
+        scatter = self.__fsr_worker.result
+        for i in range(self.__ui.plotTabWidget.count()):
             tab: RaActiveConverterFSRTabWidget = self.__ui.plotTabWidget.widget(i)  # type: ignore
-            points = np.array(channel).T
+            points = np.array(scatter[i]).T
             tab.set_scatter_plot(
                 points[0],
                 points[1],
@@ -813,6 +794,8 @@ class RaActiveConverterWindow(QMainWindow):
                 outlier_range=self.__ui.plotTrendlineOutlierRangeDoubleSpinBox.value()
                 * 1e-3,
             )
+        self.__ui.plotTabWidget.setEnabled(True)
+        self.__ui.plotPushButton.setEnabled(True)
 
         # trigger this slot to update the equalized stream plot
         self.slot_on_sweep_raw_preview_file_changed()
@@ -833,35 +816,9 @@ class RaActiveConverterWindow(QMainWindow):
             logger.info("Conversion failed with no CSV rules loaded.")
             return
 
-        conversion_tab: ConversionTabBase = self.__ui.conversionMethodStackedWidget.currentWidget()  # type: ignore
-        system = conversion_tab.to_lti()
-
-        v_min = self.__ui.rampVMinDoubleSpinBox.value()
-        v_max = self.__ui.rampVMaxDoubleSpinBox.value()
-        width = self.__ui.rampSymmetryDoubleSpinBox.value() / 100
-        freq = self.__ui.rampFrequencyDoubleSpinBox.value()
-
-        t_final = 50
-        len_period = 400
-        t = np.arange(0, t_final, 1 / freq / len_period)
-
-        voltage = (sawtooth(2 * np.pi * freq * t, width) + 1) / 2  # type: ignore
-        voltage *= v_max - v_min
-        voltage += v_min
-
-        regulation_tab: RegulationTabBase = self.__ui.inputRegulationStackedWidget.currentWidget()  # type: ignore
-        regulation_function = regulation_tab.to_regulate_function()
-
-        input = regulation_function(voltage)  # type: ignore
-
-        t, y, x = lsim(system, input, t)
-        y = y[-len_period:]
-
         polarity = (
             1 if self.__ui.conversionMethodPolarityComboBox.currentIndex() else -1
         )
-
-        ref = polarity * y + self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
 
         interp_len = self.__ui.rawSpectrogramInterpolateSpinBox.value()
 
@@ -869,11 +826,13 @@ class RaActiveConverterWindow(QMainWindow):
             with Pool() as pool:
                 return list(
                     pool.starmap(
-                        _sweep_2d_data_to_passive_format,
+                        _advanced_reader_to_passive_format,
                         zip(
-                            map(lambda x: x[0], self.__csv_reader),
-                            repeat(ref),
+                            self.__advanced_csv_reader,
                             repeat(polarity),
+                            repeat(
+                                self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
+                            ),
                             repeat(interp_len),
                         ),
                     )
