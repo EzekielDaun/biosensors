@@ -2,7 +2,7 @@
 
 ## Setup
 
-Python version >= 3.10
+Python version >= 3.11
 
 ### Windows 10/11
 
@@ -65,10 +65,10 @@ python retrospective_analysis_gui.pyw
 5. Select power channels and click `Start Track`
 6. Once the results show up, use the tab to navigate through power channels
 7. If necessary, manually adjust the traces:
-   1. Select the trace (Trace1 Time xx-xx) in the combo box
-   2. Adjust the offset by multiples of FSR or any arbitrary number in the spinboxes
+   1. Left-mouse-button dragging: free range adjustment
+   2. Right-mouse-button dragging: trace will be anchored by a roughly estimated FSR
 8. In the `Plot` block, push buttons for various kinds of plots **for this channel only**. Check `Auto-Save` to save the plots in the selected folder when clicking those buttons
-9. Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (This figure will always be automatically saved)
+9.  Click `Save Results` to save all the fitted peaks in `peaks.mat`, all traces in `peak_shifts.mat`, and the overlaid and grouped traces will be popped up (This figure will always be automatically saved)
 
 ## Result Format
 

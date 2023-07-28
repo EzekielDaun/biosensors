@@ -1,0 +1,143 @@
+from functools import reduce
+from typing import Optional
+
+import control
+import numpy as np
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWidgets import (
+    QDoubleSpinBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
+from scipy.signal import lti, tf2zpk
+
+
+# Wavelength Conversion Methods
+class ConversionTabBase(QWidget):
+    def to_lti(self) -> lti:
+        ...
+
+
+class ConversionZPGTFTab(ConversionTabBase):
+    def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.setLayout(QVBoxLayout())
+
+        self.__first_row_layout = QHBoxLayout()
+
+        self.__first_row_layout.addWidget(QLabel("Zeros"))
+        self.__zeros_line_edit = QLineEdit("[]")
+        self.__first_row_layout.addWidget(self.__zeros_line_edit)
+
+        self.__first_row_layout.addWidget(QLabel("Poles"))
+        self.__poles_line_edit = QLineEdit("[-1]")
+        self.__first_row_layout.addWidget(self.__poles_line_edit)
+
+        self.__first_row_layout.addWidget(QLabel("Gain"))
+        self.__gain_double_spinbox = QDoubleSpinBox()
+        self.__gain_double_spinbox.setValue(1.0)
+        self.__gain_double_spinbox.setDecimals(4)
+        self.__gain_double_spinbox.setSingleStep(1)
+        self.__gain_double_spinbox.setRange(
+            np.iinfo(np.int32).min, np.iinfo(np.int32).max
+        )
+        self.__first_row_layout.addWidget(self.__gain_double_spinbox)
+
+        layout: QVBoxLayout = self.layout()  # type: ignore
+        layout.addLayout(self.__first_row_layout)
+
+    def to_lti(self):
+        return lti(
+            np.array(eval(self.__zeros_line_edit.text())),
+            np.array(eval(self.__poles_line_edit.text())),
+            self.__gain_double_spinbox.value(),
+        )
+
+
+class ConversionRCTFTab(ConversionTabBase):
+    def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.setLayout(QHBoxLayout())
+
+        equation_web_engine_view = QWebEngineView()
+        equation_web_engine_view.setHtml(
+            r"""
+             <html><head>
+             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+             </script></head>
+             <body>
+             <p><mathjax style="font-size:2em">
+             $$\text{TF}=\sum \frac{R}{1+RCs}$$
+             </mathjax></p>
+             </body></html>
+             """
+        )
+        self.layout().addWidget(equation_web_engine_view)
+
+        parameter_layout = QVBoxLayout()
+
+        label_r = QLabel("R Array")
+        label_r.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_r)
+        self.__rs_line_edit = QLineEdit("[0.95, 10, 0, 0]")
+        parameter_layout.addWidget(self.__rs_line_edit)
+
+        label_c = QLabel("C Array")
+        label_c.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_c)
+        self.__cs_line_edit = QLineEdit("[20e-6, 200e-3, 1, 1]")
+        parameter_layout.addWidget(self.__cs_line_edit)
+
+        label_gain = QLabel("Gain")
+        label_gain.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        parameter_layout.addWidget(label_gain)
+        self.__gain_double_spinbox = QDoubleSpinBox()
+        self.__gain_double_spinbox.setDecimals(4)
+        self.__gain_double_spinbox.setSingleStep(1)
+        self.__gain_double_spinbox.setRange(
+            np.iinfo(np.int32).min, np.iinfo(np.int32).max
+        )
+        self.__gain_double_spinbox.setValue(1)
+        parameter_layout.addWidget(self.__gain_double_spinbox)
+
+        self.layout().addLayout(parameter_layout)  # type: ignore
+
+    def to_lti(self):
+        Rs = np.array(eval(self.__rs_line_edit.text()))
+        Cs = np.array(eval(self.__cs_line_edit.text()))
+
+        if len(Rs) != len(Cs):
+            raise ValueError("The length of R and C must be the same")
+
+        num, den = reduce(  # polynomial fraction addition
+            # TF for each RC layer: R/(RC*s + 1)
+            lambda acc, c_r: [
+                np.polymul(acc[0], np.poly1d([c_r[0] * c_r[1], 1]))
+                + np.polymul(acc[1], np.poly1d([c_r[1]])),
+                np.polymul(acc[1], np.poly1d([c_r[0] * c_r[1], 1])),
+            ],
+            zip(Cs, Rs),
+            [np.poly1d(0), np.poly1d(1)],
+        )
+        z, p, _k = tf2zpk(num, den)
+        return lti(
+            z,
+            p,
+            self.__gain_double_spinbox.value() / control.dcgain(control.zpk(z, p, 1)),
+        )
+
+    @property
+    def rs_line_edit(self):
+        return self.__rs_line_edit
+
+    @property
+    def cs_line_edit(self):
+        return self.__cs_line_edit
+
+    @property
+    def gain_double_spinbox(self):
+        return self.__gain_double_spinbox

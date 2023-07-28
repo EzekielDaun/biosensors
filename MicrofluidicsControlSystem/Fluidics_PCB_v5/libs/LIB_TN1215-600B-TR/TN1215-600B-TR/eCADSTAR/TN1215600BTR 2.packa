@@ -1,0 +1,13 @@
+(unit MM)
+
+(package "TN1215-600B-TR"
+    (type UNDEF)
+    (uver 2)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (utime 2021-04-29-10:55:30)
+    (mountForm default
+        (footprintRef "TN1215600BTR")
+        (spec "System")
+    )
+)

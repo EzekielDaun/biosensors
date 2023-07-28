@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP MIC29300-12WU-TR
+D LDO Voltage Regulators
+K
+F http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en580805
+$ENDCMP
+#
+#End Doc Library

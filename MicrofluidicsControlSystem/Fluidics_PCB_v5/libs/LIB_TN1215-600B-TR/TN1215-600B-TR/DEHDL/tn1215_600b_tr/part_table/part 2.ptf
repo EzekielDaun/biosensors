@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'TN1215_600B_TR'
+CLASS = DISCRETE
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "STMicroelectronics", "TN1215-600B-TR" (!) = "", "TN1215600BTR", "Other", "511-TN1215-600B-TR", "https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TN1215-600B-TR?qs=JQs6Bl0TY0oFh73kuIh3ZA%3D%3D", "SCR 600V 12A Standard Recovery Surface Mount DPAK", "https://www.st.com/resource/en/datasheet/tyn1012.pdf", "2.63 mm"
+END_PART
+
+END.

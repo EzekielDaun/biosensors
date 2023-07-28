@@ -1,0 +1,9 @@
+Manufacturer=Copal Electronics
+PartNumber=8SS1012-Z
+PartCategory=Switch
+PackageCategory=Other
+PinCount=3
+Version=1.1
+Released=2019-05-03 10:26:07
+Downloaded=2023-06-28 23:21:39
+3D=Y

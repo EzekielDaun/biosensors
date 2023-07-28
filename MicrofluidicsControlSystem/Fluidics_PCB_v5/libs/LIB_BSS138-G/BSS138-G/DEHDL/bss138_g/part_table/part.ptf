@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'BSS138_G'
+CLASS = DISCRETE
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "onsemi", "BSS138-G" (!) = "", "SOT96P237X111-3N", "SOT23 (3-Pin)", "863-BSS138-G", "https://www.mouser.co.uk/ProductDetail/onsemi/BSS138-G?qs=UkDUCjYnTB3VwCqWT1Cb%2FQ%3D%3D", "MOSFET FET 50V 3.5 OHM", "https://www.mouser.co.uk/datasheet/2/308/BSS138-D-1658842.pdf", "1.11 mm"
+END_PART
+
+END.

@@ -1,0 +1,9 @@
+Manufacturer=LITTELFUSE
+PartNumber=0494001.NR
+PartCategory=Fuse
+PackageCategory=Fuses Chip
+PinCount=2
+Version=1.1
+Released=2021-04-04 16:11:53
+Downloaded=2022-12-14 13:02:43
+3D=Y

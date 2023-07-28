@@ -1,0 +1,16 @@
+.BSS138-G :1 ;MOSFET FET 50V 3.5 OHM
+SOT96P237X111-3N
+*STM Q
+*NGS
+*PLB 1="G" 2="D" 3="S"
+*MXP 3
+*DFN BSS138-G
+~!Mouser Part Number (863-BSS138-G)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/onsemi/BSS138-G?qs=UkDUCjYnTB3VwCqWT1Cb%2FQ%3D%3D)
+~!Manufacturer_Name (onsemi)
+~!Manufacturer_Part_Number (BSS138-G)
+~!Link Datasheet (https://www.mouser.co.uk/datasheet/2/308/BSS138-D-1658842.pdf)
+~!Height (1.11mm)
+~!3D_Model (BSS138-G)
+BSS138-G
+1.1!U 2.1!U 3.1!U 

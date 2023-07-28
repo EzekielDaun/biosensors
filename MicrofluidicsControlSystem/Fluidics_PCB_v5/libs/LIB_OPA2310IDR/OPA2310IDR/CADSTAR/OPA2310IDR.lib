@@ -1,0 +1,16 @@
+.OPA2310IDR :1 ;General Purpose Amplifier 2 Circuit Rail-to-Rail 8-SOIC
+SOIC127P600X175-8N
+*STM IC
+*NGS
+*PLB 1="OUT1" 2="IN1-" 3="IN1+" 4="V-" 5="IN2+" 6="IN2-" 7="OUT2" 8="V+"
+*MXP 8
+*DFN OPA2310IDR
+~!Mouser Part Number (595-OPA2310IDR)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Texas-Instruments/OPA2310IDR?qs=vvQtp7zwQdO7M4WMfM7rQg%3D%3D)
+~!Manufacturer_Name (Texas Instruments)
+~!Manufacturer_Part_Number (OPA2310IDR)
+~!Link Datasheet (https://www.ti.com/lit/ds/symlink/opa2310.pdf?HQS=dis-mous-null-mousermode-dsf-pf-null-wwe&ts=1664810239166&ref_url=https%253A%252F%252Fwww.mouser.co.il%252F)
+~!Height (1.75mm)
+~!3D_Model (OPA2310IDR)
+OPA2310IDR
+1.1!U 2.1!U 3.1!U 4.1!U 8.1!U 7.1!U 6.1!U 5.1!U 

@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP BSS138-G
+D MOSFET FET 50V 3.5 OHM
+K
+F https://www.mouser.co.uk/datasheet/2/308/BSS138-D-1658842.pdf
+$ENDCMP
+#
+#End Doc Library

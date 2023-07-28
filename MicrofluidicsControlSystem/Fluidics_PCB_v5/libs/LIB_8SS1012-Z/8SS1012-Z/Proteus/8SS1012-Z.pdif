@@ -1,0 +1,113 @@
+;Proteus Design Interchange Format
+(PDIF
+ (vendor "SamacSys Limited")
+ (version 1 0)
+ (library
+  (part "8SS1012-Z"
+   (description "NIDEC COPAL ELECTRONICS - 8SS1012-Z - SLIDE SWITCH, SPDT, 6A, 125VAC, TH")
+   (family "SWI")
+   (package "8SS1012Z")
+   (attribute "Datasheet Link" "https://www.nidec-copal-electronics.com/e/catalog/switch/8ss.pdf")
+   (attribute "Geometry.Height" "14.75mm")
+   (attribute "Mouser Part Number" "")
+   (attribute "Mouser Price/Stock" "")
+   (attribute "Manufacturer_Name" "Copal Electronics")
+   (attribute "Manufacturer_Part_Number" "8SS1012-Z")
+   (gate
+    (symbol "8SS1012-Z")
+    (pin "1" 1 PS)
+    (pin "2" 2 PS)
+    (pin "3" 3 PS)
+   )
+  )
+  (symbol "8SS1012-Z"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 200 100) (pt 600 100) (pt 600 -300) (pt 200 -300) (pt 200 100) (closed))
+   )
+   (terminal
+    (body (symbol "PIN") (pt 0 0) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -100) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+   (terminal
+    (body (symbol "PIN") (pt 0 -200) (rot 0) (mir 0) (visible true))
+    (name (pt 230 0) (rot 0) (just MIDDLE LEFT) (visible true))
+    (number (pt 140 20) (rot 0) (just BOTTOM RIGHT) (visible true)))
+  )
+  (symbol "PIN"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 200 0))))
+  (symbol "PINSHORT"
+   (units THOU)
+   (origin (pt 0 0))
+   (graphic
+    (stroke 10)
+    (path (pt 0 0) (pt 100 0))))
+  (package "8SS1012Z"
+   (units MM)
+   (layer TASM
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed true)
+      (pt -3.95 2.1)
+      (pt 3.95 2.1)
+      (pt 3.95 -10.9)
+      (pt -3.95 -10.9)
+      (pt -3.95 2.1))))
+   (layer TSLK
+    (graphic
+     (stroke 0.1)
+     (path
+      (closed true)
+      (pt -3.95 2.1)
+      (pt 3.95 2.1)
+      (pt 3.95 -10.9)
+      (pt -3.95 -10.9)
+      (pt -3.95 2.1))))
+   (layer OCCA
+    (graphic
+     (stroke 0.1)
+     (path
+      (closed true)
+      (pt -4.95 3.1)
+      (pt 4.95 3.1)
+      (pt 4.95 -11.9)
+      (pt -4.95 -11.9)
+      (pt -4.95 3.1))))
+   (layer TSLK
+    (graphic
+     (stroke 0.2)
+     (path
+      (closed true)
+      (pt 0 2.5)
+      (arc (pt 0.000 2.500) (pt -0.100 2.500) (pt 0.100 2.700) (start 180.0) (sweep -90.0))
+      (pt 0 2.7)
+      (arc (pt 0.000 2.700) (pt -0.100 2.500) (pt 0.100 2.700) (start 180.0) (sweep 90.0))
+      (pt 0 2.5))))
+   (leg 1 (pt 0.000 0.000) (padstack 0))
+   (leg 2 (pt 0.000 -4.400) (padstack 0))
+   (leg 3 (pt 0.000 -8.800) (padstack 0))
+   (padstack 0
+    (hole 1.6)
+    (plated true)
+    (pad (layer TCOP) (round 2.400))
+    (pad (layer INNER) (round 2.400))
+    (pad (layer BCOP) (round 2.400))
+   )
+   (model "8SS1012-Z.stp"
+    (euler 0 0 0)
+    (offset 0 0 0)
+   )
+  )
+ )
+)

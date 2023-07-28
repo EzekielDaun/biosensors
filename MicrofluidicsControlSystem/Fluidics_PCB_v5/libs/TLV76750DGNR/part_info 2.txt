@@ -1,0 +1,9 @@
+Manufacturer=Texas Instruments
+PartNumber=TLV76750DGNR
+PartCategory=Integrated Circuit
+PackageCategory=Small Outline Packages
+PinCount=9
+Version=1.1
+Released=2021-08-02 14:34:35
+Downloaded=2022-12-07 14:56:41
+3D=Y

@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'MIC39101_5.0YM_TR'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "ARROW_PART_NUMBER", "ARROW_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Microchip", "MIC39101-5.0YM-TR" (!) = "", "SOIC127P599X173-8N", "Small Outline Packages", "998-MIC39101-5.0YMTR", "https://www.mouser.co.uk/ProductDetail/Microchip-Technology-Micrel/MIC39101-50YM-TR?qs=U6T8BxXiZAW4%252Bcnkgk10yA%3D%3D", "", "", "LDO Voltage Regulators 1.0A 1.0% Fixed Voltage LDO", "http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en581613", "1.73 mm"
+END_PART
+
+END.

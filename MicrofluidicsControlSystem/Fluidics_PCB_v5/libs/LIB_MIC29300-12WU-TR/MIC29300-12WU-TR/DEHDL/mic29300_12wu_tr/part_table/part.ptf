@@ -1,0 +1,11 @@
+FILE_TYPE = MULTI_PHYS_TABLE;
+
+PART 'MIC29300_12WU_TR'
+CLASS = IC
+{========================================================================================}
+:"MANUFACTURER_NAME", "MANUFACTURER_PART_NUMBER"= "PART_NUMBER", "JEDEC_TYPE", "PACK_TYPE", "MOUSER_PART_NUMBER", "MOUSER_PRICE/STOCK", "DESCRIPTION", "DATASHEET", "HEIGHT";
+{========================================================================================}
+ "Microchip", "MIC29300-12WU-TR" (!) = "", "MIC2930012WUTR", "Other", "998-MIC29300-12WUTR", "https://www.mouser.co.uk/ProductDetail/Microchip-Technology/MIC29300-12WU-TR?qs=U6T8BxXiZAUm3rpKH4l03A%3D%3D", "LDO Voltage Regulators", "http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en580805", "4.597 mm"
+END_PART
+
+END.

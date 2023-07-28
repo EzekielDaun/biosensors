@@ -3,17 +3,32 @@ import logging
 import multiprocessing as mp
 import os
 import re
-from functools import reduce
-from itertools import repeat, starmap
+from functools import partial, reduce
 from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.io import loadmat
+from tqdm import tqdm
 
-from .lib import get_lorentzian_peaks, peaks_to_traces
+from .lib import SweepFitResult, peaks_to_traces
 
 logger = logging.getLogger(__name__)
+
+
+class tqdm_qt(tqdm):
+    """
+    hack tqdm to send a qt signal, instead of printing to stderr
+    """
+
+    def __init__(self, *args, qt_signal=None, **kwargs):
+        self.__qt_signal = qt_signal
+        super().__init__(*args, **kwargs)
+
+    def display(self, msg: str | None = None, pos: int | None = None) -> None:
+        if self.__qt_signal:
+            self.__qt_signal.emit(self.format_dict)
+        # super().display(msg, pos) # ban the original display to stderr
 
 
 class PassiveAnalyzer(object):
@@ -22,7 +37,6 @@ class PassiveAnalyzer(object):
         folder_path: str,
         timestamp: str | float,
         pattern: str = r".*sweep_(\d+)\.mat",
-        wavelength_multiplier: float = 1e9,
         timestamp_multiplier: float = 1 / 60,
     ):
         self.__folder_path = folder_path
@@ -41,6 +55,11 @@ class PassiveAnalyzer(object):
                     for row in csv.reader(csv_file, delimiter=",")
                     if len(row) >= 3 and row[2] != ""
                 }
+                self.__filenames = [
+                    f
+                    for f in self.__filenames
+                    if int(pat.match(f).group(1)) in time_dict  # type: ignore
+                ]
                 self.__timestamps = (
                     np.array(
                         [
@@ -57,11 +76,10 @@ class PassiveAnalyzer(object):
             )
 
         # check the first file for wavelengths, assume all files have the same wavelengths
-        self.__wavelengths = (
-            read_mat(os.path.join(self.__folder_path, self.__filenames[0]))[1]
-            * wavelength_multiplier
-        )
-        self.__wavelength_multiplier = wavelength_multiplier
+        self.__wavelengths = read_mat(
+            os.path.join(self.__folder_path, self.__filenames[0])
+        )[1]
+        self.__wavelengths *= 1e9  # assume input in m and convert to nm
 
     @property
     def timestamps(self):
@@ -83,7 +101,7 @@ class PassiveAnalyzer(object):
 
     def get_spectrograms(
         self,
-        channels: list[int],
+        channels: set[int],
         step: int = 1,
         start_index: int = 0,
         stop_index: int | None = None,
@@ -107,12 +125,13 @@ class PassiveAnalyzer(object):
 
     def analyze(
         self,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
+        r2_threshold: float,
+        max_n100dBm_points: int,
         enable_multi_processing: bool = True,
-    ) -> tuple[
-        dict[int, tuple[list[list[float]], float]], dict[int, list[NDArray[np.float64]]]
-    ]:
+        qt_signal=None,
+    ):
         """analyze
 
         Args:
@@ -129,76 +148,83 @@ class PassiveAnalyzer(object):
                 - peaks: list of sweep matrix, indexes are sweep number and values are rows of sweep vectors.
         """
 
-        def __starmap(*args, **kwargs):
+        def __map(*args, **kwargs):
             if enable_multi_processing:
                 process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                return mp.Pool(processes=max(1, process_num - 2)).imap(
                     *args, **kwargs
                 )  # reserve one for GUI and one for other programs
             else:
-                return starmap(*args, **kwargs)
+                return map(*args, **kwargs)
 
         start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
 
-        peaks: dict[int, list[NDArray[np.float64]]] = reduce(
+        sweep_fit_dict: dict[int, list[SweepFitResult]] = reduce(
             lambda acc, b: {
                 x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
             },
-            __starmap(
-                mat_to_peak_dict,
-                zip(
-                    [
-                        os.path.join(self.__folder_path, f)
-                        for f in self.__filenames[start:stop:step]
-                    ],
-                    repeat(channels),
-                    repeat(self.__wavelength_multiplier),
+            tqdm_qt(
+                __map(
+                    partial(mat_to_sweep_fit_results, channels=channels),
+                    self.__filenames[start:stop:step],
                 ),
+                total=len(self.__filenames[start:stop:step]),
+                qt_signal=qt_signal,
             ),
             {},
         )
 
-        return {k: peaks_to_traces(v) for k, v in peaks.items()}, peaks
+        peaks_dict = {
+            k: [s.get_peaks(r2_threshold, max_n100dBm_points) for s in v]
+            for k, v in sweep_fit_dict.items()
+        }
+
+        return {k: peaks_to_traces(v) for k, v in peaks_dict.items()}, peaks_dict
 
     def analyze_fsr_er_q(
         self,
-        channels: list[int],
+        channels: set[int],
         start_stop_step: tuple[int, Optional[int], int],
+        r2_threshold: float,
+        max_n100dBm_points: int,
         enable_multi_processing: bool = True,
     ):
-        def __starmap(*args, **kwargs):
+        def __map(*args, **kwargs):
             if enable_multi_processing:
                 process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-                return mp.Pool(processes=max(1, process_num - 2)).starmap(
+                return mp.Pool(processes=max(1, process_num - 2)).imap(
                     *args, **kwargs
                 )  # reserve one for GUI and one for other programs
             else:
-                return starmap(*args, **kwargs)
+                return map(*args, **kwargs)
 
         start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
 
-        fsr_er_q_dict: dict[
-            int,
-            list[tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]],
-        ] = reduce(
+        sweep_fit_dict: dict[int, list[SweepFitResult]] = reduce(
             lambda acc, b: {
                 x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
             },
-            __starmap(
-                mat_to_fsr_er_q_dict,
-                zip(
-                    [
-                        os.path.join(self.__folder_path, f)
-                        for f in self.__filenames[start:stop:step]
-                    ],
-                    repeat(channels),
-                    repeat(self.__wavelength_multiplier),
+            tqdm(
+                __map(
+                    partial(mat_to_sweep_fit_results, channels=channels),
+                    self.__filenames[start:stop:step],
                 ),
+                total=len(self.__filenames[start:stop:step]),
             ),
             {},
         )
 
-        return fsr_er_q_dict
+        return {
+            k: [
+                (
+                    s.get_fsr(r2_threshold, max_n100dBm_points),
+                    s.get_er(r2_threshold, max_n100dBm_points),
+                    s.get_q(r2_threshold, max_n100dBm_points),
+                )
+                for s in v
+            ]
+            for k, v in sweep_fit_dict.items()
+        }
 
 
 def read_mat(
@@ -212,61 +238,6 @@ def read_mat(
     return (power, wavelengths)
 
 
-def mat_to_peak_dict(
-    path: str,
-    channels: list[int],
-    wavelength_multiplier: float,
-) -> dict[int, list[list[NDArray[np.float64]]]]:
-    """_mat_to_peak_dict
-
-    Args:
-        path (str): path to .mat file
-        channels (list[int]): indices of channels to be parsed
-        wavelength_multiplier (float): wavelength multiplier
-
-    Returns:
-        dict[int, list[list[NDArray[np.float64]]]]: dict of peaks, key=channel, value=list of peaks
-    """
-    ret = {}
-    power_matrix, wavelengths = read_mat(path)
-    wavelengths *= wavelength_multiplier
-    for c in channels:
-        powers = power_matrix[c]
-        temp_peaks = get_lorentzian_peaks(
-            powers,
-            wavelengths,
-        )[0]
-        ret[c] = ret.get(c, []) + [temp_peaks]
-
-    return ret
-
-
-def mat_to_fsr_er_q_dict(
-    path: str,
-    channels: list[int],
-    wavelength_multiplier: float,
-) -> dict[int, list[list[NDArray[np.float64]]]]:
-    """_mat_to_fsr_er_q_dict
-
-    Args:
-        path (str): path to .mat file
-        channels (list[int]): indices of channels to be parsed
-        wavelength_multiplier (float): wavelength multiplier
-
-    Returns:
-        dict[int, list[list[NDArray[np.float64]]]]: dict of fsr,er,q, key=channel, value=list of (fsr,er,q)
-    """
-    ret = {}
-    power_matrix, wavelengths = read_mat(path)
-    wavelengths *= wavelength_multiplier
-    for c in channels:
-        powers = power_matrix[c]
-        __peaks, fsr, er, q = get_lorentzian_peaks(
-            powers,
-            wavelengths,
-        )
-        ret[c] = ret.get(c, []) + [(fsr, er, q)]
-
-    return ret
-
-
+def mat_to_sweep_fit_results(file_path: str, channels: set[int]):
+    power, wavelength = read_mat(file_path)
+    return {c: [SweepFitResult.from_data(power[c], wavelength * 1e9)] for c in channels}

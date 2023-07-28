@@ -1,0 +1,13 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP Comp-LM339
+D Quad Differntial Comparators
+F doc/lm339.pdf
+$ENDCMP
+#
+$CMP OpAmp-TLV2374
+D Quad Rail-to-Rail Operational Amplifiers
+F doc/tlv2374.pdf
+$ENDCMP
+#
+#End Doc Library

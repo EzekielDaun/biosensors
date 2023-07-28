@@ -1,0 +1,70 @@
+(Japanese_coding: sjis)
+(function "ECS_922851"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2022-08-30-11:53:55)
+    (utime 2022-08-31-06:25:43)
+    (interface
+        (port "1" (symbPinId 1) (portType INOUT))
+        (port "2" (symbPinId 2) (portType INOUT))
+        (port "3" (symbPinId 3) (portType INOUT))
+    )
+    (property "symbolName" "TN1215-600G")
+)
+
+
+(pinAssign "ECS_922851"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2022-08-30-11:53:55)
+    (utime 2022-08-31-06:25:43)
+    (interface
+        (port "1" (symbPinId 1) (portName "K") (portType INOUT))
+        (port "2" (symbPinId 2) (portName "A") (portType INOUT))
+        (port "3" (symbPinId 3) (portName "G") (portType INOUT))
+    )
+    (internal
+        (funcInst (functionRef "ECS_922851")
+                (port "1" (match "1"))
+                (port "2" (match "2"))
+                (port "3" (match "3"))
+        )
+    )
+    (property "usePowerBox" "No")
+    (property "symbolName" "TN1215-600G")
+)
+
+
+(part "TN1215-600G"
+    (uver 1)
+    (cuser "SamacSys")
+    (uuser "SamacSys")
+    (ctime 2022-08-30-11:53:55)
+    (utime 2022-08-31-06:25:43)
+    (packageRef "TN1215-600G")
+    (pinAssignRef "ECS_922851")
+    (interface
+        (port "1" (symbPinId 1) (portName "K") (portType INOUT))
+        (port "2" (symbPinId 2) (portName "A") (portType INOUT))
+        (port "3" (symbPinId 3) (portName "G") (portType INOUT))
+    )
+    (partClass UNDEF)
+    (useInSchema Y)
+    (useInLayout Y)
+    (inPartsList Y)
+    (partType NORMAL)
+    (placeRestriction FREE)
+    (property "enetNonSeries" "YES")
+    (property "refDesPrefix" "D")
+    (property "description" "12A standard SCRs")
+    (property "Mouser_Part_Number" "511-TN1215-600G")
+    (property "Mouser_Price/Stock" "https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TN1215-600G?qs=lDh9v96ogBZTCD0WccrzTw%3D%3D")
+    (property "Manufacturer_Name" "STMicroelectronics")
+    (property "Manufacturer_Part_Number" "TN1215-600G")
+    (property "Datasheet_Link" "https://www.st.com/resource/en/datasheet/tyn1012.pdf")
+    (property "compAreaTopHeight" 4.83)
+)
+
+

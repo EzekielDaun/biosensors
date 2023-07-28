@@ -1,0 +1,23 @@
+#include "SerialTransfer.h"
+#include <Wire.h>
+ 
+// Define DAC pins
+#define DAC_CH1 25
+#define DAC_CH2 26
+int i = 0;
+
+void setup() 
+{
+  // Setup Serial Monitor
+  Serial.begin(9600);
+  Serial.println("Starting");
+}
+ 
+void loop()
+{
+  for(int i=0;i<256;i+=32){
+    dacWrite(DAC_CH1,i);
+    delay(1500);            
+  } 
+  dacWrite(DAC_CH1,i);
+}

@@ -1,0 +1,3 @@
+3DX_CUI_INC_Supplier: CUI, Inc
+3DX_CUI_INC_Description: 2.0 mm Center Pin, 8.0 A, Right Angle, Through Hole, Shielded, Kinked Pins, Dc Power Jack Connector
+3DX_CUI_INC_Model Number: PJ-063AH
