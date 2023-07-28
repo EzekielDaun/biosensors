@@ -30,6 +30,7 @@ num_avg = 10;
 % figure positions [x loc, y loc, width, height]
 fig1Pos = [103 490 450 200];
 fig2Pos = [103 490 600 400];
+fig3Pos = [103 490 900 400];
 legendStr2 = [];
 
 % load in the colormap file path
@@ -47,18 +48,54 @@ cd(selpath);
 
 tbl = readtable(configFile);
 numFiles = height(tbl);
+initWidth = width(tbl);
+
+% set up the framework for our collated dataframe output (first store all
+% values in arrays then convert to a table at the end)
+collFilePath = []; % the file analyzed
+collSensorNum = []; % the sensor number
+collBulkRIConc = []; % the bulk RI concentrations used
+collBulkRIUnits = []; % the units for the bulk RI concentrations
+collBulkRIs = []; % the bulk RI values
+collSensitivity = []; % the bulk RI sensitivities
+collR2 = []; % the collated R^2 of our S_bulk fits
+
+% check whether our additional parameters have been added
+if initWidth > 6
+    collFluidicChannel = []; % the fluidic channel
+    collTapeout = []; % the photonic tapeout (for tracking)
+    collChip = []; % the chip # (for tracking)
+    collExptName = []; % the experiment name (for tracking)
+    if initWidth > 11
+        collSensorType = []; % the type of sensor
+    end
+end
 
 % loop through the files to do the analysis
 for fileIdx = 1:numFiles
     % set up all the parameters for each file
     filePath = cell2mat(tbl{fileIdx, 1});
-    bulkConc = cell2mat(cellfun(@str2num,tbl{1,2},'uniform',0));
+    bulkConc = cell2mat(cellfun(@str2num,tbl{fileIdx,2},'uniform',0));
     solutionUnits = cell2mat(tbl{fileIdx, 3});
-    RIs = cell2mat(cellfun(@str2num,tbl{1,4},'uniform',0));
+    RIs = cell2mat(cellfun(@str2num,tbl{fileIdx,4},'uniform',0));
     outputPath = cell2mat(tbl{fileIdx, 5});
     numSensors = tbl{fileIdx, 6};
+    if width(tbl) > 6
+        channel1Sensors = cell2mat(cellfun(@str2num,tbl{fileIdx,7},'uniform',0)); % the sensors in fluidic channel 1
+        channel2Sensors = cell2mat(cellfun(@str2num,tbl{fileIdx,8},'uniform',0)); % the sensors in fluidic channel 2
+        tapeout = cell2mat(tbl{fileIdx, 9}); % the photonic tapeout (for tracking)
+        chip = tbl{fileIdx, 10}; % the chip # (for tracking)
+        exptName = cell2mat(tbl{fileIdx, 11}); % the name of the experiment (for tracking)
+        if width(tbl) > 11
+            sensorType = string(tbl{fileIdx,12}); % the type of sensor
+            sensorType = split(sensorType, ',');
+        end
+    end
     outputFile = fullfile(outputPath,'Output.xlsx');
     newcolors = inferno(numSensors);
+    % set up the two colourmaps for the fluidic channels
+    ch1Map = gray(length(channel1Sensors)+1); % gray map
+    ch2Map = winter(length(channel2Sensors)+1);
     
     if length(bulkConc) ~= length(RIs)
         error('The number of Bulk RI concentrations and RI values specified in the configuration file do not match.')
@@ -75,6 +112,21 @@ for fileIdx = 1:numFiles
     
     plottedSensors = 0;
     for sensorIdx = 1:numSensors
+        % figure out what channel the sensor is in
+        if width(tbl) > 6
+            if any(channel1Sensors == sensorIdx)
+                fluidicChannel(sensorIdx) = 1;
+            elseif any(channel2Sensors == sensorIdx)
+                fluidicChannel(sensorIdx) = 2;
+            else
+                warning(['No fluidic channel found for sensor ', num2str(sensorIdx), '!']);
+                fluidicChannel(sensorIdx) = NaN;
+            end
+        else
+            warning(['No fluidic channel found for sensor ', num2str(sensorIdx), '!']);
+            fluidicChannel(sensorIdx) = NaN;
+        end
+            
         % if the variable name exists, add the data to an array.  If not,
         % make warning
         if ~offsetCollation
@@ -101,7 +153,7 @@ for fileIdx = 1:numFiles
                 plot(powArray{fileIdx, sensorIdx}, 'Color', newcolors(sensorIdx, :));
             end
 
-            legendStr{plottedSensors} = ['Ch. ', num2str(sensorIdx)];
+            legendStr{plottedSensors} = ['Det. ', num2str(sensorIdx)];
         end
     end
     
@@ -118,7 +170,7 @@ for fileIdx = 1:numFiles
     % each bulk RI region
     for RIidx = 1:length(RIs)
         % get the user input for the start of this region
-        title(['File ', num2str(fileIdx), ': RI region for ', num2str(bulkConc(RIidx)), ' ', solutionUnits, ': click on the start x-location']);
+        title(['File ', num2str(fileIdx), ': RI region for ', num2str(bulkConc(RIidx)), ' ', solutionUnits, ': click on the x-location at the centre of the region to analyze']);
         [x,y,button] = ginput(1);
         RIloc(fileIdx, RIidx) = uint16(x);
         % check that we have enough data on both sides of the click to do
@@ -190,6 +242,46 @@ for fileIdx = 1:numFiles
     xlabel('RI shift');
     ylabel('Peak shift (nm)')
     legend(legendStr2, 'Location', 'Southeast');
+    
+    % plot the peak shift data with colour dependent on channel and more
+    % descriptive legend, if the additional data were provided
+    if initWidth > 11
+        h3 = figure(3*numFiles + fileIdx); 
+        clear legendStr3;
+        plottedSensors = 0;
+        for sensorIdx = 1:numSensors
+            if ~isempty(powArray{fileIdx, sensorIdx})
+                hold on;
+                plottedSensors = plottedSensors+1;
+                % plot the data with colour dependent on sensor and channel
+                if fluidicChannel(sensorIdx) == 1
+                    if ~data_nm
+                        plot(powArray{fileIdx, sensorIdx}*1e9, 'Color', ch1Map(ceil(sensorIdx/2), :));  % convert to nm
+                    else
+                        plot(powArray{fileIdx, sensorIdx}, 'Color', ch1Map(ceil(sensorIdx/2), :));
+                    end
+                else
+                    if fluidicChannel(sensorIdx) == 2
+                        if ~data_nm
+                            plot(powArray{fileIdx, sensorIdx}*1e9, 'Color', ch2Map(ceil(sensorIdx/2), :));  % convert to nm
+                        else
+                            plot(powArray{fileIdx, sensorIdx}, 'Color', ch2Map(ceil(sensorIdx/2), :));
+                        end
+                    end
+                end
+                legendStr3{plottedSensors} = ['Det. ', num2str(sensorIdx), ', Ch. ', num2str(fluidicChannel(sensorIdx)), ', ', sensorType{sensorIdx}];
+            end
+        end
+
+        title(['File ', num2str(fileIdx)]);
+        xlabel('Measurement number');
+        ylabel('Peak shift (nm)');
+        legend(legendStr3)
+        set(h1, 'Position', fig3Pos)
+        saveas(h3, fullfile(outputPath, ['pkShiftColourPlot_file', num2str(fileIdx), '.fig']))
+        saveas(h3, fullfile(outputPath, ['pkShiftColourPlot_file', num2str(fileIdx), '.svg']))
+        saveas(h3, fullfile(outputPath, ['pkShiftColourPlot_file', num2str(fileIdx), '.png']))
+    end
 
     % save the figures
     figure(h1); title(['File ', num2str(fileIdx)]);
@@ -200,8 +292,33 @@ for fileIdx = 1:numFiles
     saveas(h2, fullfile(outputPath, ['sensitivityPlot_file', num2str(fileIdx), '.svg']))
     saveas(h2, fullfile(outputPath, ['sensitivityPlot_file', num2str(fileIdx), '.png']))
 
-end
+    % add to our arrays for another output file that is more readily postprocessed, with one row
+    % for each sensor measurement
+    for sensorIdx = 1:numSensors
+        if ~isempty(powArray{fileIdx, sensorIdx})
+            collFilePath = [collFilePath; string(filePath)]; % the file analyzed
+            collSensorNum = [collSensorNum; sensorIdx]; % the sensor number
+            collBulkRIConc = [collBulkRIConc; {bulkConc}]; % the bulk RI concentrations used
+            collBulkRIUnits = [collBulkRIUnits; string(solutionUnits)]; % the units for the bulk RI concentrations
+            collBulkRIs = [collBulkRIs; {RIs}]; % the bulk RI values
+            collSensitivity = [collSensitivity; S(fileIdx, sensorIdx)]; % the bulk RI sensitivities
+            collR2 = [collR2; Rsq(fileIdx, sensorIdx)]; % the collated R^2 of our S_bulk fits
 
+            % check whether our additional parameters have been added
+            if initWidth > 6
+                collFluidicChannel = [collFluidicChannel; fluidicChannel(sensorIdx)]; % the fluidic channel
+                collTapeout = [collTapeout; string(tapeout)]; % the photonic tapeout (for tracking)
+                collChip = [collChip; chip]; % the chip # (for tracking)
+                collExptName = [collExptName; exptName]; % the experiment name (for tracking)
+                if initWidth > 11
+                    collSensorType = [collSensorType; sensorType(sensorIdx)]; % the type of sensor
+                end
+            end
+            
+        end
+    end
+end
+    
 % output the data to a data output file
 % add the sensitivities
 for sensorIdx = 1:numSensors
@@ -216,8 +333,34 @@ for sensorIdx = 1:numSensors
         tbl.(varName) = squeeze(Rsq(:, sensorIdx));
     end
 end
-
 writetable(tbl, outputFile)
 
 
+% save another output file in a dataframe format that is more readily 
+% postprocessed, with one row for each sensor measurement
+% make the table (can also be postprocessed in MATLAB)
+varNames = {'Detector Number','Bulk Sensitivity','Sensitivity fit R^2', ...
+    'Analyzed file path', 'Bulk RI solution concentrations', 'Concentration units', ...
+    'Bulk RI values'};
+T2 = table(collSensorNum, collSensitivity, collR2, collFilePath, collBulkRIConc, ...
+    collBulkRIUnits, collBulkRIs,'VariableNames',varNames);
 
+if initWidth > 6
+    T2 = addvars(T2, collExptName, collTapeout, collChip, collFluidicChannel, ...
+        'Before', 'Detector Number', 'NewVariableNames', {'Experiment Name', ...
+        'Tapeout Name', 'Chip #', 'Fluidic channel'});
+    if initWidth > 11
+        T2 = addvars(T2, collSensorType, 'NewVariableNames', 'Sensor type');
+    end
+end
+
+% make another table to avoid splitting columns in Excel, then output the
+% file
+T3 = T2;
+T3.("Bulk RI solution concentrations") = cellfun(@num2str, T3.("Bulk RI solution concentrations"), 'UniformOutput', false); 
+T3.("Bulk RI values") = cellfun(@num2str, T3.("Bulk RI values"), 'UniformOutput', false); 
+writetable(T3, strrep(outputFile, '.xlsx', '_dataFrame.xlsx'));
+
+% clear the duplicate table and save the workspace in MATLAB format
+clear T3
+save(strrep(outputFile, '.xlsx', '.mat'))
