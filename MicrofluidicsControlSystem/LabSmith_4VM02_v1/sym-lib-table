@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "DMC3025LSD")(type "Legacy")(uri "${KIPRJMOD}/Trans_Diodes Inc._DMHC3025LSD-13/eec.lib")(options "")(descr ""))
+  (lib (name "AOZ1031AI")(type "KiCad")(uri "${KIPRJMOD}/Regulator_Switching_AOZ1031AI.kicad_sym")(options "")(descr ""))
+)
