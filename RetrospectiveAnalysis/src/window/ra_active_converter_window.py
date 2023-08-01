@@ -109,15 +109,11 @@ def _advanced_reader_to_passive_format(
     wls = ref * polarity + central_wavelength
     indices = np.argsort(wls)
     wls = wls[indices]
-    wls_interp = np.interp(
-        np.linspace(0, 1, interp_len), np.linspace(0, 1, len(wls)), wls
-    )
+    wls_interp = np.linspace(np.min(wls), np.max(wls), interp_len)
     power_2d = [[] for i in range(data.shape[0])]
     for i, channel in enumerate(data):
         channel = channel[indices]
-        channel_interp = np.interp(
-            np.linspace(0, 1, interp_len), np.linspace(0, 1, len(channel)), channel
-        )
+        channel_interp = np.interp(wls_interp, wls, channel)
         power_2d[i] = channel_interp
 
     ret: dict[str, NDArray] = {
@@ -145,7 +141,9 @@ class RaActiveConverterWindow(QMainWindow):
         def result(self):
             return self.__ret
 
-    def __init__(self, folder_path: str, parent: Optional[QWidget], *args, **kwargs):
+    def __init__(
+        self, folder_path: str, parent: Optional[QWidget] = None, *args, **kwargs
+    ):
         super().__init__(parent, *args, **kwargs)
 
         self.__ui = Ui_MainWindow()
@@ -815,6 +813,62 @@ class RaActiveConverterWindow(QMainWindow):
         if self.__csv_reader is None:
             logger.info("Conversion failed with no CSV rules loaded.")
             return
+
+        if self.__advanced_csv_reader is None:
+            conversion_tab: ConversionTabBase = self.__ui.conversionMethodStackedWidget.currentWidget()  # type: ignore
+            system = conversion_tab.to_lti()
+
+            v_min = self.__ui.rampVMinDoubleSpinBox.value()
+            v_max = self.__ui.rampVMaxDoubleSpinBox.value()
+            width = self.__ui.rampSymmetryDoubleSpinBox.value() / 100
+            freq = self.__ui.rampFrequencyDoubleSpinBox.value()
+
+            regulation_tab: RegulationTabBase = self.__ui.inputRegulationStackedWidget.currentWidget()  # type: ignore
+            regulation_function = regulation_tab.to_regulate_function()
+            match RampType.from_float(width):
+                case RampType.UP:
+                    self.__advanced_csv_reader = AdvancedRampUpCSVReader(
+                        self.__folder_path,
+                        re.compile(self.__ui.rawRegexLineEdit.text()),
+                        self.__ui.skipRowsSpinBox.value(),
+                        self.__ui.skipColumnsSpinBox.value(),
+                        self.__ui.rawRampChannelSpinBox.value() - 1,
+                        system,
+                        freq,
+                        v_min,
+                        v_max,
+                        regulation_function,
+                    )
+                case RampType.DOWN:
+                    self.__advanced_csv_reader = AdvancedRampDownCSVReader(
+                        self.__folder_path,
+                        re.compile(self.__ui.rawRegexLineEdit.text()),
+                        self.__ui.skipRowsSpinBox.value(),
+                        self.__ui.skipColumnsSpinBox.value(),
+                        self.__ui.rawRampChannelSpinBox.value() - 1,
+                        system,
+                        freq,
+                        v_min,
+                        v_max,
+                        regulation_function,
+                    )
+                case RampType.TRIANGLE:
+                    self.__advanced_csv_reader = AdvancedRampUpDownCSVReader(
+                        self.__folder_path,
+                        re.compile(self.__ui.rawRegexLineEdit.text()),
+                        self.__ui.skipRowsSpinBox.value(),
+                        self.__ui.skipColumnsSpinBox.value(),
+                        self.__ui.rawRampChannelSpinBox.value() - 1,
+                        system,
+                        freq,
+                        v_min,
+                        v_max,
+                        regulation_function,
+                    )
+                case _:
+                    raise ValueError(
+                        "Only support ramp symmetry of 0% (down), 50% (triangular), 100% (up)"
+                    )
 
         polarity = (
             1 if self.__ui.conversionMethodPolarityComboBox.currentIndex() else -1
