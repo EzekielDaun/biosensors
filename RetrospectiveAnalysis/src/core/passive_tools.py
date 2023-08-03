@@ -33,7 +33,7 @@ class PassiveAnalyzer(object):
             key=lambda x: int(pat.match(x).group(1)),  # type: ignore
         )
 
-        self.__timestamps: NDArray[np.float64] = np.array([])
+        self.__timestamps: NDArray[np.floating] = np.array([])
         if type(timestamp) is str:
             with open(os.path.join(self.__folder_path, timestamp), "r") as csv_file:
                 time_dict: dict[int, float] = {
@@ -91,7 +91,7 @@ class PassiveAnalyzer(object):
         step: int = 1,
         start_index: int = 0,
         stop_index: int | None = None,
-    ) -> dict[int, NDArray[np.float64]]:
+    ) -> dict[int, NDArray[np.floating]]:
         """Get spectrums at a given sample rate for the given channels.
 
         Args:
@@ -101,7 +101,7 @@ class PassiveAnalyzer(object):
         Returns:
             `data`: Dict[K:`index`, V:`spectrogram`], where `spectrogram` is ready to be plotted with matplotlib.imshow()
         """
-        data: dict[int, NDArray[np.float64]] = {}
+        data: dict[int, NDArray[np.floating]] = {}
         for f in self.__filenames[start_index:stop_index:step]:
             matrix, _ = read_mat(os.path.join(self.__folder_path, f))
             for key in channels:
@@ -215,8 +215,8 @@ class PassiveAnalyzer(object):
 
 def read_mat(
     file_path: str,
-) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-    mat: dict[str, NDArray[np.float64]] = loadmat(file_path)
+) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
+    mat: dict[str, NDArray[np.floating]] = loadmat(file_path)
     power = np.array(mat["power"]).transpose()
     wavelengths = np.array(mat["wavelength"][0])
     if power.shape[1] != wavelengths.shape[0]:

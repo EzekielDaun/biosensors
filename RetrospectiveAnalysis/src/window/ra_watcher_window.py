@@ -59,8 +59,8 @@ WATCH_BUTTON_IDLE_TEXT = "Watching new files..."
 @dataclass(frozen=True)
 class OutputQueueItem:
     sweeps: list[SweepFitResult]
-    powers: NDArray
-    wavelength: NDArray
+    powers: NDArray[np.floating]
+    wavelength: NDArray[np.floating]
     file_name: str
 
 
@@ -302,9 +302,9 @@ class RaWatcherWindow(QMainWindow):
         if self.__central_widget.table_widget.rowCount() == 0:
             # the first data
             self.__wavelength = item.wavelength
-            self.__spectrograms: NDArray = np.array([item.powers], ndmin=3).swapaxes(
-                0, 1
-            )
+            self.__spectrograms: NDArray[np.floating] = np.array(
+                [item.powers], ndmin=3
+            ).swapaxes(0, 1)
             for i, channel in enumerate(item.powers):
                 name = f"Channel {i+1}"
                 self.__central_widget.spectrogram_tab_widget.addTab(

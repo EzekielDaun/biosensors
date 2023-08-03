@@ -514,7 +514,9 @@ class RaActiveConverterWindow(QMainWindow):
                 )
 
                 def generate_equalized_number(
-                    ref_data_start_stop: tuple[NDArray, NDArray, int, int],
+                    ref_data_start_stop: tuple[
+                        NDArray[np.floating], NDArray[np.floating], int, int
+                    ],
                 ):
                     ref, data, start, stop = ref_data_start_stop
                     num = ref.copy()

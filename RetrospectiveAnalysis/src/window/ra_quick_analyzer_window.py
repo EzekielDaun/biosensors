@@ -186,7 +186,7 @@ class RaQuickAnalyzerWindow(QMainWindow):
         }
 
         for i in channel_selections:
-            channel: NDArray = self.__spectrograms[i]
+            channel: NDArray[np.floating] = self.__spectrograms[i]
             plot_widget = RaQuickAnalyzerPlotWidget(i)
 
             tr = QTransform()

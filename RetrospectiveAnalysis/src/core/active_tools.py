@@ -229,8 +229,8 @@ class CSVData:
     skip_rows: int
     skip_columns: int
     ramp_channel: int
-    ramp: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
-    data: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
+    ramp: NDArray[np.floating] = field(default_factory=lambda: np.array([]))
+    data: NDArray[np.floating] = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self):
         data = np.loadtxt(self.file_path, delimiter=",", skiprows=self.skip_rows).T
@@ -635,7 +635,7 @@ class AdvancedRampUpDownCSVReader(AdvancedCSVReaderBase):
                 is_rising = not is_rising
 
 
-def generate_sawtooth_from_data(data: NDArray, ramp_type: RampType):
+def generate_sawtooth_from_data(data: NDArray[np.floating], ramp_type: RampType):
     maxima, _ = find_peaks(
         gaussian_filter1d(data, 1), prominence=(np.max(data) - np.min(data)) * 0.9
     )
@@ -658,6 +658,6 @@ def generate_sawtooth_from_data(data: NDArray, ramp_type: RampType):
     )
     offset: int = length_period - minima[0]
     offset_end: int = -(len(make_up) - len(data) - offset)
-    make_up: NDArray = make_up[offset:offset_end]
+    make_up: NDArray[np.floating] = make_up[offset:offset_end]
 
     return make_up, offset, offset_end, num_period, length_period
