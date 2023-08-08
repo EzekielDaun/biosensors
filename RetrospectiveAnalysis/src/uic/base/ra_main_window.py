@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.1
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -228,6 +228,7 @@ class Ui_RaMainWindow(object):
         self.sampleStepSpinBox = QSpinBox(self.spectrogramSettingsGroupBox)
         self.sampleStepSpinBox.setObjectName(u"sampleStepSpinBox")
         self.sampleStepSpinBox.setMinimum(1)
+        self.sampleStepSpinBox.setMaximum(999999)
 
         self.gridLayout_3.addWidget(self.sampleStepSpinBox, 0, 1, 1, 1)
 
@@ -333,6 +334,7 @@ class Ui_RaMainWindow(object):
         self.peakTracingStepSpinBox = QSpinBox(self.peakTracingSettingGroupBox)
         self.peakTracingStepSpinBox.setObjectName(u"peakTracingStepSpinBox")
         self.peakTracingStepSpinBox.setMinimum(1)
+        self.peakTracingStepSpinBox.setMaximum(999999)
 
         self.horizontalLayout_2.addWidget(self.peakTracingStepSpinBox)
 

@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>897</width>
-    <height>600</height>
+    <width>1102</width>
+    <height>608</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>RA Active Converter</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -24,7 +24,7 @@
        <property name="orientation">
         <enum>Qt::Vertical</enum>
        </property>
-       <widget class="QGroupBox" name="groupBox">
+       <widget class="QGroupBox" name="sweepRawPreviewSettingGroupBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -103,7 +103,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QGroupBox" name="groupBox_2">
+       <widget class="QGroupBox" name="sweepRawPreviewGroupBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -129,7 +129,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QGroupBox" name="groupBox_4">
+       <widget class="QGroupBox" name="rampSignalConfigGroupBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -249,7 +249,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QGroupBox" name="groupBox_3">
+       <widget class="QGroupBox" name="spectrogramRawPreviewGroupBox">
         <property name="title">
          <string>Spectrogram Raw Preview</string>
         </property>
@@ -290,7 +290,7 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QGroupBox" name="groupBox_5">
+      <widget class="QGroupBox" name="wavelengthConversionGroupBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>1</horstretch>
@@ -306,7 +306,7 @@
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QGroupBox" name="groupBox_9">
+          <widget class="QGroupBox" name="inputRegulationGroupBox">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -382,13 +382,13 @@
             </item>
            </layout>
           </widget>
-          <widget class="QGroupBox" name="groupBox_8">
+          <widget class="QGroupBox" name="fsrPlotGroupBox">
            <property name="title">
             <string>Plot</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <widget class="QGroupBox" name="groupBox_7">
+             <widget class="QGroupBox" name="fsrPlotSettingGroupBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -524,8 +524,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>897</width>
-     <height>29</height>
+     <width>1102</width>
+     <height>42</height>
     </rect>
    </property>
   </widget>
@@ -534,7 +534,7 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2">
+   <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_7">
      <item>
       <widget class="QTextBrowser" name="textBrowser"/>

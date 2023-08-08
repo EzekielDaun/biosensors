@@ -22,11 +22,11 @@ from tqdm import tqdm
 from ..core.passive_tools import PassiveAnalyzer
 from ..uic.base.ra_main_window import Ui_RaMainWindow
 from ..widgets.base.ra_peak_tracker_widget import RaPeakTrackerWidget
-from ..widgets.base.ra_progress_bar import RaProgressBar
 from ..widgets.base.ra_tab_plotter_widget import (
     RaFilePlotterWidget,
     RaSpectrogramPlotterWidget,
 )
+from ..widgets.lib.ra_progress_bar import RaProgressBar
 
 logger = logging.getLogger(__name__)
 
@@ -299,6 +299,7 @@ class RaPassiveAnalyzerWindow(QMainWindow):
     def slot_track_peak(self):
         self.__ui.statusbar.clearMessage()
         self.__progress_bar.reset()
+        self.__progress_bar.show()
         lw = self.__ui.peakTrackerPowerListWidget
         powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
         self.__peak_tracker_widget.plot_initial(
@@ -355,7 +356,6 @@ class RaPassiveAnalyzerWindow(QMainWindow):
 
     # FSR ER Q slots
     def slot_fsr_er_q(self):
-        self.__progress_bar.reset()
         self.__ui.statusbar.clearMessage()
         lw = self.__ui.peakTrackerPowerListWidget
         powers = {i for i in range(lw.count()) if lw.itemWidget(lw.item(i)).checkState() == Qt.Checked}  # type: ignore
@@ -383,18 +383,21 @@ class RaPassiveAnalyzerWindow(QMainWindow):
         total = format_dict["total"]
         elapsed = format_dict["elapsed"]
         rate = format_dict["rate"]
+
+        self.__progress_bar.value = n
+        self.__progress_bar.maximum = total
+
         if all([n, total, elapsed, rate]):
             elapsed_time = tqdm.format_interval(elapsed)
             remaining_time = tqdm.format_interval((total - n) / rate)
             rate_str = f"{rate:.2f}/s"
 
-            text1 = f"{n}/{total}({n/total*100:.2f}%) {rate_str} {elapsed_time}"
-            text2 = f"{remaining_time}"
-            self.__progress_bar.update(n, total, text1, text2)
+            self.__progress_bar.text_left = (
+                f"{n}/{total}({n/total*100:.2f}%) {rate_str} {elapsed_time}"
+            )
+            self.__progress_bar.text_right = f"{remaining_time}"
         else:
-            self.__progress_bar.update(
-                format_dict["n"],
-                format_dict["total"],
-                text1="",
-                text2="" if format_dict["n"] != format_dict["total"] else "Done",
+            self.__progress_bar.text_left = ""
+            self.__progress_bar.text_right = (
+                "" if format_dict["n"] != format_dict["total"] else "Done"
             )

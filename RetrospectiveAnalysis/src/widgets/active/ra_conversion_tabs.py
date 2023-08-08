@@ -3,7 +3,8 @@ from typing import Optional
 
 import control
 import numpy as np
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtCore import Qt
+from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,
@@ -63,20 +64,11 @@ class ConversionRCTFTab(ConversionTabBase):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QHBoxLayout())
 
-        equation_web_engine_view = QWebEngineView()
-        equation_web_engine_view.setHtml(
-            r"""
-             <html><head>
-             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-             </script></head>
-             <body>
-             <p><mathjax style="font-size:2em">
-             $$\text{TF}=\sum \frac{R}{1+RCs}$$
-             </mathjax></p>
-             </body></html>
-             """
+        equation = QSvgWidget(
+            ":/equations/resources/equations/wavelength_conversion.svg"
         )
-        self.layout().addWidget(equation_web_engine_view)
+        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        self.layout().addWidget(equation)
 
         parameter_layout = QVBoxLayout()
 

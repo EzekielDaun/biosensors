@@ -50,7 +50,7 @@ class RaStartWindow(QMainWindow):
     def slot_active_converter(self):
         dir = QFileDialog.getExistingDirectory()
         if dir:
-            active_converter_dialog = RaActiveConverterWindow(dir, self)
+            active_converter_dialog = RaActiveConverterWindow(dir)
             active_converter_dialog.signal_close.connect(self.show)
             self.hide()
             active_converter_dialog.show()

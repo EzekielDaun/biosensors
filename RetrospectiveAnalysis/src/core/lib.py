@@ -1,7 +1,6 @@
 import logging
 from dataclasses import dataclass
 from itertools import accumulate, pairwise, product
-from typing import Self
 
 import numpy as np
 from cv2 import HoughLinesPointSet
@@ -25,7 +24,7 @@ def lorentzian(x, x0, y0, _i, gamma, a):
 
 @dataclass
 class LorentzianPeakFitResult:
-    peak_params: NDArray
+    peak_params: NDArray[np.floating]
     er: float
     q: float
     r2: float
@@ -36,12 +35,12 @@ class LorentzianPeakFitResult:
 class SweepFitResult:
     peaks: list[LorentzianPeakFitResult]
 
-    @classmethod
-    def from_data(cls, powers: NDArray, wavelengths: NDArray) -> Self:
+    @staticmethod
+    def from_data(powers: NDArray[np.floating], wavelengths: NDArray[np.floating]):
         if len(powers) != len(wavelengths):
             raise RuntimeError("Number of wavelengths and powers do not match")
 
-        powers_smoothed: NDArray[np.float64] = gaussian_filter1d(
+        powers_smoothed: NDArray[np.floating] = gaussian_filter1d(
             powers, sigma=8
         )  # type: ignore
         indices, properties = find_peaks(
@@ -195,12 +194,15 @@ class SweepFitResult:
 
 
 def get_lorentzian_peaks(
-    powers: NDArray[np.float64],
-    wavelengths: NDArray[np.float64],
+    powers: NDArray[np.floating],
+    wavelengths: NDArray[np.floating],
     r2_threshold: float = 0.5,
     max_n100dBm_points: int = 30,
 ) -> tuple[
-    NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
+    NDArray[np.floating],
+    NDArray[np.floating],
+    NDArray[np.floating],
+    NDArray[np.floating],
 ]:
     """get_lorentzian_peaks
 
@@ -230,8 +232,8 @@ def get_lorentzian_peaks(
 
 
 def group_peaks(
-    peaks_wl: list[NDArray[np.float64]],
-    reference: NDArray[np.float64],
+    peaks_wl: list[NDArray[np.floating]],
+    reference: NDArray[np.floating],
 ) -> list[list[tuple[int, int]]]:
     """group_peaks
 
@@ -275,7 +277,7 @@ def group_peaks(
 
 
 def peaks_to_traces(
-    peaks: list[NDArray[np.float64]],
+    peaks: list[NDArray[np.floating]],
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 
@@ -299,7 +301,7 @@ def peaks_to_traces(
                 ]
             )
         )
-        population: NDArray[np.float64] = np.array(
+        population: NDArray[np.floating] = np.array(
             [p for sweep in peaks[::10] for p in sweep]
         )
         mean_population = np.mean(population, axis=0)
@@ -327,7 +329,7 @@ def peaks_to_traces(
             ps and cdist([ps[0][1:]], [last_peak[1:]], "cosine")[0][0] < 0.1
         ):
             shifts.append(ps[0][0] - last_peak[0])
-            last_peak: NDArray[np.float64] = ps[0]
+            last_peak: NDArray[np.floating] = ps[0]
             continue
         else:
             pairs = sorted(  # match other peaks in case that the peak correspond to the last peak is missing due to noise

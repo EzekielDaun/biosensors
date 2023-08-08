@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,
@@ -27,20 +27,11 @@ class RegulationPhaseShifterTab(RegulationTabBase):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QHBoxLayout())
 
-        __equation_web_engine_view = QWebEngineView()
-        __equation_web_engine_view.setHtml(
-            r"""
-             <html><head>
-             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-             </script></head>
-             <body>
-             <p><mathjax style="font-size:1.5em">
-             $$y=\frac{\text{FSR}}{P_{2\pi}} \frac{(x-V_\text{offset})^2}{R}$$
-             </mathjax></p>
-             </body></html>
-             """
+        equation = QSvgWidget(
+            ":/equations/resources/equations/regulation_phase_shifter.svg"
         )
-        self.layout().addWidget(__equation_web_engine_view)
+        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        self.layout().addWidget(equation)
 
         parameter_layout = QVBoxLayout()
 
@@ -112,20 +103,11 @@ class RegulationPolynomialTab(RegulationTabBase):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QHBoxLayout())
 
-        equation_web_engine_view = QWebEngineView()
-        equation_web_engine_view.setHtml(
-            r"""
-             <html><head>
-             <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-             </script></head>
-             <body>
-             <p><mathjax style="font-size:1.5em">
-             $$y=\sum_{i=0} a_i(x-x_i)^i$$
-             </mathjax></p>
-             </body></html>
-             """
+        equation = QSvgWidget(
+            ":/equations/resources/equations/regulation_polynomial.svg"
         )
-        self.layout().addWidget(equation_web_engine_view)
+        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        self.layout().addWidget(equation)
 
         parameter_layout = QVBoxLayout()
 
