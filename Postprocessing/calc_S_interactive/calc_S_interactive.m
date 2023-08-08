@@ -25,13 +25,11 @@ offsetCollation = 0;
 % are the input data units in nm or in m?  Set to 1 if data are in nm.
 data_nm = 1;
 
-% number of datapoints to average for each measurement
-num_avg = 10;
 % figure positions [x loc, y loc, width, height]
 fig1Pos = [103 490 450 200];
 fig2Pos = [103 490 600 400];
 fig3Pos = [103 490 900 400];
-legendStr2 = [];
+
 
 % load in the colormap file path
 mfilepath=fileparts(which('calc_S_interactive.m'));
@@ -46,7 +44,11 @@ if ~exist(fullfile(selpath, configFile), 'file')
 end
 cd(selpath);
 
-tbl = readtable(configFile);
+opts = detectImportOptions(configFile);
+opts = setvartype(opts, "Device_", 'string');
+opts = setvartype(opts, "NumAvg", 'double'); 
+tbl = readtable(configFile, opts);
+
 numFiles = height(tbl);
 initWidth = width(tbl);
 
@@ -62,12 +64,17 @@ collR2 = []; % the collated R^2 of our S_bulk fits
 
 % check whether our additional parameters have been added
 if initWidth > 6
+    collNum_Avg = []; % the number of datapoints averaged to calculate peak shift at each RI
     collFluidicChannel = []; % the fluidic channel
     collTapeout = []; % the photonic tapeout (for tracking)
+    collBoxNum = []; % the box number
     collChip = []; % the chip # (for tracking)
-    collExptName = []; % the experiment name (for tracking)
-    if initWidth > 11
+    collDevice = []; % the device # (for tracking)
+    collExptName = []; % the experiment name (for tracking)        
+    sensorTypeThresh = 14; % sets the number of columns expected before the sensor type field of the config file
+    if initWidth > sensorTypeThresh
         collSensorType = []; % the type of sensor
+        collRampNum = []; % the replicate ramp number
     end
 end
 
@@ -80,15 +87,19 @@ for fileIdx = 1:numFiles
     RIs = cell2mat(cellfun(@str2num,tbl{fileIdx,4},'uniform',0));
     outputPath = cell2mat(tbl{fileIdx, 5});
     numSensors = tbl{fileIdx, 6};
-    if width(tbl) > 6
-        channel1Sensors = cell2mat(cellfun(@str2num,tbl{fileIdx,7},'uniform',0)); % the sensors in fluidic channel 1
-        channel2Sensors = cell2mat(cellfun(@str2num,tbl{fileIdx,8},'uniform',0)); % the sensors in fluidic channel 2
-        tapeout = cell2mat(tbl{fileIdx, 9}); % the photonic tapeout (for tracking)
-        chip = tbl{fileIdx, 10}; % the chip # (for tracking)
-        exptName = cell2mat(tbl{fileIdx, 11}); % the name of the experiment (for tracking)
-        if width(tbl) > 11
-            sensorType = string(tbl{fileIdx,12}); % the type of sensor
+    if width(tbl) > 6 
+        num_avg = tbl{fileIdx, 7}; % number of datapoints to average for each measurement
+        channel1Sensors = cell2mat(cellfun(@str2num,tbl{fileIdx,8},'uniform',0)); % the sensors in fluidic channel 1
+        channel2Sensors = cell2mat(cellfun(@str2num,tbl{fileIdx,9},'uniform',0)); % the sensors in fluidic channel 2
+        tapeout = cell2mat(tbl{fileIdx, 10}); % the photonic tapeout (for tracking)
+        boxNum = tbl{fileIdx, 11}; % the box # (for tracking)
+        chip = tbl{fileIdx, 12}; % the chip # (for tracking)
+        device = string(cell2mat(tbl{fileIdx, 13})); % the device # (for tracking)
+        exptName = cell2mat(tbl{fileIdx, 14}); % the name of the experiment (for tracking)
+        if width(tbl) > sensorTypeThresh
+            sensorType = string(tbl{fileIdx,15}); % the type of sensor
             sensorType = split(sensorType, ',');
+            rampNum = tbl{fileIdx, 16}; % the ramp number for this ramp (to keep track of the replicate # when multiple ramps are run in a single experiment)
         end
     end
     outputFile = fullfile(outputPath,'Output.xlsx');
@@ -102,13 +113,20 @@ for fileIdx = 1:numFiles
     end
     
     % load in the data file
-    load(fullfile(filePath, 'peak_shifts.mat'))
+    if exist(fullfile(filePath, 'peak_shifts.mat'), 'file')
+        load(fullfile(filePath, 'peak_shifts.mat'))
+    elseif exist(fullfile(filePath, 'peak_shift.mat'), 'file')
+        load(fullfile(filePath, 'peak_shift.mat'))
+    else
+        error(['No data file found at: ', fullfile(filePath, 'peak_shift.mat')]);
+    end
     close all;
     
     % load in and plot the peak shift data
     h1 = figure(fileIdx); 
     
     clear legendStr;
+    legendStr2 = [];
     
     plottedSensors = 0;
     for sensorIdx = 1:numSensors
@@ -135,12 +153,14 @@ for fileIdx = 1:numFiles
                 evalin('base', ['powArray{fileIdx, sensorIdx} = ', 'power_', num2str(sensorIdx), '_peakWL_list;']);       
             else
                 warning(['Warning: no data for sensor ', num2str(sensorIdx)])
+                powArray{fileIdx, sensorIdx} = [];
             end
         else
             if size(collatedOffsets, 1) >= sensorIdx
                 powArray{fileIdx, sensorIdx} = collatedOffsets(sensorIdx, :);
             else 
                 warning(['Warning: no data for sensor ', num2str(sensorIdx)])
+                powArray{fileIdx, sensorIdx} = [];
             end
         end
         
@@ -173,6 +193,7 @@ for fileIdx = 1:numFiles
         title(['File ', num2str(fileIdx), ': RI region for ', num2str(bulkConc(RIidx)), ' ', solutionUnits, ': click on the x-location at the centre of the region to analyze']);
         [x,y,button] = ginput(1);
         RIloc(fileIdx, RIidx) = uint16(x);
+        disp(['Click RIloc = ', num2str(RIloc(fileIdx, RIidx))])
         % check that we have enough data on both sides of the click to do
         % the averaging, and correct and warn if not.
         if RIloc(fileIdx, RIidx) < num_avg/2+1
@@ -180,11 +201,19 @@ for fileIdx = 1:numFiles
             warning(['File ', num2str(fileIdx), ': RI region', num2str(RIidx), ...
                  'click too close to start of data to average.  Corrected.'])  
         end
-        if RIloc(fileIdx, RIidx) > (length(powArray{fileIdx, sensorIdx}) - (num_avg/2+1))
-            RIloc(fileIdx, RIidx) = (length(powArray{fileIdx, sensorIdx}) - (num_avg/2+1));
+        for sensorIdx = 1:numSensors
+            if ~isempty(powArray{fileIdx, sensorIdx})
+                dataLength = length(powArray{fileIdx, sensorIdx});
+                disp(['Using detector ', num2str(sensorIdx), ' to calculate data length.']);
+                break
+            end
+        end
+        if RIloc(fileIdx, RIidx) > (dataLength - (num_avg/2+1))
+            RIloc(fileIdx, RIidx) = (dataLength - (num_avg/2+1));
             warning(['File ', num2str(fileIdx), ': RI region', num2str(RIidx), ...
                  'click too close to end of data to average.  Corrected.'])
         end
+        disp(['Final RIloc = ', num2str(RIloc(fileIdx, RIidx))])
 
         % plot lines showing the averaged region
         figure(fileIdx); hold on; xline(double(RIloc(fileIdx, RIidx)-num_avg/2), ':k','HandleVisibility','off'); 
@@ -195,9 +224,16 @@ for fileIdx = 1:numFiles
         for sensorIdx = 1:numSensors
             temp = powArray{fileIdx, sensorIdx};
             if ~isempty(temp)
-                pkPos(fileIdx, sensorIdx, RIidx) = mean(temp(RIloc(fileIdx, RIidx)-num_avg/2:RIloc(fileIdx, RIidx)+num_avg/2));
-                shiftErrs(fileIdx, sensorIdx, RIidx) = 3*std(temp(RIloc(fileIdx, RIidx)-num_avg/2:RIloc(fileIdx, RIidx)+num_avg/2));
+                tempPkPos(sensorIdx, RIidx) = mean(temp(RIloc(fileIdx, RIidx)-num_avg/2:RIloc(fileIdx, RIidx)+num_avg/2));
+                tempShiftErrs(sensorIdx, RIidx) = 3*std(temp(RIloc(fileIdx, RIidx)-num_avg/2:RIloc(fileIdx, RIidx)+num_avg/2));
             end
+        end
+    end
+    
+    for sensorIdx = 1:numSensors
+        if ~isempty(powArray{fileIdx, sensorIdx})
+            pkPos{fileIdx, sensorIdx} = tempPkPos(sensorIdx, :);
+            shiftErrs{fileIdx, sensorIdx} = tempShiftErrs(sensorIdx, :);
         end
     end
     
@@ -207,13 +243,14 @@ for fileIdx = 1:numFiles
     RI_shift = RIs - RImin;
     for sensorIdx = 1:numSensors
         if ~isempty(powArray{fileIdx, sensorIdx})
+            pkPos_temp = pkPos{fileIdx, sensorIdx};
             if ~data_nm
-                pkShift(fileIdx, sensorIdx, :) = (pkPos(fileIdx, sensorIdx, :) - pkPos(fileIdx, sensorIdx, idx))*1e9;
+                pkShift{fileIdx, sensorIdx} = (pkPos{fileIdx, sensorIdx} - pkPos_temp(idx))*1e9;
             else
-                pkShift(fileIdx, sensorIdx, :) = (pkPos(fileIdx, sensorIdx, :) - pkPos(fileIdx, sensorIdx, idx));
+                pkShift{fileIdx, sensorIdx} = (pkPos{fileIdx, sensorIdx} - pkPos_temp(idx));
             end
             hold on;
-            errorbar(RI_shift', squeeze(pkShift(fileIdx, sensorIdx, :)), (squeeze(shiftErrs(fileIdx, sensorIdx, :)+shiftErrs(fileIdx, sensorIdx, idx))), '.', 'Color', newcolors(sensorIdx, :));
+            errorbar(RI_shift', squeeze(pkShift{fileIdx, sensorIdx}), (squeeze(shiftErrs{fileIdx, sensorIdx}+shiftErrs{fileIdx, sensorIdx})), '.', 'Color', newcolors(sensorIdx, :));
         end
     end
    
@@ -222,17 +259,17 @@ for fileIdx = 1:numFiles
     % fit the data with a linear regression (forcing zero intercept)
     for sensorIdx = 1:numSensors
         if ~isempty(powArray{fileIdx, sensorIdx})
-            S(fileIdx, sensorIdx) = RI_shift'\squeeze(pkShift(fileIdx, sensorIdx, :));
-            pkShift_fit(fileIdx, sensorIdx, :) = S(fileIdx, sensorIdx)*RI_shift;
-            Rsq(fileIdx, sensorIdx) = 1 - sum((pkShift(fileIdx, sensorIdx, :) - pkShift_fit(fileIdx, sensorIdx, :)).^2) ...
-                /sum((pkShift(fileIdx, sensorIdx, :) - mean(pkShift(fileIdx, sensorIdx, :))).^2);
+            S(fileIdx, sensorIdx) = RI_shift'\squeeze(pkShift{fileIdx, sensorIdx})';
+            pkShift_fit{fileIdx, sensorIdx} = S(fileIdx, sensorIdx)*RI_shift;
+            Rsq(fileIdx, sensorIdx) = 1 - sum((pkShift{fileIdx, sensorIdx} - pkShift_fit{fileIdx, sensorIdx}).^2) ...
+                /sum((pkShift{fileIdx, sensorIdx} - mean(pkShift{fileIdx, sensorIdx})).^2);
         end
     end
 
     hold on; 
     for sensorIdx = 1:numSensors
         if ~isempty(powArray{fileIdx, sensorIdx})
-            plot(RI_shift', squeeze(pkShift_fit(fileIdx, sensorIdx, :)), ':', 'Color', newcolors(sensorIdx, :), 'HandleVisibility','off'); 
+            plot(RI_shift', squeeze(pkShift_fit{fileIdx, sensorIdx}), ':', 'Color', newcolors(sensorIdx, :), 'HandleVisibility','off'); 
 
             legendStr2 = [legendStr2; {['Ch. ', num2str(sensorIdx), ': S=', num2str(S(fileIdx, sensorIdx)), ' nm/RIU', ...
                 ', R^2=', num2str(Rsq(fileIdx, sensorIdx))]}];
@@ -245,7 +282,7 @@ for fileIdx = 1:numFiles
     
     % plot the peak shift data with colour dependent on channel and more
     % descriptive legend, if the additional data were provided
-    if initWidth > 11
+    if initWidth > sensorTypeThresh
         h3 = figure(3*numFiles + fileIdx); 
         clear legendStr3;
         plottedSensors = 0;
@@ -306,17 +343,34 @@ for fileIdx = 1:numFiles
 
             % check whether our additional parameters have been added
             if initWidth > 6
+                collNum_Avg = [collNum_Avg; num_avg]; % number of averaged datapoints
                 collFluidicChannel = [collFluidicChannel; fluidicChannel(sensorIdx)]; % the fluidic channel
                 collTapeout = [collTapeout; string(tapeout)]; % the photonic tapeout (for tracking)
+                collBoxNum = [collBoxNum; boxNum]; % the box # (for tracking)
                 collChip = [collChip; chip]; % the chip # (for tracking)
-                collExptName = [collExptName; exptName]; % the experiment name (for tracking)
-                if initWidth > 11
+                collDevice = [collDevice; device]; % the device # (for tracking)
+                collExptName = [collExptName; string(exptName)]; % the experiment name (for tracking)
+                if initWidth > sensorTypeThresh
                     collSensorType = [collSensorType; sensorType(sensorIdx)]; % the type of sensor
                 end
             end
             
         end
+        
+        % clear the data before moving to the next file
+        if ~offsetCollation
+            chExist = evalin( 'base', ['exist(', '''power_', num2str(sensorIdx), '_peakWL_list''',',''var'') == 1'] );
+            if chExist
+                evalin('base', ['clear ', 'power_', num2str(sensorIdx), '_peakWL_list;']);       
+            else
+                warning(['Warning: no data for sensor ', num2str(sensorIdx)])
+            end
+        else
+            clear collatedOffsets
+        end
     end
+    
+    clear RI_shift tempPkPos tempShiftErrs
 end
     
 % output the data to a data output file
@@ -346,10 +400,10 @@ T2 = table(collSensorNum, collSensitivity, collR2, collFilePath, collBulkRIConc,
     collBulkRIUnits, collBulkRIs,'VariableNames',varNames);
 
 if initWidth > 6
-    T2 = addvars(T2, collExptName, collTapeout, collChip, collFluidicChannel, ...
-        'Before', 'Detector Number', 'NewVariableNames', {'Experiment Name', ...
-        'Tapeout Name', 'Chip #', 'Fluidic channel'});
-    if initWidth > 11
+    T2 = addvars(T2, collNum_Avg, collExptName, collTapeout, collBoxNum, collChip, collDevice, collFluidicChannel, ...
+        'Before', 'Detector Number', 'NewVariableNames', {'# Datapoints Averaged', 'Experiment Name', ...
+        'Tapeout Name', 'Box #', 'Chip #', 'Device #', 'Fluidic channel'});
+    if initWidth > sensorTypeThresh
         T2 = addvars(T2, collSensorType, 'NewVariableNames', 'Sensor type');
     end
 end
