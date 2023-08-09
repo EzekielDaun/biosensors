@@ -419,6 +419,9 @@ class AdvancedCSVReaderBase:
     def __iter__(self) -> Any:
         ...
 
+    def __len__(self) -> int:
+        ...
+
     @property
     def data_shape(self):
         filepath = [
@@ -445,6 +448,51 @@ class AdvancedCSVReaderBase:
 
 
 class AdvancedRampUpCSVReader(AdvancedCSVReaderBase):
+    def __len__(self):
+        files = [
+            os.path.join(self.folder_path, f)
+            for f in list(
+                filter(
+                    lambda x: self.pattern.match(x),
+                    iter(os.listdir(self.folder_path)),
+                )
+            )
+        ]
+
+        csv_data = CSVData(
+            files[0], self.skip_rows, self.skip_columns, self.ramp_channel
+        )
+
+        (
+            _,
+            offset,
+            offset_end,
+            num_period,
+            len_period,
+        ) = generate_sawtooth_from_data(csv_data.ramp, RampType.UP)
+        input: NDArray[np.floating] = sawtooth(
+            np.linspace(0, 2 * np.pi * 500, len_period * 500),
+            RampType.UP.value,  # type: ignore
+        )
+        input += 1
+        input *= 0.5
+        input -= self.x_min
+        input *= self.x_max - self.x_min
+        input += self.x_min
+        input = self.regulation_func(input)  # type: ignore
+        t, y, _ = lsim(
+            self.lti_sys,
+            input,
+            np.linspace(0, 500 / self.frequency, len(input)),
+        )
+        period = y[-len_period:]
+
+        out = np.concatenate([period for _ in range(num_period)])[offset:offset_end]
+
+        maxima, _ = find_peaks(out)
+
+        return len(maxima) * len(files)
+
     def __iter__(self):
         for filepath in [
             os.path.join(self.folder_path, f)
@@ -508,6 +556,51 @@ class AdvancedRampUpCSVReader(AdvancedCSVReaderBase):
 
 
 class AdvancedRampDownCSVReader(AdvancedCSVReaderBase):
+    def __len__(self):
+        files = [
+            os.path.join(self.folder_path, f)
+            for f in list(
+                filter(
+                    lambda x: self.pattern.match(x),
+                    iter(os.listdir(self.folder_path)),
+                )
+            )
+        ]
+
+        csv_data = CSVData(
+            files[0], self.skip_rows, self.skip_columns, self.ramp_channel
+        )
+
+        (
+            _,
+            offset,
+            offset_end,
+            num_period,
+            len_period,
+        ) = generate_sawtooth_from_data(csv_data.ramp, RampType.UP)
+        input: NDArray[np.floating] = sawtooth(
+            np.linspace(0, 2 * np.pi * 500, len_period * 500),
+            RampType.UP.value,  # type: ignore
+        )
+        input += 1
+        input *= 0.5
+        input -= self.x_min
+        input *= self.x_max - self.x_min
+        input += self.x_min
+        input = self.regulation_func(input)  # type: ignore
+        t, y, _ = lsim(
+            self.lti_sys,
+            input,
+            np.linspace(0, 500 / self.frequency, len(input)),
+        )
+        period = y[-len_period:]
+
+        out = np.concatenate([period for _ in range(num_period)])[offset:offset_end]
+
+        maxima, _ = find_peaks(out)
+
+        return len(maxima) * len(files)
+
     def __iter__(self):
         for filepath in [
             os.path.join(self.folder_path, f)
@@ -571,6 +664,52 @@ class AdvancedRampDownCSVReader(AdvancedCSVReaderBase):
 
 
 class AdvancedRampUpDownCSVReader(AdvancedCSVReaderBase):
+    def __len__(self):
+        files = [
+            os.path.join(self.folder_path, f)
+            for f in list(
+                filter(
+                    lambda x: self.pattern.match(x),
+                    iter(os.listdir(self.folder_path)),
+                )
+            )
+        ]
+
+        csv_data = CSVData(
+            files[0], self.skip_rows, self.skip_columns, self.ramp_channel
+        )
+
+        (
+            _,
+            offset,
+            offset_end,
+            num_period,
+            len_period,
+        ) = generate_sawtooth_from_data(csv_data.ramp, RampType.UP)
+        input: NDArray[np.floating] = sawtooth(
+            np.linspace(0, 2 * np.pi * 500, len_period * 500),
+            RampType.UP.value,  # type: ignore
+        )
+        input += 1
+        input *= 0.5
+        input -= self.x_min
+        input *= self.x_max - self.x_min
+        input += self.x_min
+        input = self.regulation_func(input)  # type: ignore
+        t, y, _ = lsim(
+            self.lti_sys,
+            input,
+            np.linspace(0, 500 / self.frequency, len(input)),
+        )
+        period = y[-len_period:]
+
+        out = np.concatenate([period for _ in range(num_period)])[offset:offset_end]
+
+        maxima, _ = find_peaks(out)
+        minima, _ = find_peaks(-out)
+
+        return (2 * min(len(maxima), len(minima)) - 1) * len(files)
+
     def __iter__(self):
         for filepath in [
             os.path.join(self.folder_path, f)
