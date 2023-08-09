@@ -979,7 +979,7 @@ class RaActiveConverterWindow(QMainWindow):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         for i, d in enumerate(result):
-            savemat(os.path.join(output_dir, f"laser_sweep_{i}.mat"), d)
+            savemat(os.path.join(output_dir, f"active_sweep_{i}.mat"), d)
         self.close()
 
     def slot_reject(self):
