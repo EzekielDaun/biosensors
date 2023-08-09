@@ -691,19 +691,19 @@ class RaActiveConverterWindow(QMainWindow):
         self.__conversion_method_periodic_response_plot.plot(
             t_plot,
             voltage_plot,
-            name="voltage ramp",
+            name="V_input",
             pen={"color": "r", "style": Qt.PenStyle.DashLine},
         )
         self.__conversion_method_periodic_response_plot.plot(
             t_plot,
             input_plot,
-            name="input",
+            name="lambda_target",
             pen={"color": "g", "style": Qt.PenStyle.DashLine},
         )
         self.__conversion_method_periodic_response_plot.plot(
             t_plot,
             y_plot,
-            name="output",
+            name="lambda_real",
         )
 
     def slot_on_plot_FSR_clicked(self):
