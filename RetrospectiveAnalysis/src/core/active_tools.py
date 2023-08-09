@@ -233,7 +233,7 @@ class CSVData:
     data: NDArray[np.floating] = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self):
-        data = np.loadtxt(self.file_path, delimiter=",", skiprows=self.skip_rows).T
+        data = np.loadtxt(self.file_path, delimiter=",", skiprows=self.skip_rows,encoding="cp1252").T
 
         self.ramp = data[self.ramp_channel]
         data = np.delete(data, self.ramp_channel, 0)

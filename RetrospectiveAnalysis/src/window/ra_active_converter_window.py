@@ -95,9 +95,9 @@ def _advanced_reader_to_scatter(
     for i, channel in enumerate(data):
         channel = channel[indices]
         sweep = SweepFitResult.from_data(channel, wls)
-        fsr = sweep.get_fsr()
+        fsr = sweep.get_fsr(0.0001)
         if len(fsr) >= 1:
-            wl = sweep.get_peaks().T[0]
+            wl = sweep.get_peaks(0.0001).T[0]
             for w, f in zip(wl, fsr):
                 scatters[i].append([w, f])
     return scatters

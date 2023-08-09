@@ -97,7 +97,7 @@ class SweepFitResult:
                         ],
                         [
                             wavelengths[right_base_index],
-                            10,
+                            100,
                             0,
                             max(wavelength_fixed) - min(wavelength_fixed),
                             np.inf,
