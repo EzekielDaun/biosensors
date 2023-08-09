@@ -807,14 +807,20 @@ class RaActiveConverterWindow(QMainWindow):
         for i in range(self.__ui.plotTabWidget.count()):
             tab: RaActiveConverterFSRTabWidget = self.__ui.plotTabWidget.widget(i)  # type: ignore
             points = np.array(scatter[i]).T
-            tab.set_scatter_plot(
-                points[0],
-                points[1],
-                fit=self.__ui.plotTrendlineCheckBox.isChecked(),
-                order=self.__ui.plotTrendlineOrderSpinBox.value(),
-                outlier_range=self.__ui.plotTrendlineOutlierRangeDoubleSpinBox.value()
-                * 1e-3,
-            )
+            try:
+                tab.set_scatter_plot(
+                    points[0],
+                    points[1],
+                    fit=self.__ui.plotTrendlineCheckBox.isChecked(),
+                    order=self.__ui.plotTrendlineOrderSpinBox.value(),
+                    outlier_range=self.__ui.plotTrendlineOutlierRangeDoubleSpinBox.value()
+                    * 1e-3,
+                )
+            except IndexError as e:
+                logger.warning(
+                    f"channel {i+1} plot failed for the following reason: {e}"
+                )
+                continue
         self.__ui.plotTabWidget.setEnabled(True)
         self.__ui.plotPushButton.setEnabled(True)
 
