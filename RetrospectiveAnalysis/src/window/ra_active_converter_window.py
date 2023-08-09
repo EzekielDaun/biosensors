@@ -4,7 +4,7 @@ import re
 import sys
 from collections.abc import Callable
 from functools import partial, reduce
-from itertools import cycle, islice, repeat
+from itertools import cycle, repeat
 from logging import getLogger
 from multiprocessing import Pool
 from typing import Any, Optional
@@ -23,6 +23,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
+    QLabel,
     QMainWindow,
     QMenu,
     QPushButton,
@@ -31,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 from scipy.io import savemat
 from scipy.signal import impulse2, lsim, sawtooth, step
+from tqdm import tqdm
 
 from ..core.active_tools import (
     AdvancedCSVReaderBase,
@@ -46,6 +48,7 @@ from ..core.active_tools import (
     SimpleRampUpDownCSVReader,
 )
 from ..core.lib import SweepFitResult
+from ..core.utils import tqdm_qt
 from ..uic.active import active_rc  # noqa: F401
 from ..uic.active.ra_active_converter_window import Ui_MainWindow
 from ..widgets.active.ra_conversion_tabs import (
@@ -61,6 +64,7 @@ from ..widgets.active.ra_regulation_tabs import (
     RegulationPolynomialTab,
     RegulationTabBase,
 )
+from ..widgets.lib.ra_progress_bar import RaProgressBar
 
 logger = getLogger(__name__)
 
@@ -126,6 +130,7 @@ def _advanced_reader_to_passive_format(
 class RaActiveConverterWindow(QMainWindow):
     __signal_write = Signal(str)
     signal_close = Signal()
+    signal_progress = Signal(dict)
 
     class __Worker(QThread):
         def __init__(self, f: Callable[[], Any], *args, **kwargs):
@@ -152,6 +157,13 @@ class RaActiveConverterWindow(QMainWindow):
         self.__folder_path = folder_path
         self.__csv_reader: SimpleRampUpCSVReader = None  # type: ignore
         self.__advanced_csv_reader: AdvancedCSVReaderBase = None  # type: ignore
+
+        # status bar
+        self.__ui.statusbar.addPermanentWidget(QLabel("RA Active Converter"))
+        self.__progress_bar = RaProgressBar()
+        self.__progress_bar.hide()
+        self.__ui.statusbar.addWidget(self.__progress_bar)
+        self.signal_progress.connect(self.slot_signal_progress)
 
         # sweep raw preview
         self.__sweep_raw_preview_widget = GraphicsLayoutWidget()
@@ -559,7 +571,7 @@ class RaActiveConverterWindow(QMainWindow):
                         pool.starmap(
                             _interpolate_2d_spectrogram_data,
                             zip(
-                                islice(map(lambda x: x[0], self.__csv_reader), 1000),
+                                map(lambda x: x[0], self.__csv_reader),
                                 repeat(interp_len),
                             ),
                         )
@@ -695,6 +707,10 @@ class RaActiveConverterWindow(QMainWindow):
         )
 
     def slot_on_plot_FSR_clicked(self):
+        self.__ui.statusbar.clearMessage()
+        self.__progress_bar.reset()
+        self.__progress_bar.show()
+
         conversion_tab: ConversionTabBase = self.__ui.conversionMethodStackedWidget.currentWidget()  # type: ignore
         system = conversion_tab.to_lti()
 
@@ -720,6 +736,7 @@ class RaActiveConverterWindow(QMainWindow):
                     v_max,
                     regulation_function,
                 )
+
             case RampType.DOWN:
                 self.__advanced_csv_reader = AdvancedRampDownCSVReader(
                     self.__folder_path,
@@ -765,15 +782,19 @@ class RaActiveConverterWindow(QMainWindow):
             with Pool() as pool:
                 return reduce(
                     acc_func,
-                    pool.map(
-                        partial(
-                            _advanced_reader_to_scatter,
-                            polarity=polarity,
-                            central_wavelength=central_wavelength,
+                    tqdm_qt(
+                        pool.imap(
+                            partial(
+                                _advanced_reader_to_scatter,
+                                polarity=polarity,
+                                central_wavelength=central_wavelength,
+                            ),
+                            self.__advanced_csv_reader,
                         ),
-                        self.__advanced_csv_reader,
+                        total=len(self.__advanced_csv_reader),
+                        qt_signal=self.signal_progress,
                     ),
-                    [[] for i in range(self.__advanced_csv_reader.data_shape[0])],
+                    [[] for _ in range(self.__advanced_csv_reader.data_shape[0])],
                 )
 
         self.__fsr_worker = self.__Worker(f)
@@ -796,6 +817,11 @@ class RaActiveConverterWindow(QMainWindow):
             )
         self.__ui.plotTabWidget.setEnabled(True)
         self.__ui.plotPushButton.setEnabled(True)
+
+        # set progress bar to 100%
+        self.__progress_bar.text_left = ""
+        self.__progress_bar.text_right = "Done"
+        self.__progress_bar.value = self.__progress_bar.maximum
 
         # trigger this slot to update the equalized stream plot
         self.slot_on_sweep_raw_preview_file_changed()
@@ -881,16 +907,18 @@ class RaActiveConverterWindow(QMainWindow):
         def f():
             with Pool() as pool:
                 return list(
-                    pool.starmap(
-                        _advanced_reader_to_passive_format,
-                        zip(
-                            self.__advanced_csv_reader,
-                            repeat(polarity),
-                            repeat(
-                                self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value()
+                    tqdm_qt(
+                        pool.imap(
+                            partial(
+                                _advanced_reader_to_passive_format,
+                                polarity=polarity,
+                                central_wavelength=self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value(),
+                                interp_len=interp_len,
                             ),
-                            repeat(interp_len),
+                            self.__advanced_csv_reader,
                         ),
+                        total=len(self.__advanced_csv_reader),
+                        qt_signal=self.signal_progress,
                     )
                 )
 
@@ -932,6 +960,10 @@ class RaActiveConverterWindow(QMainWindow):
         csv_config.to_csv(csv_config_path)
         logger.info(f"RA-Active-Converter config csv file saved to {csv_config_path}")
 
+        self.__ui.statusbar.clearMessage()
+        self.__progress_bar.reset()
+        self.__progress_bar.show()
+
         self.setEnabled(False)
         self.__convert_worker.start()
 
@@ -946,3 +978,28 @@ class RaActiveConverterWindow(QMainWindow):
 
     def slot_reject(self):
         self.close()
+
+    # Progress bar slot
+    def slot_signal_progress(self, format_dict: dict):
+        n = format_dict["n"]
+        total = format_dict["total"]
+        elapsed = format_dict["elapsed"]
+        rate = format_dict["rate"]
+
+        self.__progress_bar.value = n
+        self.__progress_bar.maximum = total
+
+        if all([n, total, elapsed, rate]):
+            elapsed_time = tqdm.format_interval(elapsed)
+            remaining_time = tqdm.format_interval((total - n) / rate)
+            rate_str = f"{rate:.2f}/s"
+
+            self.__progress_bar.text_left = (
+                f"{n}/{total}({n/total*100:.2f}%) {rate_str} {elapsed_time}"
+            )
+            self.__progress_bar.text_right = f"{remaining_time}"
+        else:
+            self.__progress_bar.text_left = ""
+            self.__progress_bar.text_right = (
+                "" if format_dict["n"] != format_dict["total"] else "Done"
+            )
