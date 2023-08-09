@@ -278,6 +278,7 @@ def group_peaks(
 
 def peaks_to_traces(
     peaks: list[NDArray[np.floating]],
+    weights: NDArray[np.floating] = np.array([1, 1, 1, 1, 1]),
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 
@@ -289,6 +290,15 @@ def peaks_to_traces(
     Returns:
         tuple[list[list[float]], float]: ([traces], FSR)
     """
+
+    def __cosine_similarity(a, b):
+        return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
+
+    def __weighted_distance_with_x0(a, b):
+        return __cosine_similarity(a * weights, b * weights)
+
+    def __weighted_distance_without_x0(a, b):
+        return __cosine_similarity((a * weights)[1:], (b * weights)[1:])
 
     try:
         FSR = float(
@@ -319,14 +329,13 @@ def peaks_to_traces(
     for i, (p1s, p2s) in pair_iter:
         ps = sorted(  # possible peaks in p2s to pair with the last peak
             [p for p in p2s if abs(p[0] - last_peak[0]) < 0.3 * FSR],
-            key=lambda x: cdist(
-                [(x[1:] - mean_population[1:]) / std_population[1:]],
-                [(last_peak[1:] - mean_population[1:]) / std_population[1:]],
-                "cosine",
-            )[0][0],
+            key=lambda x: __weighted_distance_without_x0(
+                (x - mean_population) / std_population,
+                (last_peak - mean_population) / std_population,
+            ),
         )
         if (  # normal case, a small shift near the last tracked peak is found and their shapes are similar
-            ps and cdist([ps[0][1:]], [last_peak[1:]], "cosine")[0][0] < 0.1
+            ps and __weighted_distance_without_x0(ps[0], last_peak) < 0.1
         ):
             shifts.append(ps[0][0] - last_peak[0])
             last_peak: NDArray[np.floating] = ps[0]
@@ -334,25 +343,20 @@ def peaks_to_traces(
         else:
             pairs = sorted(  # match other peaks in case that the peak correspond to the last peak is missing due to noise
                 product([p for p in p1s if p[0] != last_peak[0]], p2s),
-                key=lambda x: cdist(
-                    # contain x0 or not
-                    # [(x[0][1:] - mean_population[1:]) / std_population[1:]],
-                    # [(x[1][1:] - mean_population[1:]) / std_population[1:]],
-                    [(x[0][:] - mean_population[:]) / std_population[:]],
-                    [(x[1][:] - mean_population[:]) / std_population[:]],
-                    "cosine",
-                )[0][0],
+                key=lambda x: __weighted_distance_with_x0(
+                    (x[0] - mean_population) / std_population[:],
+                    (x[1] - mean_population) / std_population[:],
+                ),
             )
             if (
                 # if no other peaks in p1s
                 len(pairs) <= 0
                 or
                 # if the minimum difference in shape is still too large
-                cdist(
-                    [(pairs[0][0][1:] - mean_population[1:]) / std_population[1:]],
-                    [(pairs[0][1][1:] - mean_population[1:]) / std_population[1:]],
-                    "cosine",
-                )[0][0]
+                __weighted_distance_without_x0(
+                    (pairs[0][0] - mean_population) / std_population,
+                    (pairs[0][1] - mean_population) / std_population,
+                )
                 > 0.1
             ):
                 shifts.append(np.nan)
