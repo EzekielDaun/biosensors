@@ -294,11 +294,14 @@ def peaks_to_traces(
     def __cosine_similarity(a, b):
         return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
 
+    def __euclidean_distance(a, b):
+        return cdist(np.array([a]), np.array([b]), "euclidean")[0][0]
+
     def __weighted_distance_with_x0(a, b):
-        return __cosine_similarity(a * weights, b * weights)
+        return __euclidean_distance(a * weights, b * weights)
 
     def __weighted_distance_without_x0(a, b):
-        return __cosine_similarity((a * weights)[1:], (b * weights)[1:])
+        return __euclidean_distance((a * weights)[1:], (b * weights)[1:])
 
     try:
         FSR = float(
@@ -335,7 +338,7 @@ def peaks_to_traces(
             ),
         )
         if (  # normal case, a small shift near the last tracked peak is found and their shapes are similar
-            ps and __weighted_distance_without_x0(ps[0], last_peak) < 0.1
+            ps and __weighted_distance_without_x0(ps[0], last_peak) < 2.5
         ):
             shifts.append(ps[0][0] - last_peak[0])
             last_peak: NDArray[np.floating] = ps[0]
@@ -344,8 +347,8 @@ def peaks_to_traces(
             pairs = sorted(  # match other peaks in case that the peak correspond to the last peak is missing due to noise
                 product([p for p in p1s if p[0] != last_peak[0]], p2s),
                 key=lambda x: __weighted_distance_with_x0(
-                    (x[0] - mean_population) / std_population[:],
-                    (x[1] - mean_population) / std_population[:],
+                    (x[0] - mean_population) / std_population,
+                    (x[1] - mean_population) / std_population,
                 ),
             )
             if (
@@ -357,7 +360,7 @@ def peaks_to_traces(
                     (pairs[0][0] - mean_population) / std_population,
                     (pairs[0][1] - mean_population) / std_population,
                 )
-                > 0.1
+                > 2.5
             ):
                 shifts.append(np.nan)
                 logger.warning(
