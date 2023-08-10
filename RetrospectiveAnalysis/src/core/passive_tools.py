@@ -165,6 +165,12 @@ class PassiveAnalyzer(object):
             for k, v in sweep_fit_dict.items()
         }
 
+        for k, v in peaks_dict.items():
+            if v[0].shape[0] == 0:
+                raise RuntimeError(
+                    f"The first sweep in channel {k+1} has no peaks detected. Consider adjusting the R2 threshold, -100dBm threshold or skipping this sweep."
+                )
+
         return {k: peaks_to_traces(v) for k, v in peaks_dict.items()}, peaks_dict
 
     def analyze_fsr_er_q(
