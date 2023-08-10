@@ -41,6 +41,7 @@ class CorvusEcoClass:
     name = "CorvusEco"
     isMotor = True
     isLaser = False
+    isTEC = False
 
     def connect(self, visaName, rm, Velocity, Acceleration, NumberOfAxis):
         self.ser = rm.open_resource(visaName)  # Connects to device with pyVisa

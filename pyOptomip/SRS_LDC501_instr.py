@@ -3,16 +3,24 @@ import pyvisa as visa
 import time
 
 class SRS_LDC501():
+    name = "TEC_LDC"
+    isMotor = False
+    isLaser = False
+    isTEC = True
+
+    temp_min = 20
+    temp_max = 40
 
     def __init__(self):
         self.connected = False
+        self.useLDC = False
 
     def __del__(self):
         if self.connected:
             self.disconnect()
     def connect(self,visaAddr):
         self.rm = visa.ResourceManager()
-        print(self.rm.list_resources())
+        #print(self.rm.list_resources())
         self.instrument = self.rm.open_resource(visaAddr)
         print(self.instrument.query("*IDN?")) #Requests the device for identification
         self.connected = True
@@ -27,6 +35,29 @@ class SRS_LDC501():
     def getTemperature(self):
         res = self.instrument.query('TTRD?')
         #print('LD temperature: %g degC'%float(res))
+        return(float(res))
+
+    def getTemplimit(self):
+        min = self.instrument.query('TMIN?')
+        self.temp_max = min
+        max = self.instrument.query('TMAX?')
+        self.temp_max = max
+
+        return float(min), float(max)
+
+    def getTECVoltage(self):
+        res = self.instrument.query('TVRD?')
+        #print('TEC Voltage: %g V'%float(res))
+        return(float(res))
+
+    def getTECCurrent(self):
+        res = self.instrument.query('TIRD?')
+        #print('TEC Voltage: %g V'%float(res))
+        return(float(res))
+
+    def getTECThermometerReading(self):
+        res = self.instrument.query('TRAW?')
+        #print('TEC Raw Thermometer Reading: %g kOhm'%float(res))
         return(float(res))
 
     def sync(self):

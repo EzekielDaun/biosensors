@@ -34,6 +34,8 @@ class hp816x(object):
     name = "hp816x"
     isMotor = False
     isLaser = True
+    isTEC = False
+
     # Slot info
     hp816x_UNDEF = 0
     hp816x_SINGLE_SENSOR = 1
