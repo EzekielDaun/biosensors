@@ -1,0 +1,43 @@
+{
+    "device": {
+      "isN77": false,
+      "isOBand": false,
+      "tec1": false,
+      "stage": false
+    },
+    "logging": {
+      "tec1": [],
+      "HP816x" : [],
+      "N77" : []
+    },
+    "default": {
+      "time": 20,
+      "sweep": 100,
+      "laserIntensity": 0,
+      "outputPath": "C:/Users/piram/Desktop/test",
+      "startWavelength": null ,
+      "endWavelength": null,
+      "sweepStep": 0.008,
+      "sweepSpeed": "5",
+      "fineAlignWavelength": "" ,
+      "tec1Temp": 22,
+      "ldc1Current": 10
+    },
+   "segment": {
+      "time": [],
+      "sweep": [],
+      "outputPath": [],
+      "laserIntensity": [],
+      "startWavelength": [],
+      "endWavelength": [],
+      "sweepStep": [],
+      "sweepSpeed" : [],
+      "fineAlignWavelength": [],
+      "tec1Temp": [],
+      "ldc1Current": [],
+       "isTime": false
+  },
+  "fineAlign": {
+    "wavelength" : 1550
+  }
+}
