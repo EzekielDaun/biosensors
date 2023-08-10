@@ -262,7 +262,7 @@ def group_peaks(
             / 2,  # set a large step to check horizontal line only
         )
     )
-    rhos = lines.T[1]
+    rhos = np.array(lines.T[1], ndmin=1)
 
     groups: list[list[tuple[int, int]]] = [[] for _ in range(len(rhos))]
     EPSILON = 0.1
