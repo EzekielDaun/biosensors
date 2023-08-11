@@ -10,6 +10,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from scipy.spatial.distance import cdist
 from sklearn.metrics import r2_score
+from sklearn.preprocessing import MinMaxScaler
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class SweepFitResult:
                         ],
                         [
                             wavelengths[right_base_index],
-                            100,
+                            np.inf,
                             0,
                             max(wavelength_fixed) - min(wavelength_fixed),
                             np.inf,
@@ -109,20 +110,21 @@ class SweepFitResult:
                 r2: float = r2_score(  # type: ignore
                     power_fixed, lorentzian(wavelength_fixed, x0, y0, _i, gamma, a)
                 )
-                xs = wavelengths[left_base_index:right_base_index]
 
-                # convert to linear scale for Q calculation
-                ys_linear = 10 ** ((powers[left_base_index:right_base_index]) / 10)
-                ys_linear *= 1e3  # value too small will cause nonsense fitting result
+                power_fixed_linear_scaled = (
+                    MinMaxScaler()
+                    .fit_transform(10 ** (power_fixed / 10).reshape(-1, 1))
+                    .squeeze()
+                )
 
                 params_linear, _ = curve_fit(
                     f=lorentzian,
-                    xdata=xs,
-                    ydata=ys_linear,
+                    xdata=wavelength_fixed,
+                    ydata=power_fixed_linear_scaled,
                     p0=[
                         x0,
                         0,
-                        -1e3 * 1e-3,
+                        -0.5,
                         0.01
                         * (
                             wavelengths[right_base_index] - wavelengths[left_base_index]
@@ -130,8 +132,8 @@ class SweepFitResult:
                         0,
                     ],
                     bounds=(
-                        [wavelengths[left_base_index], 0, -1e3, 0, -np.inf],
-                        [np.inf, 1, 0, np.inf, np.inf],
+                        [wavelengths[left_base_index], 0, -2, 0, -np.inf],
+                        [wavelengths[right_base_index], 1, 0, np.inf, np.inf],
                     ),
                 )
 
