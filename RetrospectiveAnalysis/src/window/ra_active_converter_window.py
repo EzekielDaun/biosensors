@@ -607,7 +607,7 @@ class RaActiveConverterWindow(QMainWindow):
             plot_item.setLabel(axis="bottom", text="Sweep Number")
             plot_item.setLabel(axis="left", text="Voltage", units="V")
             plot_item.setTitle(
-                f"{self.__ui.rawPreviewFileComboBox.currentText()} Channel {i+1}"
+                f"Channel {i+1}"
             )
             if view_box is None:
                 view_box = plot_item.getViewBox()
