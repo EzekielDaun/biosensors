@@ -57,7 +57,10 @@ class RaActiveConverterFSRTabWidget(QWidget):
             self.__left_plot_widget.getPlotItem().addItem(ScatterPlotItem(x[indices_outliers], y[indices_outliers], name="outliers", symbol="o", brush=None))  # type: ignore
             self.__left_plot_widget.getPlotItem().addItem(ScatterPlotItem(x[indices_in_range], y[indices_in_range], name="scatter plot"))  # type: ignore
 
-            r2 = r2_score(y[indices_in_range], fit_curve[indices_in_range])
+            try:
+                r2 = r2_score(y[indices_in_range], fit_curve[indices_in_range])
+            except Exception:
+                r2 = np.nan
 
             std = np.std(y[indices_in_range])
 

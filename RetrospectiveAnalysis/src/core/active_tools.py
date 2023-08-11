@@ -233,7 +233,9 @@ class CSVData:
     data: NDArray[np.floating] = field(default_factory=lambda: np.array([]))
 
     def __post_init__(self):
-        data = np.loadtxt(self.file_path, delimiter=",", skiprows=self.skip_rows,encoding="cp1252").T
+        data = np.loadtxt(
+            self.file_path, delimiter=",", skiprows=self.skip_rows, encoding="cp1252"
+        ).T
 
         self.ramp = data[self.ramp_channel]
         data = np.delete(data, self.ramp_channel, 0)
@@ -795,7 +797,11 @@ def generate_sawtooth_from_data(data: NDArray[np.floating], ramp_type: RampType)
         ),
         ramp_type.value,  # type: ignore
     )
-    offset: int = length_period - minima[0]
+    offset: int = (
+        length_period - minima[0]
+        if length_period > minima[0]
+        else 2 * length_period - minima[0]
+    )
     offset_end: int = -(len(make_up) - len(data) - offset)
     make_up: NDArray[np.floating] = make_up[offset:offset_end]
 
