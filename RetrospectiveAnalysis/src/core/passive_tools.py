@@ -3,8 +3,11 @@ import logging
 import multiprocessing as mp
 import os
 import re
-from functools import partial, reduce
-from typing import Optional
+from abc import abstractmethod
+from dataclasses import dataclass
+from functools import lru_cache, partial, reduce
+from itertools import islice
+from typing import Iterator
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,6 +20,96 @@ from .utils import tqdm_qt
 logger = logging.getLogger(__name__)
 
 
+Data = tuple[float, NDArray[np.floating], NDArray[np.floating]]
+Sweep = NDArray[np.floating]
+
+
+class DataReaderBase:
+    @abstractmethod
+    def __iter__(self) -> Iterator[Data]:
+        # return the timestamp, wavelength of a sweep and the sweep 2D power data itself
+        ...
+
+    @abstractmethod
+    def __len__(self) -> int:
+        ...
+
+    @abstractmethod
+    def __getitem__(self, index: int) -> Data:
+        ...
+
+    @abstractmethod
+    def sweep_only(self) -> Iterator[Sweep]:
+        ...
+
+
+@lru_cache
+def read_mat(file_path: str) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
+    mat: dict[str, NDArray[np.floating]] = loadmat(file_path)
+    power = np.array(mat["power"]).transpose()
+    wavelengths = np.array(mat["wavelength"][0])
+    if power.shape[1] != wavelengths.shape[0]:
+        raise RuntimeError("Number of wavelengths and powers do not match")
+    return (power, wavelengths)
+
+
+@dataclass(frozen=True)
+class MatDataReader(DataReaderBase):
+    files: list[str]
+    timestamps: NDArray[np.floating]
+
+    @staticmethod
+    def new(
+        files: list[str],
+        timestamp_input: str | float,
+        multiplier: float = 1,
+    ):
+        match timestamp_input:
+            case float():
+                return MatDataReader(
+                    files=files,
+                    timestamps=np.arange(len(files)) * timestamp_input,
+                )
+            case str():
+                with open(timestamp_input) as csv_file:
+                    time_dict: dict[str, float] = {
+                        str(row[1]): float(row[2])
+                        for row in csv.reader(csv_file, delimiter=",")
+                        if len(row) >= 3 and row[2] != ""
+                    }
+                    base_names = [os.path.basename(f) for f in files if f in time_dict]  # type: ignore
+                    timestamps = (
+                        np.array(
+                            [time_dict.get(k) for k in base_names], dtype=np.float64
+                        )
+                        * multiplier
+                    )
+                    return MatDataReader(files=files, timestamps=timestamps)
+
+    def __iter__(self) -> Iterator[Data]:
+        for t, f in zip(self.timestamps, self.files):
+            power, wavelength = read_mat(f)
+            yield t, wavelength, power
+
+    def __len__(self) -> int:
+        return len(self.files)
+
+    def __getitem__(self, index: int) -> Data:
+        power, wavelength = read_mat(self.files[index])
+        timestamp = self.timestamps[index]
+        return timestamp, wavelength, power
+
+    def sweep_only(self) -> Iterator[Sweep]:
+        for _, _, power in self:
+            yield power
+
+
+def _powers_to_sweep_fit_results(
+    powers: NDArray[np.floating], wavelengths: NDArray[np.floating], channels: set[int]
+):
+    return {c: [SweepFitResult.from_data(powers[c], wavelengths)] for c in channels}
+
+
 class PassiveAnalyzer(object):
     def __init__(
         self,
@@ -25,55 +118,23 @@ class PassiveAnalyzer(object):
         pattern: str = r".*sweep_(\d+)\.mat",
         timestamp_multiplier: float = 1 / 60,
     ):
-        self.__folder_path = folder_path
-
         pat = re.compile(pattern)
-        self.__filenames = sorted(
+        filenames = sorted(
             list(filter(lambda x: pat.match(x), iter(os.listdir(folder_path)))),
             key=lambda x: int(pat.match(x).group(1)),  # type: ignore
         )
-
-        self.__timestamps: NDArray[np.floating] = np.array([])
-        if type(timestamp) is str:
-            with open(os.path.join(self.__folder_path, timestamp), "r") as csv_file:
-                time_dict: dict[int, float] = {
-                    int(row[0]): float(row[2])
-                    for row in csv.reader(csv_file, delimiter=",")
-                    if len(row) >= 3 and row[2] != ""
-                }
-                self.__filenames = [
-                    f
-                    for f in self.__filenames
-                    if int(pat.match(f).group(1)) in time_dict  # type: ignore
-                ]
-                self.__timestamps = (
-                    np.array(
-                        [
-                            time_dict[int(pat.match(s).group(1))] for s in self.__filenames  # type: ignore
-                        ]
-                    )
-                    * timestamp_multiplier
-                )
-        elif type(timestamp) is float:
-            self.__timestamps = np.array(list(range(len(self.__filenames)))) * timestamp
-        else:
-            raise RuntimeError(
-                "Timestamp must be a filename string or a time interval float"
-            )
-
-        # check the first file for wavelengths, assume all files have the same wavelengths
-        self.__wavelengths = read_mat(
-            os.path.join(self.__folder_path, self.__filenames[0])
-        )[1]
-        self.__wavelengths *= 1e9  # assume input in m and convert to nm
+        self.__data_reader: DataReaderBase = MatDataReader.new(
+            filenames, timestamp, timestamp_multiplier
+        )
 
     @property
     def timestamps(self):
-        return self.__timestamps
+        return [t for t, _, _ in self.__data_reader]
 
     @property
     def wavelengths(self):
-        return self.__wavelengths
+        _, wavelengths, _ = self.__data_reader[0]
+        return wavelengths * 1e9
 
     def info(self) -> tuple[int, int]:
         """Get the number of files in the folder and the number of powers in the first file.
@@ -81,9 +142,9 @@ class PassiveAnalyzer(object):
         Returns:
             Tuple[number_of_files, number_of_powers]
         """
-        return len(self.__filenames), len(
-            read_mat(os.path.join(self.__folder_path, self.__filenames[0]))[0]
-        )
+        _, _, powers = self.__data_reader[0]
+
+        return len(self.__data_reader), powers.shape[0]
 
     def get_spectrograms(
         self,
@@ -102,8 +163,9 @@ class PassiveAnalyzer(object):
             `data`: Dict[K:`index`, V:`spectrogram`], where `spectrogram` is ready to be plotted with matplotlib.imshow()
         """
         data: dict[int, NDArray[np.floating]] = {}
-        for f in self.__filenames[start_index:stop_index:step]:
-            matrix, _ = read_mat(os.path.join(self.__folder_path, f))
+        for matrix in islice(
+            self.__data_reader.sweep_only(), start_index, stop_index, step
+        ):
             for key in channels:
                 vector = np.flip(np.array([matrix[key]])).transpose()
                 data[key] = np.hstack((data[key], vector)) if key in data else vector
@@ -112,10 +174,9 @@ class PassiveAnalyzer(object):
     def analyze(
         self,
         channels: set[int],
-        start_stop_step: tuple[int, Optional[int], int],
+        start_stop_step: tuple[int, int, int],
         r2_threshold: float,
         max_n100dBm_points: int,
-        enable_multi_processing: bool = True,
         qt_signal=None,
     ):
         """analyze
@@ -133,32 +194,27 @@ class PassiveAnalyzer(object):
                 - traces: (list of list of floats, FSR), the traces start at an actual peak wavelength in spectrogram.
                 - peaks: list of sweep matrix, indexes are sweep number and values are rows of sweep vectors.
         """
-
-        def __map(*args, **kwargs):
-            if enable_multi_processing:
-                process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-                return mp.Pool(processes=max(1, process_num - 2)).imap(
-                    *args, **kwargs
-                )  # reserve one for GUI and one for other programs
-            else:
-                return map(*args, **kwargs)
-
         start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
 
-        sweep_fit_dict: dict[int, list[SweepFitResult]] = reduce(
-            lambda acc, b: {
-                x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
-            },
-            tqdm_qt(
-                __map(
-                    partial(mat_to_sweep_fit_results, channels=channels),
-                    self.__filenames[start:stop:step],
+        with mp.Pool() as pool:
+            sweep_fit_dict: dict[int, list[SweepFitResult]] = reduce(
+                lambda acc, b: {
+                    x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
+                },
+                tqdm_qt(
+                    pool.imap(
+                        partial(
+                            _powers_to_sweep_fit_results,
+                            wavelengths=self.wavelengths,
+                            channels=channels,
+                        ),
+                        islice(self.__data_reader.sweep_only(), start, stop, step),
+                    ),
+                    total=(stop - start) // step,
+                    qt_signal=qt_signal,
                 ),
-                total=len(self.__filenames[start:stop:step]),
-                qt_signal=qt_signal,
-            ),
-            {},
-        )
+                {},
+            )
 
         peaks_dict = {
             k: [s.get_peaks(r2_threshold, max_n100dBm_points) for s in v]
@@ -176,35 +232,30 @@ class PassiveAnalyzer(object):
     def analyze_fsr_er_q(
         self,
         channels: set[int],
-        start_stop_step: tuple[int, Optional[int], int],
+        start_stop_step: tuple[int, int, int],
         r2_threshold: float,
         max_n100dBm_points: int,
-        enable_multi_processing: bool = True,
     ):
-        def __map(*args, **kwargs):
-            if enable_multi_processing:
-                process_num: int = 1 if os.cpu_count() is None else os.cpu_count()  # type: ignore
-                return mp.Pool(processes=max(1, process_num - 2)).imap(
-                    *args, **kwargs
-                )  # reserve one for GUI and one for other programs
-            else:
-                return map(*args, **kwargs)
-
         start, stop, step = start_stop_step[0], start_stop_step[1], start_stop_step[2]
 
-        sweep_fit_dict: dict[int, list[SweepFitResult]] = reduce(
-            lambda acc, b: {
-                x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
-            },
-            tqdm(
-                __map(
-                    partial(mat_to_sweep_fit_results, channels=channels),
-                    self.__filenames[start:stop:step],
+        with mp.Pool() as pool:
+            sweep_fit_dict: dict[int, list[SweepFitResult]] = reduce(
+                lambda acc, b: {
+                    x: acc.get(x, []) + b.get(x, []) for x in set(acc).union(b)  # type: ignore
+                },
+                tqdm(
+                    pool.imap(
+                        partial(
+                            _powers_to_sweep_fit_results,
+                            wavelengths=self.wavelengths,
+                            channels=channels,
+                        ),
+                        islice(self.__data_reader.sweep_only(), start, stop, step),
+                    ),
+                    total=(stop - start) // step,
                 ),
-                total=len(self.__filenames[start:stop:step]),
-            ),
-            {},
-        )
+                {},
+            )
 
         return {
             k: [
@@ -217,19 +268,3 @@ class PassiveAnalyzer(object):
             ]
             for k, v in sweep_fit_dict.items()
         }
-
-
-def read_mat(
-    file_path: str,
-) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
-    mat: dict[str, NDArray[np.floating]] = loadmat(file_path)
-    power = np.array(mat["power"]).transpose()
-    wavelengths = np.array(mat["wavelength"][0])
-    if power.shape[1] != wavelengths.shape[0]:
-        raise RuntimeError("Number of wavelengths and powers do not match")
-    return (power, wavelengths)
-
-
-def mat_to_sweep_fit_results(file_path: str, channels: set[int]):
-    power, wavelength = read_mat(file_path)
-    return {c: [SweepFitResult.from_data(power[c], wavelength * 1e9)] for c in channels}
