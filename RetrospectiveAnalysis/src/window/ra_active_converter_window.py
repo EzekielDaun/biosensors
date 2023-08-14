@@ -104,12 +104,13 @@ def _advanced_reader_to_scatter(
 
 
 def _advanced_reader_to_passive_format(
-    ref_data_start_stop: tuple[NDArray, NDArray, int, int],
+    index_ref_data_start_stop: tuple[int, tuple[NDArray, NDArray, int, int]],
     polarity: int,
     central_wavelength: float,
     interp_len: int,
+    output_dir: str,
 ):
-    ref, data, start, stop = ref_data_start_stop
+    index, (ref, data, start, stop) = index_ref_data_start_stop
     wls = ref * polarity + central_wavelength
     indices = np.argsort(wls)
     wls = wls[indices]
@@ -124,7 +125,8 @@ def _advanced_reader_to_passive_format(
         "power": np.array(power_2d).T,
         "wavelength": 1e-9 * wls_interp,
     }
-    return ret
+
+    savemat(os.path.join(output_dir, f"active_sweep_{index}.mat"), ret)
 
 
 class RaActiveConverterWindow(QMainWindow):
@@ -606,9 +608,7 @@ class RaActiveConverterWindow(QMainWindow):
             plot_item = PlotItem()
             plot_item.setLabel(axis="bottom", text="Sweep Number")
             plot_item.setLabel(axis="left", text="Voltage", units="V")
-            plot_item.setTitle(
-                f"Channel {i+1}"
-            )
+            plot_item.setTitle(f"Channel {i+1}")
             if view_box is None:
                 view_box = plot_item.getViewBox()
             else:
@@ -910,6 +910,10 @@ class RaActiveConverterWindow(QMainWindow):
 
         interp_len = self.__ui.rawSpectrogramInterpolateSpinBox.value()
 
+        output_dir = self.__ui.outputPathComboBox.currentText()
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
         def f():
             with Pool() as pool:
                 return list(
@@ -920,8 +924,9 @@ class RaActiveConverterWindow(QMainWindow):
                                 polarity=polarity,
                                 central_wavelength=self.__ui.conversionMethodOutputOffsetDoubleSpinBox.value(),
                                 interp_len=interp_len,
+                                output_dir=output_dir,
                             ),
-                            self.__advanced_csv_reader,
+                            enumerate(self.__advanced_csv_reader),
                         ),
                         total=len(self.__advanced_csv_reader),
                         qt_signal=self.signal_progress,
@@ -974,12 +979,6 @@ class RaActiveConverterWindow(QMainWindow):
         self.__convert_worker.start()
 
     def slot_on_conversion_done(self):
-        result = self.__convert_worker.result
-        output_dir = self.__ui.outputPathComboBox.currentText()
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        for i, d in enumerate(result):
-            savemat(os.path.join(output_dir, f"active_sweep_{i}.mat"), d)
         self.close()
 
     def slot_reject(self):
