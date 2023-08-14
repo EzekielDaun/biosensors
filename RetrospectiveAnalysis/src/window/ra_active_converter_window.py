@@ -48,7 +48,7 @@ from ..core.active_tools import (
     SimpleRampUpDownCSVReader,
 )
 from ..core.lib import SweepFitResult
-from ..core.utils import tqdm_qt
+from ..core.utils.tqdm_qt import tqdm_qt
 from ..uic.active import active_rc  # noqa: F401
 from ..uic.active.ra_active_converter_window import Ui_MainWindow
 from ..widgets.active.ra_conversion_tabs import (
