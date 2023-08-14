@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from itertools import accumulate, pairwise, product
+from itertools import accumulate, groupby, pairwise, product
 
 import numpy as np
 from cv2 import HoughLinesPointSet
@@ -8,9 +8,13 @@ from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
+from scipy.sparse import csr_array
+from scipy.sparse.csgraph import dijkstra
 from scipy.spatial.distance import cdist
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import MinMaxScaler
+
+from .utils.ragged_array import RaggedArray
 
 logger = logging.getLogger(__name__)
 
@@ -278,6 +282,14 @@ def group_peaks(
     return groups
 
 
+def __euclidean_distance(a, b):
+    return cdist(np.array([a]), np.array([b]), "euclidean")[0][0]
+
+
+def __cosine_similarity(a, b):
+    return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
+
+
 def peaks_to_traces(
     peaks: list[NDArray[np.floating]],
     weights: NDArray[np.floating] = np.array([1, 1, 1, 1, 1]),
@@ -292,12 +304,6 @@ def peaks_to_traces(
     Returns:
         tuple[list[list[float]], float]: ([traces], FSR)
     """
-
-    def __cosine_similarity(a, b):
-        return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
-
-    def __euclidean_distance(a, b):
-        return cdist(np.array([a]), np.array([b]), "euclidean")[0][0]
 
     def __weighted_distance_with_x0(a, b):
         return __euclidean_distance(a * weights, b * weights)
@@ -412,3 +418,125 @@ def peaks_to_traces(
     ret.append(list(accumulate([start_wavelength] + shifts)))
 
     return ret, FSR
+
+
+def peaks_to_traces2(peaks: list[list[np.floating]]):
+    try:
+        FSR = float(
+            np.mean(
+                [
+                    d
+                    for sweep in peaks[::10]
+                    if len(sweep) > 1
+                    for d in np.diff(sweep[:, 0])  # type: ignore
+                ]
+            )
+        )
+    except IndexError as e:
+        raise IndexError("No peaks found in the first sweep.") from e
+
+    ragged_peaks = RaggedArray(peaks)
+
+    # Create an adjacency matrix for the graph
+    rows: list[float] = []
+    cols: list[float] = []
+    data: list[float] = []
+    for (row1, col1, p1), (row2, col2, p2) in [
+        [(row1, col1, p1), (row2, col2, p2)]
+        for (row1, s1), (row2, s2) in pairwise(enumerate(ragged_peaks.array))
+        for (col1, p1), (col2, p2) in product(enumerate(s1), enumerate(s2))
+    ]:
+        if abs(p1[0] - p2[0]) >= 0.3 * FSR:  # not a valid edge
+            # weight = np.inf # This will still make them connected
+            # weight = 0 # This will set the cost to 0, different than no value fields in sparse array. Do not use this.
+            continue
+        else:
+            distance = __euclidean_distance(p1, p2)
+            if distance == 0:  # avoid zero distance
+                weight = np.nextafter(0, 1)  # the minimum positive float64
+            else:
+                weight = distance
+        index1 = ragged_peaks.get_single_index(row1, col1)
+        index2 = ragged_peaks.get_single_index(row2, col2)
+
+        rows.append(index1)
+        cols.append(index2)
+        data.append(weight)
+
+        rows.append(index2)
+        cols.append(index1)
+        data.append(weight)
+
+    num_nodes = sum(len(sublist) for sublist in ragged_peaks.array)
+    adjacency_matrix = csr_array((data, (rows, cols)), shape=(num_nodes, num_nodes))
+
+    start_single_index = 0
+    end_single_index = len(ragged_peaks.double_indices)
+    start_row = ragged_peaks.get_double_index(start_single_index)[0]
+    end_row = ragged_peaks.get_double_index(end_single_index - 1)[0] + 1
+
+    traces = np.ones(len(ragged_peaks.array)) * np.nan
+    while end_row > start_row:
+        # print("---------")
+        end_single_indices = np.array(
+            [
+                ragged_peaks.get_single_index(end_row - 1, i)
+                for i in range(len(ragged_peaks.array[end_row - 1]))
+            ]
+        )
+        start_single_indices = np.array(
+            [
+                ragged_peaks.get_single_index(start_row, i)
+                for i in range(len(ragged_peaks.array[start_row]))
+            ]
+        )
+
+        dist_matrix, predecessors = dijkstra(
+            adjacency_matrix[
+                min(start_single_indices) : max(end_single_indices) + 1,
+                min(start_single_indices) : max(end_single_indices) + 1,
+            ],
+            return_predecessors=True,
+            indices=end_single_indices - min(start_single_indices),
+        )
+
+        if np.all(
+            predecessors == -9999
+        ):  # these end nodes are not connected to any other peaks in the previous sweep
+            end_row -= 1
+            logger.warning(f"sweep index {end_row} has no available peak connections")
+            while len(ragged_peaks.array[end_row - 1]) == 0:
+                end_row -= 1
+            continue
+
+        src = 0
+        pivot = 0
+
+        for i in range(dist_matrix.shape[1]):
+            if np.all(np.isinf(dist_matrix[:, i])):
+                continue
+            else:
+                pivot = i
+                src = np.where(np.isfinite(dist_matrix[:, i]))[0][0]
+                break
+
+        trace = [pivot]
+        while predecessors[src, pivot] != end_single_indices[src]:
+            trace.append(predecessors[src, pivot])
+            pivot = predecessors[src, pivot]
+        trace.append(end_single_indices[src])
+
+        if len(trace) > 10:  # threshold of minimum trace length
+            for i, p in enumerate(trace[::-1]):
+                traces[end_row - i - 1] = ragged_peaks[int(p)][0]
+
+        end_row -= len(trace)
+        traces[end_row] = np.nan
+        while len(ragged_peaks.array[end_row - 1]) == 0:
+            end_row -= 1
+            traces[end_row] = np.nan
+
+    return (
+        [list(g) for _, g in groupby(traces, np.isnan)],  # split into sublist by nan
+        FSR,
+    )
