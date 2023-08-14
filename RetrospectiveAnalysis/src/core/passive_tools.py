@@ -15,7 +15,7 @@ from scipy.io import loadmat
 from tqdm import tqdm
 
 from .lib import SweepFitResult, peaks_to_traces
-from .utils import tqdm_qt
+from .utils.tqdm_qt import tqdm_qt
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +60,12 @@ class MatDataReader(DataReaderBase):
 
     @staticmethod
     def new(
+        dir: str,
         files: list[str],
         timestamp_input: str | float,
         multiplier: float = 1,
     ):
+        files = [os.path.join(dir, f) for f in files]
         match timestamp_input:
             case float():
                 return MatDataReader(
@@ -77,7 +79,7 @@ class MatDataReader(DataReaderBase):
                         for row in csv.reader(csv_file, delimiter=",")
                         if len(row) >= 3 and row[2] != ""
                     }
-                    base_names = [os.path.basename(f) for f in files if f in time_dict]  # type: ignore
+                    base_names = [b for f in files if (b := os.path.basename(f)) in time_dict]  # type: ignore
                     timestamps = (
                         np.array(
                             [time_dict.get(k) for k in base_names], dtype=np.float64
@@ -124,7 +126,7 @@ class PassiveAnalyzer(object):
             key=lambda x: int(pat.match(x).group(1)),  # type: ignore
         )
         self.__data_reader: DataReaderBase = MatDataReader.new(
-            filenames, timestamp, timestamp_multiplier
+            folder_path, filenames, timestamp, timestamp_multiplier
         )
 
     @property
