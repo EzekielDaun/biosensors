@@ -234,6 +234,9 @@ class RaActiveConverterWindow(QMainWindow):
         self.__ui.splitter.insertWidget(
             0, self.__wavelength_conversion_block_diagram_widget
         )
+        self.__ui.splitter.setStretchFactor(0, 0)
+        self.__ui.splitter.setStretchFactor(1, 1)
+        self.__ui.splitter.setSizes([1, 5])
 
         # input regulation
         self.__ui.inputRegulationComboBox.currentIndexChanged.connect(
@@ -273,8 +276,8 @@ class RaActiveConverterWindow(QMainWindow):
         self.__conversion_method_visualize_button.clicked.connect(
             self.slot_on_wavelength_conversion_plot_clicked
         )
-        self.__ui.conversionMethodGroupBox.layout().insertWidget(  # type: ignore
-            self.__ui.conversionMethodGroupBox.layout().count() - 1,
+        self.__ui.conversionMethodTab.layout().insertWidget(  # type: ignore
+            self.__ui.conversionMethodTab.layout().count() - 1,
             self.__conversion_method_visualize_button,
         )
 
@@ -294,8 +297,8 @@ class RaActiveConverterWindow(QMainWindow):
                 title="Periodic Response"
             )
         )
-        self.__ui.conversionMethodGroupBox.layout().insertWidget(  # type: ignore
-            self.__ui.conversionMethodGroupBox.layout().count() - 1,
+        self.__ui.conversionMethodTab.layout().insertWidget(  # type: ignore
+            self.__ui.conversionMethodTab.layout().count() - 1,
             self.__conversion_method_graphics_layout_widget,
         )
 
@@ -397,9 +400,6 @@ class RaActiveConverterWindow(QMainWindow):
             (self.__ui.sweepRawPreviewGroupBox, "Sweep Raw Preview"),
             (self.__ui.rampSignalConfigGroupBox, "Ramp Signal Config"),
             (self.__ui.spectrogramRawPreviewGroupBox, "Spectrogram Raw Preview"),
-            (self.__ui.inputRegulationGroupBox, "Input Regulation"),
-            (self.__ui.conversionMethodGroupBox, "Conversion Method"),
-            (self.__ui.fsrPlotGroupBox, "FSR Plot"),
             (self.__ui.fsrPlotSettingGroupBox, "FSR Plot Setting"),
         ]
         for widget, string in panels:

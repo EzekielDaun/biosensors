@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1102, 608)
+        MainWindow.resize(1118, 608)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
@@ -207,38 +207,38 @@ class Ui_MainWindow(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.wavelengthConversionGroupBox.sizePolicy().hasHeightForWidth())
         self.wavelengthConversionGroupBox.setSizePolicy(sizePolicy2)
-        self.verticalLayout_4 = QVBoxLayout(self.wavelengthConversionGroupBox)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.horizontalLayout_6 = QHBoxLayout(self.wavelengthConversionGroupBox)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.splitter = QSplitter(self.wavelengthConversionGroupBox)
         self.splitter.setObjectName(u"splitter")
         self.splitter.setOrientation(Qt.Vertical)
-        self.inputRegulationGroupBox = QGroupBox(self.splitter)
-        self.inputRegulationGroupBox.setObjectName(u"inputRegulationGroupBox")
-        sizePolicy.setHeightForWidth(self.inputRegulationGroupBox.sizePolicy().hasHeightForWidth())
-        self.inputRegulationGroupBox.setSizePolicy(sizePolicy)
-        self.verticalLayout_6 = QVBoxLayout(self.inputRegulationGroupBox)
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.inputRegulationComboBox = QComboBox(self.inputRegulationGroupBox)
+        self.wavelengthConversionTabWidget = QTabWidget(self.splitter)
+        self.wavelengthConversionTabWidget.setObjectName(u"wavelengthConversionTabWidget")
+        self.inputRegulationTab = QWidget()
+        self.inputRegulationTab.setObjectName(u"inputRegulationTab")
+        self.verticalLayout_4 = QVBoxLayout(self.inputRegulationTab)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.inputRegulationComboBox = QComboBox(self.inputRegulationTab)
         self.inputRegulationComboBox.setObjectName(u"inputRegulationComboBox")
 
-        self.verticalLayout_6.addWidget(self.inputRegulationComboBox)
+        self.verticalLayout_4.addWidget(self.inputRegulationComboBox)
 
-        self.inputRegulationStackedWidget = QStackedWidget(self.inputRegulationGroupBox)
+        self.inputRegulationStackedWidget = QStackedWidget(self.inputRegulationTab)
         self.inputRegulationStackedWidget.setObjectName(u"inputRegulationStackedWidget")
 
-        self.verticalLayout_6.addWidget(self.inputRegulationStackedWidget)
+        self.verticalLayout_4.addWidget(self.inputRegulationStackedWidget)
 
-        self.splitter.addWidget(self.inputRegulationGroupBox)
-        self.conversionMethodGroupBox = QGroupBox(self.splitter)
-        self.conversionMethodGroupBox.setObjectName(u"conversionMethodGroupBox")
-        self.verticalLayout_2 = QVBoxLayout(self.conversionMethodGroupBox)
+        self.wavelengthConversionTabWidget.addTab(self.inputRegulationTab, "")
+        self.conversionMethodTab = QWidget()
+        self.conversionMethodTab.setObjectName(u"conversionMethodTab")
+        self.verticalLayout_2 = QVBoxLayout(self.conversionMethodTab)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.conversionMethodComboBox = QComboBox(self.conversionMethodGroupBox)
+        self.conversionMethodComboBox = QComboBox(self.conversionMethodTab)
         self.conversionMethodComboBox.setObjectName(u"conversionMethodComboBox")
 
         self.verticalLayout_2.addWidget(self.conversionMethodComboBox)
 
-        self.conversionMethodStackedWidget = QStackedWidget(self.conversionMethodGroupBox)
+        self.conversionMethodStackedWidget = QStackedWidget(self.conversionMethodTab)
         self.conversionMethodStackedWidget.setObjectName(u"conversionMethodStackedWidget")
         sizePolicy.setHeightForWidth(self.conversionMethodStackedWidget.sizePolicy().hasHeightForWidth())
         self.conversionMethodStackedWidget.setSizePolicy(sizePolicy)
@@ -247,14 +247,14 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.conversionMethodPolarityComboBox = QComboBox(self.conversionMethodGroupBox)
+        self.conversionMethodPolarityComboBox = QComboBox(self.conversionMethodTab)
         self.conversionMethodPolarityComboBox.addItem("")
         self.conversionMethodPolarityComboBox.addItem("")
         self.conversionMethodPolarityComboBox.setObjectName(u"conversionMethodPolarityComboBox")
 
         self.horizontalLayout_4.addWidget(self.conversionMethodPolarityComboBox)
 
-        self.conversionMethodOutputOffsetDoubleSpinBox = QDoubleSpinBox(self.conversionMethodGroupBox)
+        self.conversionMethodOutputOffsetDoubleSpinBox = QDoubleSpinBox(self.conversionMethodTab)
         self.conversionMethodOutputOffsetDoubleSpinBox.setObjectName(u"conversionMethodOutputOffsetDoubleSpinBox")
         self.conversionMethodOutputOffsetDoubleSpinBox.setMinimum(-999999.000000000000000)
         self.conversionMethodOutputOffsetDoubleSpinBox.setMaximum(999999.000000000000000)
@@ -265,12 +265,12 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_4)
 
-        self.splitter.addWidget(self.conversionMethodGroupBox)
-        self.fsrPlotGroupBox = QGroupBox(self.splitter)
-        self.fsrPlotGroupBox.setObjectName(u"fsrPlotGroupBox")
-        self.verticalLayout_3 = QVBoxLayout(self.fsrPlotGroupBox)
+        self.wavelengthConversionTabWidget.addTab(self.conversionMethodTab, "")
+        self.fsrPlotTab = QWidget()
+        self.fsrPlotTab.setObjectName(u"fsrPlotTab")
+        self.verticalLayout_3 = QVBoxLayout(self.fsrPlotTab)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.fsrPlotSettingGroupBox = QGroupBox(self.fsrPlotGroupBox)
+        self.fsrPlotSettingGroupBox = QGroupBox(self.fsrPlotTab)
         self.fsrPlotSettingGroupBox.setObjectName(u"fsrPlotSettingGroupBox")
         sizePolicy.setHeightForWidth(self.fsrPlotSettingGroupBox.sizePolicy().hasHeightForWidth())
         self.fsrPlotSettingGroupBox.setSizePolicy(sizePolicy)
@@ -303,13 +303,14 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_3.addWidget(self.fsrPlotSettingGroupBox)
 
-        self.plotTabWidget = QTabWidget(self.fsrPlotGroupBox)
+        self.plotTabWidget = QTabWidget(self.fsrPlotTab)
         self.plotTabWidget.setObjectName(u"plotTabWidget")
         self.plotTabWidget.setEnabled(False)
 
         self.verticalLayout_3.addWidget(self.plotTabWidget)
 
-        self.splitter.addWidget(self.fsrPlotGroupBox)
+        self.wavelengthConversionTabWidget.addTab(self.fsrPlotTab, "")
+        self.splitter.addWidget(self.wavelengthConversionTabWidget)
         self.layoutWidget = QWidget(self.splitter)
         self.layoutWidget.setObjectName(u"layoutWidget")
         self.horizontalLayout = QHBoxLayout(self.layoutWidget)
@@ -350,7 +351,7 @@ class Ui_MainWindow(object):
 
         self.splitter.addWidget(self.layoutWidget)
 
-        self.verticalLayout_4.addWidget(self.splitter)
+        self.horizontalLayout_6.addWidget(self.splitter)
 
         self.splitter_3.addWidget(self.wavelengthConversionGroupBox)
 
@@ -359,7 +360,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1102, 42))
+        self.menubar.setGeometry(QRect(0, 0, 1118, 42))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -382,6 +383,7 @@ class Ui_MainWindow(object):
         self.buttonBox.accepted.connect(MainWindow.slot_accept)
         self.buttonBox.rejected.connect(MainWindow.slot_reject)
 
+        self.wavelengthConversionTabWidget.setCurrentIndex(0)
         self.conversionMethodStackedWidget.setCurrentIndex(-1)
 
 
@@ -413,19 +415,19 @@ class Ui_MainWindow(object):
         self.label_7.setText(QCoreApplication.translate("MainWindow", u"Interpolate:", None))
         self.rawSpectrogramPlotPushButton.setText(QCoreApplication.translate("MainWindow", u"Spectrogram", None))
         self.wavelengthConversionGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"Wavelength Conversion", None))
-        self.inputRegulationGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"Input Regulation", None))
-        self.conversionMethodGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"Convsersion Method", None))
+        self.wavelengthConversionTabWidget.setTabText(self.wavelengthConversionTabWidget.indexOf(self.inputRegulationTab), QCoreApplication.translate("MainWindow", u"Input Regulation", None))
         self.conversionMethodPolarityComboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Output Polarity: -", None))
         self.conversionMethodPolarityComboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Output Polarity: +", None))
 
         self.conversionMethodOutputOffsetDoubleSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"Output Offset: ", None))
-        self.fsrPlotGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"Plot", None))
+        self.wavelengthConversionTabWidget.setTabText(self.wavelengthConversionTabWidget.indexOf(self.conversionMethodTab), QCoreApplication.translate("MainWindow", u"Conversion Method", None))
         self.fsrPlotSettingGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"Plot Setting", None))
         self.plotTrendlineCheckBox.setText(QCoreApplication.translate("MainWindow", u"Trendline", None))
         self.plotTrendlineOrderSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"Order: ", None))
         self.plotTrendlineOutlierRangeDoubleSpinBox.setPrefix(QCoreApplication.translate("MainWindow", u"Outlier Range: ", None))
         self.plotTrendlineOutlierRangeDoubleSpinBox.setSuffix(QCoreApplication.translate("MainWindow", u" pm", None))
         self.plotPushButton.setText(QCoreApplication.translate("MainWindow", u"Plot FSR", None))
+        self.wavelengthConversionTabWidget.setTabText(self.wavelengthConversionTabWidget.indexOf(self.fsrPlotTab), QCoreApplication.translate("MainWindow", u"FSR Plot", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Output Path:", None))
         self.outputPathPushButton.setText(QCoreApplication.translate("MainWindow", u"Select", None))
     # retranslateUi

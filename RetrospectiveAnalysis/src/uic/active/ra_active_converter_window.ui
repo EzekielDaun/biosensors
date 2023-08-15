@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1102</width>
+    <width>1118</width>
     <height>608</height>
    </rect>
   </property>
@@ -300,159 +300,158 @@
        <property name="title">
         <string>Wavelength Conversion</string>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
         <item>
          <widget class="QSplitter" name="splitter">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
-          <widget class="QGroupBox" name="inputRegulationGroupBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+          <widget class="QTabWidget" name="wavelengthConversionTabWidget">
+           <property name="currentIndex">
+            <number>0</number>
            </property>
-           <property name="title">
-            <string>Input Regulation</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_6">
-            <item>
-             <widget class="QComboBox" name="inputRegulationComboBox"/>
-            </item>
-            <item>
-             <widget class="QStackedWidget" name="inputRegulationStackedWidget"/>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QGroupBox" name="conversionMethodGroupBox">
-           <property name="title">
-            <string>Convsersion Method</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_2">
-            <item>
-             <widget class="QComboBox" name="conversionMethodComboBox"/>
-            </item>
-            <item>
-             <widget class="QStackedWidget" name="conversionMethodStackedWidget">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="currentIndex">
-               <number>-1</number>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <item>
-               <widget class="QComboBox" name="conversionMethodPolarityComboBox">
-                <item>
-                 <property name="text">
-                  <string>Output Polarity: -</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Output Polarity: +</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item>
-               <widget class="QDoubleSpinBox" name="conversionMethodOutputOffsetDoubleSpinBox">
-                <property name="prefix">
-                 <string>Output Offset: </string>
-                </property>
-                <property name="minimum">
-                 <double>-999999.000000000000000</double>
-                </property>
-                <property name="maximum">
-                 <double>999999.000000000000000</double>
-                </property>
-                <property name="value">
-                 <double>1310.000000000000000</double>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QGroupBox" name="fsrPlotGroupBox">
-           <property name="title">
-            <string>Plot</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <widget class="QGroupBox" name="fsrPlotSettingGroupBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="title">
-               <string>Plot Setting</string>
-              </property>
-              <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <widget class="QWidget" name="inputRegulationTab">
+            <attribute name="title">
+             <string>Input Regulation</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QComboBox" name="inputRegulationComboBox"/>
+             </item>
+             <item>
+              <widget class="QStackedWidget" name="inputRegulationStackedWidget"/>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="conversionMethodTab">
+            <attribute name="title">
+             <string>Conversion Method</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="QComboBox" name="conversionMethodComboBox"/>
+             </item>
+             <item>
+              <widget class="QStackedWidget" name="conversionMethodStackedWidget">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="currentIndex">
+                <number>-1</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
-                <widget class="QCheckBox" name="plotTrendlineCheckBox">
-                 <property name="text">
-                  <string>Trendline</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
+                <widget class="QComboBox" name="conversionMethodPolarityComboBox">
+                 <item>
+                  <property name="text">
+                   <string>Output Polarity: -</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Output Polarity: +</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
                <item>
-                <widget class="QSpinBox" name="plotTrendlineOrderSpinBox">
+                <widget class="QDoubleSpinBox" name="conversionMethodOutputOffsetDoubleSpinBox">
                  <property name="prefix">
-                  <string>Order: </string>
+                  <string>Output Offset: </string>
                  </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QDoubleSpinBox" name="plotTrendlineOutlierRangeDoubleSpinBox">
-                 <property name="prefix">
-                  <string>Outlier Range: </string>
-                 </property>
-                 <property name="suffix">
-                  <string> pm</string>
+                 <property name="minimum">
+                  <double>-999999.000000000000000</double>
                  </property>
                  <property name="maximum">
-                  <double>9999999999999.000000000000000</double>
+                  <double>999999.000000000000000</double>
                  </property>
                  <property name="value">
-                  <double>30.000000000000000</double>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QPushButton" name="plotPushButton">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="text">
-                  <string>Plot FSR</string>
+                  <double>1310.000000000000000</double>
                  </property>
                 </widget>
                </item>
               </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QTabWidget" name="plotTabWidget">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="fsrPlotTab">
+            <attribute name="title">
+             <string>FSR Plot</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <widget class="QGroupBox" name="fsrPlotSettingGroupBox">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="title">
+                <string>Plot Setting</string>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_2">
+                <item>
+                 <widget class="QCheckBox" name="plotTrendlineCheckBox">
+                  <property name="text">
+                   <string>Trendline</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="plotTrendlineOrderSpinBox">
+                  <property name="prefix">
+                   <string>Order: </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDoubleSpinBox" name="plotTrendlineOutlierRangeDoubleSpinBox">
+                  <property name="prefix">
+                   <string>Outlier Range: </string>
+                  </property>
+                  <property name="suffix">
+                   <string> pm</string>
+                  </property>
+                  <property name="maximum">
+                   <double>9999999999999.000000000000000</double>
+                  </property>
+                  <property name="value">
+                   <double>30.000000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="plotPushButton">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
+                  <property name="text">
+                   <string>Plot FSR</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTabWidget" name="plotTabWidget">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
           </widget>
           <widget class="QWidget" name="layoutWidget">
            <layout class="QHBoxLayout" name="horizontalLayout">
@@ -524,7 +523,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1102</width>
+     <width>1118</width>
      <height>42</height>
     </rect>
    </property>
