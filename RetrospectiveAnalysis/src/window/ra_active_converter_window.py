@@ -47,7 +47,7 @@ from ..core.active_tools import (
     SimpleRampUpCSVReader,
     SimpleRampUpDownCSVReader,
 )
-from ..core.lib import SweepFitResult
+from ..core.lib import find_peak_and_properties
 from ..core.utils.tqdm_qt import tqdm_qt
 from ..uic.active import active_rc  # noqa: F401
 from ..uic.active.ra_active_converter_window import Ui_MainWindow
@@ -94,12 +94,20 @@ def _advanced_reader_to_scatter(
     wls = wls[indices]
     for i, channel in enumerate(data):
         channel = channel[indices]
-        sweep = SweepFitResult.from_data(channel, wls)
-        fsr = sweep.get_fsr(0.0001)
-        if len(fsr) >= 1:
-            wl = sweep.get_peaks(0.0001).T[0]
-            for w, f in zip(wl, fsr):
-                scatters[i].append([w, f])
+        # use peak finding result
+        peak_indices, _, _, _ = find_peak_and_properties(channel)
+        wl_array = wls[peak_indices]
+        fsr_array = np.diff(wl_array)
+        for p, f in zip(wl_array, fsr_array):
+            scatters[i].append([p, f])
+
+        # # use precise fitting result
+        # sweep = ..core.lib.SweepFitResult.from_data(channel, wls) # import SweepFitResult and edit this line
+        # fsr = sweep.get_fsr(0.0001)
+        # if len(fsr) >= 1:
+        #     wl = sweep.get_peaks(0.0001).T[0]
+        #     for w, f in zip(wl, fsr):
+        #         scatters[i].append([w, f])
     return scatters
 
 

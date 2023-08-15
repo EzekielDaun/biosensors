@@ -36,6 +36,24 @@ class LorentzianPeakFitResult:
     n100dbm_points: int
 
 
+def find_peak_and_properties(
+    powers: NDArray[np.floating], gaussian_filter_sigma=8, prominence_scaler=0.1
+):
+    powers_smoothed: NDArray[np.floating] = gaussian_filter1d(
+        powers, sigma=gaussian_filter_sigma
+    )  # type: ignore
+    indices, properties = find_peaks(
+        -1 * powers_smoothed,
+        prominence=prominence_scaler * (max(powers_smoothed) - min(powers_smoothed)),
+        width=0,
+        height=min(-1 * powers_smoothed),
+    )
+    __base_indices = [int(np.mean(p)) for p in pairwise(indices)]
+    left_base_indices = [0] + __base_indices
+    right_base_indices = __base_indices + [len(powers_smoothed) - 1]
+    return indices, properties, left_base_indices, right_base_indices
+
+
 @dataclass
 class SweepFitResult:
     peaks: list[LorentzianPeakFitResult]
@@ -45,18 +63,12 @@ class SweepFitResult:
         if len(powers) != len(wavelengths):
             raise RuntimeError("Number of wavelengths and powers do not match")
 
-        powers_smoothed: NDArray[np.floating] = gaussian_filter1d(
-            powers, sigma=8
-        )  # type: ignore
-        indices, properties = find_peaks(
-            -1 * powers_smoothed,
-            prominence=0.1 * (max(powers_smoothed) - min(powers_smoothed)),
-            width=0,
-            height=min(-1 * powers_smoothed),
-        )
-        __base_indices = [int(np.mean(p)) for p in pairwise(indices)]
-        left_base_indices = [0] + __base_indices
-        right_base_indices = __base_indices + [len(powers_smoothed) - 1]
+        (
+            indices,
+            properties,
+            left_base_indices,
+            right_base_indices,
+        ) = find_peak_and_properties(powers)
 
         peaks: list[LorentzianPeakFitResult] = []
         for i, peak_index in enumerate(indices):
