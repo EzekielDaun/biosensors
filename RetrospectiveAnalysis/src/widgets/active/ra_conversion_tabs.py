@@ -23,39 +23,35 @@ class ConversionTabBase(QWidget):
         ...
 
 
-class ConversionZPGTFTab(ConversionTabBase):
+class ConversionZPTFTab(ConversionTabBase):
     def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.setLayout(QVBoxLayout())
 
-        self.__first_row_layout = QHBoxLayout()
-
-        self.__first_row_layout.addWidget(QLabel("Zeros"))
-        self.__zeros_line_edit = QLineEdit("[]")
-        self.__first_row_layout.addWidget(self.__zeros_line_edit)
-
-        self.__first_row_layout.addWidget(QLabel("Poles"))
-        self.__poles_line_edit = QLineEdit("[-1]")
-        self.__first_row_layout.addWidget(self.__poles_line_edit)
-
-        self.__first_row_layout.addWidget(QLabel("Gain"))
-        self.__gain_double_spinbox = QDoubleSpinBox()
-        self.__gain_double_spinbox.setValue(1.0)
-        self.__gain_double_spinbox.setDecimals(4)
-        self.__gain_double_spinbox.setSingleStep(1)
-        self.__gain_double_spinbox.setRange(
-            np.iinfo(np.int32).min, np.iinfo(np.int32).max
+        equation = QSvgWidget(
+            ":/equations/resources/equations/wavelength_conversion_zp.svg"
         )
-        self.__first_row_layout.addWidget(self.__gain_double_spinbox)
+        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+
+        self.__zp_row_layout = QHBoxLayout()
+
+        self.__zp_row_layout.addWidget(QLabel("Zeros:"))
+        self.__zeros_line_edit = QLineEdit("[]")
+        self.__zp_row_layout.addWidget(self.__zeros_line_edit)
+
+        self.__zp_row_layout.addWidget(QLabel("Poles:"))
+        self.__poles_line_edit = QLineEdit("[-1]")
+        self.__zp_row_layout.addWidget(self.__poles_line_edit)
 
         layout: QVBoxLayout = self.layout()  # type: ignore
-        layout.addLayout(self.__first_row_layout)
+        layout.addWidget(equation)
+        layout.addLayout(self.__zp_row_layout)
 
     def to_lti(self):
         return lti(
-            np.array(eval(self.__zeros_line_edit.text())),
-            np.array(eval(self.__poles_line_edit.text())),
-            self.__gain_double_spinbox.value(),
+            zeros := np.array(eval(self.__zeros_line_edit.text())),
+            poles := np.array(eval(self.__poles_line_edit.text())),
+            1 / control.dcgain(control.zpk(zeros, poles, 1)),
         )
 
 
@@ -65,26 +61,26 @@ class ConversionRCTFTab(ConversionTabBase):
         self.setLayout(QHBoxLayout())
 
         equation = QSvgWidget(
-            ":/equations/resources/equations/wavelength_conversion.svg"
+            ":/equations/resources/equations/wavelength_conversion_rc.svg"
         )
         equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
         self.layout().addWidget(equation)
 
         parameter_layout = QVBoxLayout()
 
-        label_r = QLabel("R Array")
+        label_r = QLabel("R Array:")
         label_r.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         parameter_layout.addWidget(label_r)
         self.__rs_line_edit = QLineEdit("[0.95, 10, 0, 0]")
         parameter_layout.addWidget(self.__rs_line_edit)
 
-        label_c = QLabel("C Array")
+        label_c = QLabel("C Array:")
         label_c.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         parameter_layout.addWidget(label_c)
         self.__cs_line_edit = QLineEdit("[20e-6, 200e-3, 1, 1]")
         parameter_layout.addWidget(self.__cs_line_edit)
 
-        label_gain = QLabel("Gain")
+        label_gain = QLabel("Gain:")
         label_gain.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         parameter_layout.addWidget(label_gain)
         self.__gain_double_spinbox = QDoubleSpinBox()

@@ -5,6 +5,7 @@
   <qresource prefix="equations">
     <file>resources/equations/regulation_phase_shifter.svg</file>
     <file>resources/equations/regulation_polynomial.svg</file>
-    <file>resources/equations/wavelength_conversion.svg</file>
+    <file>resources/equations/wavelength_conversion_rc.svg</file>
+    <file>resources/equations/wavelength_conversion_zp.svg</file>
   </qresource>
 </RCC>

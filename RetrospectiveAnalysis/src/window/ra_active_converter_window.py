@@ -54,7 +54,7 @@ from ..uic.active.ra_active_converter_window import Ui_MainWindow
 from ..widgets.active.ra_conversion_tabs import (
     ConversionRCTFTab,
     ConversionTabBase,
-    ConversionZPGTFTab,
+    ConversionZPTFTab,
 )
 from ..widgets.active.ra_fsr_tab_widget import (
     RaActiveConverterFSRTabWidget,
@@ -266,10 +266,10 @@ class RaActiveConverterWindow(QMainWindow):
         self.__rctf_tab = ConversionRCTFTab()
         self.__ui.conversionMethodStackedWidget.addWidget(self.__rctf_tab)
 
-        self.__ZPGTF_tab = ConversionZPGTFTab()
+        self.__ZPGTF_tab = ConversionZPTFTab()
         self.__ui.conversionMethodStackedWidget.addWidget(self.__ZPGTF_tab)
 
-        self.__ui.conversionMethodComboBox.addItems(["RC Circuit", "Zero-Pole-Gain"])
+        self.__ui.conversionMethodComboBox.addItems(["RC Circuit", "Zero-Pole"])
         self.__ui.conversionMethodComboBox.setCurrentIndex(0)
 
         self.__conversion_method_visualize_button = QPushButton("Visualize")

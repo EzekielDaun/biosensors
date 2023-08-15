@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QSizePolicy,
+    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
@@ -25,14 +26,9 @@ class RegulationTabBase(QWidget):
 class RegulationPhaseShifterTab(RegulationTabBase):
     def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.setLayout(QHBoxLayout())
+        self.setLayout(QVBoxLayout())
 
-        equation = QSvgWidget(
-            ":/equations/resources/equations/regulation_phase_shifter.svg"
-        )
-        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
-        self.layout().addWidget(equation)
-
+        first_row_layout = QHBoxLayout()
         parameter_layout = QVBoxLayout()
 
         self.__fsr_double_spinbox = QDoubleSpinBox()
@@ -75,7 +71,19 @@ class RegulationPhaseShifterTab(RegulationTabBase):
         self.__r_double_spinbox.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         parameter_layout.addWidget(self.__r_double_spinbox)
 
-        self.layout().addLayout(parameter_layout)  # type: ignore
+        equation = QSvgWidget(
+            ":/equations/resources/equations/regulation_phase_shifter.svg"
+        )
+        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+
+        first_row_layout.addWidget(equation)
+        first_row_layout.addLayout(parameter_layout)
+        self.layout().addLayout(first_row_layout)  # type: ignore
+        self.layout().addSpacerItem(  # type: ignore
+            QSpacerItem(
+                0, 0, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+            )
+        )
 
     def to_regulate_function(self) -> Callable[[float], float]:
         return ConverterConfig.ConvertMethod2(
@@ -105,29 +113,34 @@ class RegulationPhaseShifterTab(RegulationTabBase):
 class RegulationPolynomialTab(RegulationTabBase):
     def __init__(self, parent: Optional[QWidget] = None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.setLayout(QHBoxLayout())
+        self.setLayout(QVBoxLayout())
 
-        equation = QSvgWidget(
-            ":/equations/resources/equations/regulation_polynomial.svg"
-        )
-        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
-        self.layout().addWidget(equation)
+        parameter_layout = QHBoxLayout()
 
-        parameter_layout = QVBoxLayout()
-
-        label_ai = QLabel("Ai Array")
+        label_ai = QLabel("Ai Array:")
         label_ai.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         parameter_layout.addWidget(label_ai)
         self.__a_array_line_edit = QLineEdit("[]")
         parameter_layout.addWidget(self.__a_array_line_edit)
 
-        label_xi = QLabel("Xi Array")
+        label_xi = QLabel("Xi Array:")
         label_xi.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         parameter_layout.addWidget(label_xi)
         self.__x_array_line_edit = QLineEdit("[]")
         parameter_layout.addWidget(self.__x_array_line_edit)
 
+        equation = QSvgWidget(
+            ":/equations/resources/equations/regulation_polynomial.svg"
+        )
+        equation.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+
+        self.layout().addWidget(equation)  # type: ignore
         self.layout().addLayout(parameter_layout)  # type: ignore
+        self.layout().addSpacerItem(  # type: ignore
+            QSpacerItem(
+                0, 0, QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+            )
+        )
 
     def to_regulate_function(self) -> Callable[[float], float]:
         return ConverterConfig.ConvertMethod1(
