@@ -173,10 +173,10 @@ class RaActiveConverterWindow(QMainWindow):
         self.__ui.rawPreviewPlotSpaceholderWidget.layout().addWidget(
             self.__sweep_raw_preview_widget
         )
-        self.__sweep_raw_preview_widget_ramp_plot = (
+        self.__sweep_raw_preview_widget_ramp_plot: PlotItem = (
             self.__sweep_raw_preview_widget.addPlot(row=1, col=0)
         )
-        self.__sweep_raw_preview_widget_data_plot = (
+        self.__sweep_raw_preview_widget_data_plot: PlotItem = (
             self.__sweep_raw_preview_widget.addPlot(row=0, col=0)
         )
         self.__sweep_raw_preview_widget_data_plot.addLegend()
@@ -271,17 +271,17 @@ class RaActiveConverterWindow(QMainWindow):
         )
 
         self.__conversion_method_graphics_layout_widget = GraphicsLayoutWidget()
-        self.__conversion_method_impulse_response_plot = (
+        self.__conversion_method_impulse_response_plot: PlotItem = (
             self.__conversion_method_graphics_layout_widget.addPlot(
                 title="Impulse Response"
             )
         )
-        self.__conversion_method_step_response_plot = (
+        self.__conversion_method_step_response_plot: PlotItem = (
             self.__conversion_method_graphics_layout_widget.addPlot(
                 title="Step Response"
             )
         )
-        self.__conversion_method_periodic_response_plot = (
+        self.__conversion_method_periodic_response_plot: PlotItem = (
             self.__conversion_method_graphics_layout_widget.addPlot(
                 title="Periodic Response"
             )
@@ -359,8 +359,8 @@ class RaActiveConverterWindow(QMainWindow):
                 rc_length - len(csv_config.tau_array)
             )
 
-            r_array = []
-            c_array = []
+            r_array: list[float] = []
+            c_array: list[float] = []
             for r, c, tau in zip(r_array_pad, c_array_pad, tau_array_pad):
                 match r, c, tau:
                     case float(r), float(c), None:
@@ -384,7 +384,7 @@ class RaActiveConverterWindow(QMainWindow):
 
         # add a window manager on menu bar
         menu = QMenu("Window", self)
-        panels = [
+        panels: list[tuple[QWidget, str]] = [
             (self.__ui.sweepRawPreviewSettingGroupBox, "Sweep Raw Preview Setting"),
             (self.__ui.sweepRawPreviewGroupBox, "Sweep Raw Preview"),
             (self.__ui.rampSignalConfigGroupBox, "Ramp Signal Config"),
@@ -510,7 +510,7 @@ class RaActiveConverterWindow(QMainWindow):
         # if plot tab widget is enabled, update converted sweep stream data
         if self.__ui.plotTabWidget.isEnabled():
             selected_file_basename = self.__ui.rawPreviewFileComboBox.currentText()
-            file_index = re.compile(self.__ui.rawRegexLineEdit.text()).match(selected_file_basename).group(1)  # type: ignore
+            file_index: str = re.compile(self.__ui.rawRegexLineEdit.text()).match(selected_file_basename).group(1)  # type: ignore
             pattern = re.compile(selected_file_basename.replace(file_index, f"({file_index})"))  # type: ignore
 
             if self.__advanced_csv_reader is not None:
