@@ -2,7 +2,6 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Callable
 from functools import partial, reduce
 from itertools import cycle, repeat
 from logging import getLogger
@@ -17,7 +16,7 @@ from pyqtgraph import (
     ImageView,
     PlotItem,
 )
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCloseEvent, QTextCursor, QTransform
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
@@ -65,6 +64,7 @@ from ..widgets.active.ra_regulation_tabs import (
     RegulationTabBase,
 )
 from ..widgets.lib.ra_progress_bar import RaProgressBar
+from ..widgets.lib.utils.ra_qthread_worker import RaQThreadWorker
 
 logger = getLogger(__name__)
 
@@ -142,20 +142,6 @@ class RaActiveConverterWindow(QMainWindow):
     signal_close = Signal()
     signal_progress = Signal(dict)
 
-    class __Worker(QThread):
-        def __init__(self, f: Callable[[], Any], *args, **kwargs):
-            super().__init__()
-            self.__f = f
-            self.__args = args
-            self.__kwargs = kwargs
-
-        def run(self):
-            self.__ret = self.__f(*self.__args, **self.__kwargs)
-
-        @property
-        def result(self):
-            return self.__ret
-
     def __init__(
         self, folder_path: str, parent: Optional[QWidget] = None, *args, **kwargs
     ):
@@ -220,7 +206,7 @@ class RaActiveConverterWindow(QMainWindow):
         self.__raw_spectrogram_widget = QWidget()
         self.__raw_spectrogram_widget.setLayout(QVBoxLayout())
 
-        self.__spectrogram_worker: Optional[RaActiveConverterWindow.__Worker] = None
+        self.__spectrogram_worker: Optional[RaQThreadWorker] = None
 
         # wavelength conversion block diagram
         self.__wavelength_conversion_block_diagram_widget = QSvgWidget(
@@ -236,7 +222,7 @@ class RaActiveConverterWindow(QMainWindow):
         )
         self.__ui.splitter.setStretchFactor(0, 0)
         self.__ui.splitter.setStretchFactor(1, 1)
-        self.__ui.splitter.setSizes([1, 5])
+        self.__ui.splitter.setSizes([1, 5, 1])
 
         # input regulation
         self.__ui.inputRegulationComboBox.currentIndexChanged.connect(
@@ -597,7 +583,7 @@ class RaActiveConverterWindow(QMainWindow):
             self.__ui.rawSpectrogramPlotPushButton.setEnabled(False)
             self.__ui.rawPreviewFileComboBox.setEnabled(False)
 
-            self.__spectrogram_worker = self.__Worker(f=get_spectrogram_data)
+            self.__spectrogram_worker = RaQThreadWorker(f=get_spectrogram_data)
             self.__spectrogram_worker.finished.connect(self.slot_plot_spectrogram_done)
             self.__spectrogram_worker.start()
 
@@ -805,7 +791,7 @@ class RaActiveConverterWindow(QMainWindow):
                     [[] for _ in range(self.__advanced_csv_reader.data_shape[0])],
                 )
 
-        self.__fsr_worker = self.__Worker(f)
+        self.__fsr_worker = RaQThreadWorker(f)
         self.__fsr_worker.finished.connect(self.slot_on_plot_FSR_finished)
         self.__ui.plotPushButton.setDisabled(True)
         self.__fsr_worker.start()
@@ -941,7 +927,7 @@ class RaActiveConverterWindow(QMainWindow):
                     )
                 )
 
-        self.__convert_worker = self.__Worker(f)
+        self.__convert_worker = RaQThreadWorker(f)
         self.__convert_worker.finished.connect(self.slot_on_conversion_done)
 
         csv_config_path = os.path.join(self.__folder_path, CONFIG_CSV_DEFAULT_NAME)
