@@ -11,7 +11,6 @@ from pyqtgraph import ImageView, PlotCurveItem, PlotItem, PlotWidget
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QTextCursor, QTransform
 from PySide6.QtWidgets import (
-    QCheckBox,
     QDockWidget,
     QDoubleSpinBox,
     QFileDialog,
@@ -31,6 +30,7 @@ from PySide6.QtWidgets import (
 from scipy.io import savemat
 
 from ..core.lib import SweepFitResult, group_peaks, lorentzian, peaks_to_traces
+from ..widgets.lib.ra_channel_selector import RaChannelSelector
 from ..widgets.lib.ra_drop_widgets import RaDropLineEdit, RaDropPushButton
 from ..widgets.lib.ra_plot_curve_item import RaPlotCurveItem
 from .ra_watcher_window import (
@@ -138,7 +138,7 @@ class RaQuickAnalyzerWindow(QMainWindow):
         self.__central_widget.file_number_spin_box.blockSignals(False)
         self.__slot_file_number_changed(1)
 
-        self.__central_widget.channel_selections = [True] * s1[0]
+        self.__central_widget.channel_selector.selections = [True] * s1[0]
 
         self.__central_widget.analyze_button.setEnabled(True)
         self.__central_widget.save_button.setDisabled(True)
@@ -182,7 +182,7 @@ class RaQuickAnalyzerWindow(QMainWindow):
 
         r2_threshold, n100dbm_threshold = self.__central_widget.thresholds
         channel_selections = {
-            i for i, b in enumerate(self.__central_widget.channel_selections) if b
+            i for i, b in enumerate(self.__central_widget.channel_selector) if b
         }
 
         for i in channel_selections:
@@ -393,8 +393,11 @@ class RaQuickAnalyzerWindow(QMainWindow):
             left_widget.layout().addWidget(self.__file_number_spin_box)
             left_widget.layout().addWidget(self.__spectrum_plot_tab_widget)
 
-            self.__channel_selection_grid_layout = QGridLayout()
-            left_widget.layout().addLayout(self.__channel_selection_grid_layout)  # type: ignore
+            # self.__channel_selection_grid_layout = QGridLayout()
+            # left_widget.layout().addLayout(self.__channel_selection_grid_layout)  # type: ignore
+
+            self.__channel_selector = RaChannelSelector()
+            left_widget.layout().addWidget(self.__channel_selector)  # type: ignore
 
             left_widget.layout().addWidget(self.__analyze_button)
             left_widget.layout().addWidget(self.__save_button)
@@ -443,22 +446,8 @@ class RaQuickAnalyzerWindow(QMainWindow):
             return self.__spectrum_plot_tab_widget
 
         @property
-        def channel_selections(self):
-            return [
-                self.__channel_selection_grid_layout.itemAt(i).widget().isChecked()  # type: ignore
-                for i in range(self.__channel_selection_grid_layout.count())
-            ]
-
-        @channel_selections.setter
-        def channel_selections(self, value: list[bool]):
-            for i in reversed(range(self.__channel_selection_grid_layout.count())):
-                widget = self.__channel_selection_grid_layout.itemAt(i).widget()
-                self.__channel_selection_grid_layout.removeWidget(widget)
-                widget.deleteLater()
-            for i, b in enumerate(value):
-                check_box = QCheckBox(f"Channel {i+1}")
-                check_box.setChecked(b)
-                self.__channel_selection_grid_layout.addWidget(check_box, i // 4, i % 4)
+        def channel_selector(self):
+            return self.__channel_selector
 
         @property
         def analyze_button(self):
