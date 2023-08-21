@@ -302,7 +302,7 @@ def __cosine_similarity(a, b):
     return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
 
 
-def peaks_to_traces(
+def peaks_to_traces1(
     peaks: list[NDArray[np.floating]],
     weights: NDArray[np.floating] = np.array([1, 1, 1, 1, 1]),
 ) -> tuple[list[list[float]], float]:
@@ -432,7 +432,7 @@ def peaks_to_traces(
     return ret, FSR
 
 
-def peaks_to_traces2(peaks: list[list[np.floating]]):
+def peaks_to_traces(peaks: list[list[np.floating]]):
     try:
         FSR = float(
             np.mean(
@@ -543,10 +543,12 @@ def peaks_to_traces2(peaks: list[list[np.floating]]):
                 traces[end_row - i - 1] = ragged_peaks[int(p)][0]
 
         end_row -= len(trace)
-        traces[end_row] = np.nan
+        if end_row != 0:
+            traces[end_row] = np.nan
         while len(ragged_peaks.array[end_row - 1]) == 0:
             end_row -= 1
-            traces[end_row] = np.nan
+            if end_row != 0:
+                traces[end_row] = np.nan
 
     return (
         [list(g) for _, g in groupby(traces, np.isnan)],  # split into sublist by nan
