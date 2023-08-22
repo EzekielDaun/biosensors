@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from itertools import accumulate, groupby, pairwise, product
+from typing import Callable
 
 import numpy as np
 from cv2 import HoughLinesPointSet
@@ -294,15 +295,15 @@ def group_peaks(
     return groups
 
 
-def __euclidean_distance(a, b):
+def euclidean_distance(a, b):
     return cdist(np.array([a]), np.array([b]), "euclidean")[0][0]
 
 
-def __cosine_similarity(a, b):
+def cosine_distance(a, b):
     return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
 
 
-def peaks_to_traces1(
+def peaks_to_traces_old(
     peaks: list[NDArray[np.floating]],
     weights: NDArray[np.floating] = np.array([1, 1, 1, 1, 1]),
 ) -> tuple[list[list[float]], float]:
@@ -318,10 +319,10 @@ def peaks_to_traces1(
     """
 
     def __weighted_distance_with_x0(a, b):
-        return __euclidean_distance(a * weights, b * weights)
+        return euclidean_distance(a * weights, b * weights)
 
     def __weighted_distance_without_x0(a, b):
-        return __euclidean_distance((a * weights)[1:], (b * weights)[1:])
+        return euclidean_distance((a * weights)[1:], (b * weights)[1:])
 
     try:
         FSR = float(
@@ -432,7 +433,23 @@ def peaks_to_traces1(
     return ret, FSR
 
 
-def peaks_to_traces(peaks: list[list[np.floating]]):
+def peaks_to_traces_default(peaks: list[list[np.floating]]):
+    # Temporary API for backward compatibility
+    return peaks_to_traces_dijkstra(peaks, euclidean_distance)
+
+
+def peaks_to_traces(
+    peaks: list[list[np.floating]],
+    distance_func: Callable[[NDArray[np.floating], NDArray[np.floating]], float],
+):
+    # API for future use
+    return peaks_to_traces_dijkstra(peaks, distance_func)
+
+
+def __construct_adjacency_matrix(
+    peaks: list[list[np.floating]],
+    distance_func: Callable[[NDArray[np.floating], NDArray[np.floating]], float],
+):
     try:
         FSR = float(
             np.mean(
@@ -463,7 +480,7 @@ def peaks_to_traces(peaks: list[list[np.floating]]):
             # weight = 0 # This will set the cost to 0, different than no value fields in sparse array. Do not use this.
             continue
         else:
-            distance = __euclidean_distance(p1, p2)
+            distance = distance_func(p1, p2)
             if distance == 0:  # avoid zero distance
                 weight = np.nextafter(0, 1)  # the minimum positive float64
             else:
@@ -481,6 +498,16 @@ def peaks_to_traces(peaks: list[list[np.floating]]):
 
     num_nodes = sum(len(sublist) for sublist in ragged_peaks.array)
     adjacency_matrix = csr_array((data, (rows, cols)), shape=(num_nodes, num_nodes))
+    return FSR, adjacency_matrix
+
+
+def peaks_to_traces_dijkstra(
+    peaks: list[list[np.floating]],
+    distance_func: Callable[[NDArray[np.floating], NDArray[np.floating]], float],
+):
+    FSR, adjacency_matrix = __construct_adjacency_matrix(peaks, distance_func)
+
+    ragged_peaks = RaggedArray(peaks)
 
     start_single_index = 0
     end_single_index = len(ragged_peaks.double_indices)
@@ -489,7 +516,6 @@ def peaks_to_traces(peaks: list[list[np.floating]]):
 
     traces = np.ones(len(ragged_peaks.array)) * np.nan
     while end_row > start_row:
-        # print("---------")
         end_single_indices = np.array(
             [
                 ragged_peaks.get_single_index(end_row - 1, i)

@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 )
 from scipy.io import savemat
 
-from ..core.lib import SweepFitResult, group_peaks, lorentzian, peaks_to_traces
+from ..core.lib import SweepFitResult, group_peaks, lorentzian, peaks_to_traces_default
 from ..widgets.lib.ra_channel_selector import RaChannelSelector
 from ..widgets.lib.ra_drop_widgets import RaDropLineEdit, RaDropPushButton
 from ..widgets.lib.ra_plot_curve_item import RaPlotCurveItem
@@ -206,7 +206,7 @@ class RaQuickAnalyzerWindow(QMainWindow):
             peaks = [
                 sweep.get_peaks(r2_threshold, n100dbm_threshold) for sweep in sweeps
             ]
-            traces, fsr = peaks_to_traces(peaks)
+            traces, fsr = peaks_to_traces_default(peaks)
 
             color_palette = cycle(["light green", "blue"])
             x0 = 0

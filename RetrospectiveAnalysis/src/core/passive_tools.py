@@ -14,7 +14,7 @@ from numpy.typing import NDArray
 from scipy.io import loadmat
 from tqdm import tqdm
 
-from .lib import SweepFitResult, peaks_to_traces
+from .lib import SweepFitResult, peaks_to_traces_default
 from .utils.tqdm_qt import tqdm_qt
 
 logger = logging.getLogger(__name__)
@@ -229,7 +229,7 @@ class PassiveAnalyzer(object):
                     f"The first sweep in channel {k+1} has no peaks detected. Consider adjusting the R2 threshold, -100dBm threshold or skipping this sweep."
                 )
 
-        return {k: peaks_to_traces(v) for k, v in peaks_dict.items()}, peaks_dict
+        return {k: peaks_to_traces_default(v) for k, v in peaks_dict.items()}, peaks_dict  # type: ignore
 
     def analyze_fsr_er_q(
         self,
