@@ -254,7 +254,8 @@ class RaPeakTrackerWidget(QWidget):
             ax.plot(ys)
             ax.set_xlabel(f"Time ({self.__time_unit})")
             ax.set_xticks(
-                [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
+                [0, len(ys) - 1],
+                [f"{self.__timestamps[0]:.5g}", f"{self.__timestamps[-1]:.5g}"],
             )
             ax.set_ylabel("Wavelength (nm)")
             ax.set_yticks(
@@ -312,7 +313,7 @@ class RaPeakTrackerWidget(QWidget):
             spectrogram_ax.autoscale()
             spectrogram_ax.set_xlabel(f"Time ({self.__time_unit})")
             spectrogram_ax.set_xticks(
-                [0, len(ys) - 1], [0, f"{self.__analyzer.timestamps[-1]:.5g}"]
+                [0, len(ys) - 1], [f"{self.__timestamps[0]:.5g}", f"{self.__timestamps[-1]:.5g}"]
             )
             spectrogram_ax.set_ylabel("Wavelength (nm)")
             spectrogram_ax.set_yticks(
