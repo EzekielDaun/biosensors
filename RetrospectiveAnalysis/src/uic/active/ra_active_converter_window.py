@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ra_active_converter_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.4.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -17,11 +17,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QCheckBox, QComboBox,
     QDialogButtonBox, QDockWidget, QDoubleSpinBox, QGridLayout,
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QMenuBar, QPushButton, QSizePolicy,
-    QSpacerItem, QSpinBox, QSplitter, QStackedWidget,
-    QStatusBar, QTabWidget, QTextBrowser, QVBoxLayout,
-    QWidget)
+    QGroupBox, QHBoxLayout, QLabel, QLayout,
+    QLineEdit, QMainWindow, QMenuBar, QPushButton,
+    QSizePolicy, QSpacerItem, QSpinBox, QSplitter,
+    QStackedWidget, QStatusBar, QTabWidget, QTextBrowser,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -102,12 +102,12 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.rawPreviewFileComboBox)
 
-        self.rawPreviewPlotSpaceholderWidget = QWidget(self.sweepRawPreviewGroupBox)
-        self.rawPreviewPlotSpaceholderWidget.setObjectName(u"rawPreviewPlotSpaceholderWidget")
-        sizePolicy1.setHeightForWidth(self.rawPreviewPlotSpaceholderWidget.sizePolicy().hasHeightForWidth())
-        self.rawPreviewPlotSpaceholderWidget.setSizePolicy(sizePolicy1)
+        self.rawPreviewPlotPlaceholderWidget = QWidget(self.sweepRawPreviewGroupBox)
+        self.rawPreviewPlotPlaceholderWidget.setObjectName(u"rawPreviewPlotPlaceholderWidget")
+        sizePolicy1.setHeightForWidth(self.rawPreviewPlotPlaceholderWidget.sizePolicy().hasHeightForWidth())
+        self.rawPreviewPlotPlaceholderWidget.setSizePolicy(sizePolicy1)
 
-        self.verticalLayout.addWidget(self.rawPreviewPlotSpaceholderWidget)
+        self.verticalLayout.addWidget(self.rawPreviewPlotPlaceholderWidget)
 
         self.splitter_2.addWidget(self.sweepRawPreviewGroupBox)
         self.rampSignalConfigGroupBox = QGroupBox(self.splitter_2)
@@ -176,6 +176,8 @@ class Ui_MainWindow(object):
         self.splitter_2.addWidget(self.rampSignalConfigGroupBox)
         self.spectrogramRawPreviewGroupBox = QGroupBox(self.splitter_2)
         self.spectrogramRawPreviewGroupBox.setObjectName(u"spectrogramRawPreviewGroupBox")
+        sizePolicy.setHeightForWidth(self.spectrogramRawPreviewGroupBox.sizePolicy().hasHeightForWidth())
+        self.spectrogramRawPreviewGroupBox.setSizePolicy(sizePolicy)
         self.horizontalLayout_3 = QHBoxLayout(self.spectrogramRawPreviewGroupBox)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label_7 = QLabel(self.spectrogramRawPreviewGroupBox)
@@ -207,8 +209,8 @@ class Ui_MainWindow(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.wavelengthConversionGroupBox.sizePolicy().hasHeightForWidth())
         self.wavelengthConversionGroupBox.setSizePolicy(sizePolicy2)
-        self.horizontalLayout_6 = QHBoxLayout(self.wavelengthConversionGroupBox)
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.verticalLayout_2 = QVBoxLayout(self.wavelengthConversionGroupBox)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.splitter = QSplitter(self.wavelengthConversionGroupBox)
         self.splitter.setObjectName(u"splitter")
         self.splitter.setOrientation(Qt.Vertical)
@@ -231,30 +233,31 @@ class Ui_MainWindow(object):
         self.wavelengthConversionTabWidget.addTab(self.inputRegulationTab, "")
         self.conversionMethodTab = QWidget()
         self.conversionMethodTab.setObjectName(u"conversionMethodTab")
-        self.verticalLayout_2 = QVBoxLayout(self.conversionMethodTab)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.conversionMethodComboBox = QComboBox(self.conversionMethodTab)
+        self.horizontalLayout_5 = QHBoxLayout(self.conversionMethodTab)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.conversionMethodSplitter = QSplitter(self.conversionMethodTab)
+        self.conversionMethodSplitter.setObjectName(u"conversionMethodSplitter")
+        self.conversionMethodSplitter.setOrientation(Qt.Vertical)
+        self.conversionMethodComboBox = QComboBox(self.conversionMethodSplitter)
         self.conversionMethodComboBox.setObjectName(u"conversionMethodComboBox")
-
-        self.verticalLayout_2.addWidget(self.conversionMethodComboBox)
-
-        self.conversionMethodStackedWidget = QStackedWidget(self.conversionMethodTab)
+        self.conversionMethodSplitter.addWidget(self.conversionMethodComboBox)
+        self.conversionMethodStackedWidget = QStackedWidget(self.conversionMethodSplitter)
         self.conversionMethodStackedWidget.setObjectName(u"conversionMethodStackedWidget")
-        sizePolicy.setHeightForWidth(self.conversionMethodStackedWidget.sizePolicy().hasHeightForWidth())
-        self.conversionMethodStackedWidget.setSizePolicy(sizePolicy)
-
-        self.verticalLayout_2.addWidget(self.conversionMethodStackedWidget)
-
-        self.horizontalLayout_4 = QHBoxLayout()
+        self.conversionMethodSplitter.addWidget(self.conversionMethodStackedWidget)
+        self.widget = QWidget(self.conversionMethodSplitter)
+        self.widget.setObjectName(u"widget")
+        self.horizontalLayout_4 = QHBoxLayout(self.widget)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.conversionMethodPolarityComboBox = QComboBox(self.conversionMethodTab)
+        self.horizontalLayout_4.setSizeConstraint(QLayout.SetMaximumSize)
+        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.conversionMethodPolarityComboBox = QComboBox(self.widget)
         self.conversionMethodPolarityComboBox.addItem("")
         self.conversionMethodPolarityComboBox.addItem("")
         self.conversionMethodPolarityComboBox.setObjectName(u"conversionMethodPolarityComboBox")
 
         self.horizontalLayout_4.addWidget(self.conversionMethodPolarityComboBox)
 
-        self.conversionMethodOutputOffsetDoubleSpinBox = QDoubleSpinBox(self.conversionMethodTab)
+        self.conversionMethodOutputOffsetDoubleSpinBox = QDoubleSpinBox(self.widget)
         self.conversionMethodOutputOffsetDoubleSpinBox.setObjectName(u"conversionMethodOutputOffsetDoubleSpinBox")
         self.conversionMethodOutputOffsetDoubleSpinBox.setMinimum(-999999.000000000000000)
         self.conversionMethodOutputOffsetDoubleSpinBox.setMaximum(999999.000000000000000)
@@ -262,8 +265,9 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_4.addWidget(self.conversionMethodOutputOffsetDoubleSpinBox)
 
+        self.conversionMethodSplitter.addWidget(self.widget)
 
-        self.verticalLayout_2.addLayout(self.horizontalLayout_4)
+        self.horizontalLayout_5.addWidget(self.conversionMethodSplitter)
 
         self.wavelengthConversionTabWidget.addTab(self.conversionMethodTab, "")
         self.fsrPlotTab = QWidget()
@@ -311,18 +315,20 @@ class Ui_MainWindow(object):
 
         self.wavelengthConversionTabWidget.addTab(self.fsrPlotTab, "")
         self.splitter.addWidget(self.wavelengthConversionTabWidget)
-        self.layoutWidget = QWidget(self.splitter)
-        self.layoutWidget.setObjectName(u"layoutWidget")
-        self.horizontalLayout = QHBoxLayout(self.layoutWidget)
+
+        self.verticalLayout_2.addWidget(self.splitter)
+
+        self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.label = QLabel(self.layoutWidget)
+        self.label = QLabel(self.wavelengthConversionGroupBox)
         self.label.setObjectName(u"label")
+        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy)
         self.label.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.horizontalLayout.addWidget(self.label)
 
-        self.outputPathComboBox = QComboBox(self.layoutWidget)
+        self.outputPathComboBox = QComboBox(self.wavelengthConversionGroupBox)
         self.outputPathComboBox.setObjectName(u"outputPathComboBox")
         sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         sizePolicy3.setHorizontalStretch(1)
@@ -333,7 +339,7 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.outputPathComboBox)
 
-        self.outputPathPushButton = QPushButton(self.layoutWidget)
+        self.outputPathPushButton = QPushButton(self.wavelengthConversionGroupBox)
         self.outputPathPushButton.setObjectName(u"outputPathPushButton")
 
         self.horizontalLayout.addWidget(self.outputPathPushButton)
@@ -342,16 +348,15 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
-        self.buttonBox = QDialogButtonBox(self.layoutWidget)
+        self.buttonBox = QDialogButtonBox(self.wavelengthConversionGroupBox)
         self.buttonBox.setObjectName(u"buttonBox")
         self.buttonBox.setOrientation(Qt.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
 
         self.horizontalLayout.addWidget(self.buttonBox)
 
-        self.splitter.addWidget(self.layoutWidget)
 
-        self.horizontalLayout_6.addWidget(self.splitter)
+        self.verticalLayout_2.addLayout(self.horizontalLayout)
 
         self.splitter_3.addWidget(self.wavelengthConversionGroupBox)
 
@@ -360,7 +365,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1118, 42))
+        self.menubar.setGeometry(QRect(0, 0, 1118, 29))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")

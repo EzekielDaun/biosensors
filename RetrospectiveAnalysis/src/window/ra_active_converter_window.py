@@ -163,8 +163,8 @@ class RaActiveConverterWindow(QMainWindow):
 
         # sweep raw preview
         self.__sweep_raw_preview_widget = GraphicsLayoutWidget()
-        self.__ui.rawPreviewPlotSpaceholderWidget.setLayout(QHBoxLayout())
-        self.__ui.rawPreviewPlotSpaceholderWidget.layout().addWidget(
+        self.__ui.rawPreviewPlotPlaceholderWidget.setLayout(QHBoxLayout())
+        self.__ui.rawPreviewPlotPlaceholderWidget.layout().addWidget(
             self.__sweep_raw_preview_widget
         )
         self.__sweep_raw_preview_widget_ramp_plot: PlotItem = (
@@ -262,8 +262,8 @@ class RaActiveConverterWindow(QMainWindow):
         self.__conversion_method_visualize_button.clicked.connect(
             self.slot_on_wavelength_conversion_plot_clicked
         )
-        self.__ui.conversionMethodTab.layout().insertWidget(  # type: ignore
-            self.__ui.conversionMethodTab.layout().count() - 1,
+        self.__ui.conversionMethodSplitter.insertWidget(
+            self.__ui.conversionMethodSplitter.count() - 1,
             self.__conversion_method_visualize_button,
         )
 
@@ -283,8 +283,8 @@ class RaActiveConverterWindow(QMainWindow):
                 title="Periodic Response"
             )
         )
-        self.__ui.conversionMethodTab.layout().insertWidget(  # type: ignore
-            self.__ui.conversionMethodTab.layout().count() - 1,
+        self.__ui.conversionMethodSplitter.insertWidget(
+            self.__ui.conversionMethodSplitter.count() - 1,
             self.__conversion_method_graphics_layout_widget,
         )
 
