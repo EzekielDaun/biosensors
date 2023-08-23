@@ -626,11 +626,11 @@ class AdvancedRampDownCSVReader(AdvancedCSVReaderBase):
                 offset_end,
                 num_period,
                 len_period,
-            ) = generate_sawtooth_from_data(csv_data.ramp, RampType.UP)
+            ) = generate_sawtooth_from_data(csv_data.ramp, RampType.DOWN)
 
             input = sawtooth(
                 np.linspace(0, 2 * np.pi * 500, len_period * 500),
-                RampType.UP.value,  # type: ignore
+                RampType.DOWN.value,  # type: ignore
             )
             input += 1
             input *= 0.5
@@ -650,7 +650,7 @@ class AdvancedRampDownCSVReader(AdvancedCSVReaderBase):
             maxima, _ = find_peaks(out)
             minima, _ = find_peaks(-out)
 
-            if minima[0] > maxima[0]:
+            if minima[0] < maxima[0]:
                 minima = minima[1:]
 
             if maxima[-1] > minima[-1]:
