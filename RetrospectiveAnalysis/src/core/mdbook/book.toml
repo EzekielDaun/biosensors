@@ -1,0 +1,10 @@
+[book]
+authors = ["Yifei Liu"]
+language = "en"
+multilingual = false
+src = "src"
+title = "RA-Core Developer Guide"
+
+[output.html]
+
+[output.pdf]
