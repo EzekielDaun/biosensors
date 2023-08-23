@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from itertools import accumulate, groupby, pairwise, product
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 from cv2 import HoughLinesPointSet
@@ -38,7 +38,10 @@ class LorentzianPeakFitResult:
 
 
 def find_peak_and_properties(
-    powers: NDArray[np.floating], gaussian_filter_sigma=8, prominence_scaler=0.1
+    powers: NDArray[np.floating],
+    gaussian_filter_sigma=8,
+    prominence_scaler=0.1,
+    distance: Optional[int] = None,
 ):
     powers_smoothed: NDArray[np.floating] = gaussian_filter1d(
         powers, sigma=gaussian_filter_sigma
@@ -48,6 +51,7 @@ def find_peak_and_properties(
         prominence=prominence_scaler * (max(powers_smoothed) - min(powers_smoothed)),
         width=0,
         height=min(-1 * powers_smoothed),
+        distance=distance,
     )
     __base_indices = [int(np.mean(p)) for p in pairwise(indices)]
     left_base_indices = [0] + __base_indices
@@ -60,7 +64,13 @@ class SweepFitResult:
     peaks: list[LorentzianPeakFitResult]
 
     @staticmethod
-    def from_data(powers: NDArray[np.floating], wavelengths: NDArray[np.floating]):
+    def from_data(
+        powers: NDArray[np.floating],
+        wavelengths: NDArray[np.floating],
+        gaussian_filter_sigma=8,
+        prominence_scaler=0.1,
+        distance: Optional[int] = None,
+    ):
         if len(powers) != len(wavelengths):
             raise RuntimeError("Number of wavelengths and powers do not match")
 
@@ -69,7 +79,12 @@ class SweepFitResult:
             properties,
             left_base_indices,
             right_base_indices,
-        ) = find_peak_and_properties(powers)
+        ) = find_peak_and_properties(
+            powers,
+            gaussian_filter_sigma=gaussian_filter_sigma,
+            prominence_scaler=prominence_scaler,
+            distance=distance,
+        )
 
         peaks: list[LorentzianPeakFitResult] = []
         for i, peak_index in enumerate(indices):
