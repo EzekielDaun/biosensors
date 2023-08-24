@@ -499,7 +499,16 @@ class RaActiveConverterWindow(QMainWindow):
             self.__sweep_raw_preview_widget_data_plot.plot(
                 channel, pen=next(color_palette), name=f"Channel {i+1}"
             )
+        self.__sweep_raw_preview_widget_data_plot.getAxis("bottom").setLabel(
+            text="#Sample Point"
+        )
+        self.__sweep_raw_preview_widget_data_plot.getAxis("left").setLabel(text="Power")
+
         self.__sweep_raw_preview_widget_ramp_plot.plot(csv_data.ramp)
+        self.__sweep_raw_preview_widget_ramp_plot.getAxis("bottom").setLabel(
+            text="#Sample Point"
+        )
+        self.__sweep_raw_preview_widget_ramp_plot.getAxis("left").setLabel(text="Power")
 
         # if plot tab widget is enabled, update converted sweep stream data
         if self.__ui.plotTabWidget.isEnabled():

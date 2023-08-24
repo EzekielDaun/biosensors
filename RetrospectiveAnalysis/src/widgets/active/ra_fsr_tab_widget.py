@@ -83,3 +83,5 @@ class RaActiveConverterFSRTabWidget(QWidget):
         self.__right_plot_widget.clear()
         self.__right_plot_widget.getPlotItem().plot(y)  # type: ignore
         self.__right_plot_widget.getPlotItem().setTitle("Equalized Data Stream")  # type: ignore
+        self.__right_plot_widget.getPlotItem().getAxis("bottom").setLabel(text="#Sample Point")  # type: ignore
+        self.__right_plot_widget.getPlotItem().getAxis("left").setLabel(text="Power")  # type: ignore
