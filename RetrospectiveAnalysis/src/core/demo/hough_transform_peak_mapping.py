@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
 
-from src.core.lib import get_lorentzian_peaks
+from src.core.lib import SweepFitResult, get_lorentzian_peaks
 
 if __name__ == "__main__":
     base_folder = os.path.expanduser("~/path/to/folder")
@@ -34,7 +34,8 @@ if __name__ == "__main__":
 
     peak_set = []
     for i, sweep in enumerate(power):
-        peaks_wl = get_lorentzian_peaks(sweep, wavelengths[i] * 1e9)[0]
+        # peaks_wl = get_lorentzian_peaks(sweep, wavelengths[i] * 1e9)[0]
+        peaks_wl = SweepFitResult.from_data(sweep, wavelengths[i] * 1e9).get_peaks()
         for p in peaks_wl:
             peak_set.append(np.array([i, p[0] - trace[i]]))
 

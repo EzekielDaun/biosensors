@@ -5,6 +5,7 @@ from typing import Callable, Optional
 
 import numpy as np
 from cv2 import HoughLinesPointSet
+from deprecated import deprecated
 from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import curve_fit
@@ -227,44 +228,6 @@ class SweepFitResult:
         )
 
 
-def get_lorentzian_peaks(
-    powers: NDArray[np.floating],
-    wavelengths: NDArray[np.floating],
-    r2_threshold: float = 0.5,
-    max_n100dBm_points: int = 30,
-) -> tuple[
-    NDArray[np.floating],
-    NDArray[np.floating],
-    NDArray[np.floating],
-    NDArray[np.floating],
-]:
-    """get_lorentzian_peaks
-
-    Args:
-        powers (NDArray[np.float64]): 1D array of power
-        wavelengths (NDArray[np.float64]): 1D array of wavelength
-
-    Returns:
-        tuple[ NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64] ]: [[x0,y0,I,gamma,a]], [FSR], [ER], [Q]
-    """
-
-    # This is to mimic the old API
-    sweep_fitted = SweepFitResult.from_data(powers, wavelengths)
-    peaks = sweep_fitted.get_peaks(
-        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
-    )
-    fsr = sweep_fitted.get_fsr(
-        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
-    )
-    er = sweep_fitted.get_er(
-        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
-    )
-    q = sweep_fitted.get_q(
-        r2_threshold=r2_threshold, n100dbm_threshold=max_n100dBm_points
-    )
-    return peaks, fsr, er, q
-
-
 def group_peaks(
     peaks_wl: list[NDArray[np.floating]],
     reference: NDArray[np.floating],
@@ -318,6 +281,10 @@ def cosine_distance(a, b):
     return cdist(np.array([a]), np.array([b]), "cosine")[0][0]
 
 
+@deprecated(
+    reason="This is the old algorithm used in 202205-202308 Use `peaks_to_traces` instead",
+    action="always",
+)
 def peaks_to_traces_old(
     peaks: list[NDArray[np.floating]],
     weights: NDArray[np.floating] = np.array([1, 1, 1, 1, 1]),
@@ -448,6 +415,7 @@ def peaks_to_traces_old(
     return ret, FSR
 
 
+@deprecated(reason="Directly call `peaks_to_traces` instead.", action="always")
 def peaks_to_traces_default(peaks: list[list[np.floating]]):
     # Temporary API for backward compatibility
     return peaks_to_traces_dijkstra(peaks, euclidean_distance)
