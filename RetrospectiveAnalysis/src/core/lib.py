@@ -422,7 +422,7 @@ def peaks_to_traces_default(peaks: list[list[np.floating]]):
 
 
 def peaks_to_traces(
-    peaks: list[list[np.floating]],
+    peaks: list[list[np.floating]] | list[NDArray[np.floating]],
     distance_func: Callable[[NDArray[np.floating], NDArray[np.floating]], float],
 ):
     # API for future use
@@ -430,7 +430,7 @@ def peaks_to_traces(
 
 
 def __construct_adjacency_matrix(
-    peaks: list[list[np.floating]],
+    peaks: list[list[np.floating]] | list[NDArray[np.floating]],
     distance_func: Callable[[NDArray[np.floating], NDArray[np.floating]], float],
 ):
     try:
@@ -447,7 +447,7 @@ def __construct_adjacency_matrix(
     except IndexError as e:
         raise IndexError("No peaks found in the first sweep.") from e
 
-    ragged_peaks = RaggedArray(peaks)
+    ragged_peaks = RaggedArray(peaks)  # type: ignore
 
     # Create an adjacency matrix for the graph
     rows: list[float] = []
@@ -485,7 +485,7 @@ def __construct_adjacency_matrix(
 
 
 def peaks_to_traces_dijkstra(
-    peaks: list[list[np.floating]],
+    peaks: list[list[np.floating]] | list[NDArray[np.floating]],
     distance_func: Callable[[NDArray[np.floating], NDArray[np.floating]], float],
 ):
     FSR, adjacency_matrix = __construct_adjacency_matrix(peaks, distance_func)
