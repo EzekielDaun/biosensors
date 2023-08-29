@@ -287,7 +287,7 @@ def cosine_distance(a, b):
 )
 def peaks_to_traces_old(
     peaks: list[NDArray[np.floating]],
-    weights: NDArray[np.floating] = np.array([1, 1, 1, 1, 1]),
+    weights: NDArray[np.floating] = np.diag([1, 1, 1, 1, 1]),
 ) -> tuple[list[list[float]], float]:
     """__peaks_to_traces
 
@@ -301,10 +301,10 @@ def peaks_to_traces_old(
     """
 
     def __weighted_distance_with_x0(a, b):
-        return euclidean_distance(a * weights, b * weights)
+        return euclidean_distance(np.matmul(weights, a), np.matmul(weights, b))
 
     def __weighted_distance_without_x0(a, b):
-        return euclidean_distance((a * weights)[1:], (b * weights)[1:])
+        return euclidean_distance(np.matmul(weights, a)[1:], np.matmul(weights, b)[1:])
 
     try:
         FSR = float(
@@ -419,6 +419,7 @@ def peaks_to_traces_old(
 def peaks_to_traces_default(peaks: list[list[np.floating]]):
     # Temporary API for backward compatibility
     return peaks_to_traces_dijkstra(peaks, euclidean_distance)
+    # return peaks_to_traces_old(peaks) # The old algorithm
 
 
 def peaks_to_traces(
