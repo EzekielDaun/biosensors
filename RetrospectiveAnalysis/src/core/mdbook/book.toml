@@ -6,5 +6,6 @@ src = "src"
 title = "RA-Core Developer Guide"
 
 [output.html]
+mathjax-support = true
 
 [output.pdf]
