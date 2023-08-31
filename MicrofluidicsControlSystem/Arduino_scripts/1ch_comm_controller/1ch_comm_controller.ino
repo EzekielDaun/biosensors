@@ -105,7 +105,7 @@ void loop()
     // measurement mode (H20 calibration), then read 3x (2 bytes + 1 CRC byte) from the sensor.
     // To perform a IPA based measurement, send 0x__ instead.
     // Check datasheet for available measurement commands.
-    Wire.requestFrom(SLI0430_ADDR, 2); // reading 2 bytes ignores the CRC byte
+    uint8_t bytesReceived = Wire.requestFrom(SLI0430_ADDR, 2); // reading 2 bytes ignores the CRC byte
     if (Wire.available() < 2) {
       Serial.println("Error while reading flow measurement");
     } else {

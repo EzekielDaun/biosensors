@@ -100,15 +100,16 @@ void loop() {
     Serial.println("Error during write measurement mode command");
   } 
   else {
-    delay(1000);
+    //delay(1000);
     uint8_t bytesReceived = Wire.requestFrom(ADDRESS, 2);
     if (Wire.available() < 2) {
       Serial.println("Error while reading flow measurement");
     }
     sensor_flow_value  = Wire.read() << 8; // read the MSB from the sensor
+    Serial.print(", Flow value from Sensor 1: ");
+    Serial.print(sensor_flow_value);
     sensor_flow_value |= Wire.read();      // read the LSB from the sensor
-    
-    Serial.print("Flow value from Sensor: ");
+    Serial.print(", Flow value from Sensor 2: ");
     Serial.print(sensor_flow_value);
 
     signed_flow_value = (int16_t) sensor_flow_value;
@@ -131,5 +132,5 @@ void loop() {
     //}
   }
 
-  delay(1000); // milliseconds delay between reads (for demo purposes)
+  //delay(1000); // milliseconds delay between reads (for demo purposes)
 }

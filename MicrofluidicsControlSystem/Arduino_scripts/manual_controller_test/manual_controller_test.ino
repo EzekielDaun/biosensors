@@ -60,6 +60,7 @@ void loop()
   Serial.println("");
 
   uint16_t sensor_flow_value;
+  uint16_t sensor_flow_valuet;
   int16_t signed_flow_value;
   float scaled_signed_flow_value;
   float scaled_flow_value;
@@ -79,14 +80,20 @@ void loop()
     if (Wire.available() < 2) {
       Serial.println("Error while reading flow measurement");
     }
-    sensor_flow_value  = Wire.read() << 8; // read the MSB from the sensor
-    sensor_flow_value |= Wire.read();      // read the LSB from the sensor
-    
-    Serial.print("Flow value from Sensor: ");
+    sensor_flow_value  = Wire.read(); // read the MSB from the sensor
+    Serial.print("1: ");
     Serial.print(sensor_flow_value);
-
+    sensor_flow_value  = sensor_flow_value << 8; // read the MSB from the sensor
+    Serial.print(", 2: ");
+    Serial.print(sensor_flow_value);
+    sensor_flow_valuet  = Wire.read();
+    Serial.print(", 3: ");
+    Serial.print(sensor_flow_valuet);
+    sensor_flow_value |= sensor_flow_valuet;      // read the LSB from the sensor
+    Serial.print(", 4: ");
+    Serial.print(sensor_flow_value);
     signed_flow_value = (int16_t) sensor_flow_value;
-    Serial.print(", signed value: ");
+    Serial.print(", 5: ");
     Serial.print(signed_flow_value);
 
     scaled_signed_flow_value = ((float) signed_flow_value) / SIGNED_SCALE_FACTOR_FLOW;
