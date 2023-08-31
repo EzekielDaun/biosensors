@@ -22,11 +22,6 @@ struct TX {
 
 void setup()
 {
-//  pinMode(A2,OUTPUT);
-//  pinMode(A3,OUTPUT); 
-//  digitalWrite(A2,HIGH);
-//  digitalWrite(A3,LOW);
-
   DAC1.begin(0x60);
   
   int ret;

@@ -1,0 +1,32 @@
+#include <Wire.h>
+#include "SerialTransfer.h"
+#define LS_4VM02_ADDR 0x6A // Labsmith 4VM02 I2C Address 60 6A 7E
+#define CV_SETVALVES 0x07 // Set Valve Command
+void setup()
+{
+    Wire.begin();
+    Serial.begin(9600);
+    Serial.println("Hello!");
+}
+// Settings for AV801
+// For position Y; we send 0xY3
+// VXSet starts with V4 and finishes with V1
+
+void loop()
+{
+    int ret;
+    Wire.beginTransmission(LS_4VM02_ADDR);  //address<<1
+    Wire.write(0x05);  //Count        
+    Wire.write(CV_SETVALVES);   // Command  
+    Wire.write(0x23); //V4Set - Position 8
+    Wire.write(0x23); //V3Set - Position 8
+    Wire.write(0x23); //V2Set - Position 8
+    Wire.write(0x23); //V1Set - Position 1
+    ret = Wire.endTransmission();
+    if (ret != 0) {
+      Serial.println("Error during write measurement mode command");
+    } else {
+    delay(1000);
+    }
+
+}
