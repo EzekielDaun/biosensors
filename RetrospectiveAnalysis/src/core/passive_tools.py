@@ -3,13 +3,14 @@ import logging
 import multiprocessing as mp
 import os
 import re
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from functools import lru_cache, partial, reduce
 from itertools import islice
 from typing import Iterator
 
 import numpy as np
+from deprecated import deprecated
 from numpy.typing import NDArray
 from scipy.io import loadmat
 from tqdm import tqdm
@@ -24,7 +25,7 @@ Data = tuple[float, NDArray[np.floating], NDArray[np.floating]]
 Sweep = NDArray[np.floating]
 
 
-class DataReaderBase:
+class DataReaderBase(metaclass=ABCMeta):
     @abstractmethod
     def __iter__(self) -> Iterator[Data]:
         # return the timestamp, wavelength of a sweep and the sweep 2D power data itself
@@ -112,6 +113,9 @@ def _powers_to_sweep_fit_results(
     return {c: [SweepFitResult.from_data(powers[c], wavelengths)] for c in channels}
 
 
+@deprecated(
+    reason="Use DataReaderBase and other analyze functions instead.", action="always"
+)
 class PassiveAnalyzer(object):
     def __init__(
         self,

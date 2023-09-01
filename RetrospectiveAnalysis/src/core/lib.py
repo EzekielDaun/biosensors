@@ -491,7 +491,7 @@ def peaks_to_traces_dijkstra(
 ):
     FSR, adjacency_matrix = __construct_adjacency_matrix(peaks, distance_func)
 
-    ragged_peaks = RaggedArray(peaks)
+    ragged_peaks = RaggedArray(peaks)  # type: ignore
 
     start_single_index = 0
     end_single_index = len(ragged_peaks.double_indices)
